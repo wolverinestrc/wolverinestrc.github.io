@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tienda – Wolverines TRC</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+  :root {
+    --blue:#235498; --blue2:#1a3f72; --blue3:#2e6bc4;
+    --blue-lt:#d6e4f7; --blue-xs:#eef4fc;
+    --white:#fff; --gray:#6b7c93; --dark:#0f1e35; --text:#1a2a3a; --border:#d0dce8;
+    --green:#22c55e;
+  }
+  body { background:var(--white); font-family:'Montserrat',sans-serif; color:var(--text); }
+
+  /* NAV */
+  nav { position:sticky; top:0; z-index:100; background:var(--white); border-bottom:3px solid var(--blue); padding:0 60px; display:flex; align-items:center; justify-content:space-between; height:70px; box-shadow:0 2px 20px rgba(35,84,152,0.1); }
+  .nav-brand { display:flex; align-items:center; gap:12px; text-decoration:none; }
+  .nav-logo { width:46px; height:46px; object-fit:contain; }
+  .nav-name { font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:3px; color:var(--blue); }
+  .nav-sub { font-size:8px; color:var(--gray); letter-spacing:2px; text-transform:uppercase; }
+  .nav-links { display:flex; gap:32px; align-items:center; }
+  .nav-links a { font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--text); text-decoration:none; transition:color .2s; }
+  .nav-links a:hover { color:var(--blue); }
+  .cart-btn { position:relative; background:var(--blue); border:none; color:white; width:44px; height:44px; border-radius:8px; cursor:pointer; font-size:20px; display:flex; align-items:center; justify-content:center; }
+  .cart-count { position:absolute; top:-6px; right:-6px; background:var(--green); color:white; border-radius:50%; width:20px; height:20px; font-size:11px; font-weight:900; display:flex; align-items:center; justify-content:center; }
+
+  /* HEADER */
+  .shop-header { background:linear-gradient(135deg,var(--blue) 0%,var(--blue2) 100%); padding:60px 60px; text-align:center; color:white; position:relative; overflow:hidden; }
+  .shop-header::before { content:'WOLVERINES'; position:absolute; font-family:'Bebas Neue',sans-serif; font-size:180px; color:rgba(255,255,255,0.05); white-space:nowrap; top:50%; left:50%; transform:translate(-50%,-50%); pointer-events:none; }
+  .shop-header h1 { font-family:'Bebas Neue',sans-serif; font-size:64px; letter-spacing:3px; position:relative; }
+  .shop-header p { font-size:14px; opacity:0.85; letter-spacing:2px; text-transform:uppercase; position:relative; }
+
+  /* FILTERS */
+  .filters { padding:32px 60px 0; display:flex; gap:12px; flex-wrap:wrap; }
+  .filter-btn { background:var(--blue-xs); border:1px solid transparent; color:var(--gray); font-family:'Montserrat',sans-serif; font-size:12px; font-weight:700; padding:10px 20px; cursor:pointer; letter-spacing:1px; text-transform:uppercase; transition:all .2s; }
+  .filter-btn.active,.filter-btn:hover { background:var(--blue); color:white; }
+
+  /* PRODUCTS */
+  .products { padding:32px 60px 80px; display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:28px; }
+  .product { background:white; border:1px solid var(--border); overflow:hidden; transition:all .3s; display:flex; flex-direction:column; }
+  .product:hover { box-shadow:0 12px 40px rgba(35,84,152,0.15); transform:translateY(-4px); border-color:var(--blue); }
+  .product-img { aspect-ratio:1; background:var(--blue-xs); display:flex; align-items:center; justify-content:center; font-size:64px; position:relative; overflow:hidden; }
+  .product-img img { width:100%; height:100%; object-fit:cover; }
+  .product-tag { position:absolute; top:12px; left:12px; background:var(--blue); color:white; font-size:9px; font-weight:900; letter-spacing:1px; padding:4px 10px; text-transform:uppercase; }
+  .product-info { padding:20px; display:flex; flex-direction:column; flex:1; }
+  .product-cat { font-size:9px; font-weight:700; letter-spacing:2px; color:var(--blue3); text-transform:uppercase; margin-bottom:6px; }
+  .product-name { font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:1px; color:var(--dark); margin-bottom:8px; line-height:1; }
+  .product-price { font-size:24px; font-weight:900; color:var(--blue); margin-bottom:16px; }
+  .product-sizes { display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap; }
+  .size-btn { width:38px; height:38px; border:1px solid var(--border); background:white; color:var(--text); font-family:'Montserrat',sans-serif; font-size:12px; font-weight:700; cursor:pointer; transition:all .2s; }
+  .size-btn.selected { background:var(--blue); color:white; border-color:var(--blue); }
+  .size-btn:hover { border-color:var(--blue); }
+  .add-btn { margin-top:auto; background:var(--blue); border:none; color:white; font-family:'Montserrat',sans-serif; font-size:12px; font-weight:900; letter-spacing:2px; text-transform:uppercase; padding:14px; cursor:pointer; transition:background .2s; }
+  .add-btn:hover { background:var(--blue2); }
+  .add-btn:disabled { background:var(--gray); cursor:not-allowed; opacity:0.5; }
+
+  /* CART DRAWER */
+  .cart-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:200; display:none; }
+  .cart-overlay.open { display:block; }
+  .cart-drawer { position:fixed; top:0; right:-440px; width:420px; max-width:100vw; height:100vh; background:white; z-index:201; transition:right .3s; display:flex; flex-direction:column; box-shadow:-8px 0 40px rgba(0,0,0,0.2); }
+  .cart-drawer.open { right:0; }
+  .cart-header { background:var(--blue); color:white; padding:24px; display:flex; align-items:center; justify-content:space-between; }
+  .cart-header h2 { font-family:'Bebas Neue',sans-serif; font-size:26px; letter-spacing:2px; }
+  .cart-close { background:none; border:none; color:white; font-size:24px; cursor:pointer; }
+  .cart-items { flex:1; overflow-y:auto; padding:20px; }
+  .cart-empty { text-align:center; color:var(--gray); padding:60px 20px; }
+  .cart-empty span { font-size:48px; display:block; margin-bottom:16px; }
+  .cart-item { display:flex; gap:14px; padding:16px 0; border-bottom:1px solid var(--border); }
+  .cart-item-img { width:64px; height:64px; background:var(--blue-xs); display:flex; align-items:center; justify-content:center; font-size:28px; flex-shrink:0; overflow:hidden; }
+  .cart-item-img img { width:100%; height:100%; object-fit:cover; }
+  .cart-item-info { flex:1; }
+  .cart-item-name { font-size:14px; font-weight:700; color:var(--dark); }
+  .cart-item-meta { font-size:11px; color:var(--gray); margin:2px 0 8px; }
+  .cart-item-price { font-size:15px; font-weight:900; color:var(--blue); }
+  .cart-qty { display:flex; align-items:center; gap:8px; margin-top:8px; }
+  .qty-btn { width:26px; height:26px; border:1px solid var(--border); background:white; cursor:pointer; font-weight:700; color:var(--blue); }
+  .qty-num { font-size:13px; font-weight:700; min-width:24px; text-align:center; }
+  .cart-item-remove { background:none; border:none; color:var(--gray); cursor:pointer; font-size:18px; align-self:flex-start; }
+  .cart-item-remove:hover { color:#e53e3e; }
+  .cart-footer { border-top:2px solid var(--blue); padding:24px; }
+  .cart-total { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .cart-total .lbl { font-size:13px; font-weight:700; color:var(--gray); text-transform:uppercase; letter-spacing:1px; }
+  .cart-total .val { font-family:'Bebas Neue',sans-serif; font-size:36px; color:var(--blue); }
+  .checkout-btn { width:100%; background:var(--blue); border:none; color:white; font-family:'Montserrat',sans-serif; font-size:14px; font-weight:900; letter-spacing:2px; text-transform:uppercase; padding:16px; cursor:pointer; transition:background .2s; }
+  .checkout-btn:hover { background:var(--blue2); }
+
+  /* CHECKOUT MODAL */
+  .checkout-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:300; display:none; align-items:center; justify-content:center; padding:20px; }
+  .checkout-overlay.open { display:flex; }
+  .checkout-modal { background:white; width:100%; max-width:480px; max-height:90vh; overflow-y:auto; }
+  .checkout-modal-header { background:var(--blue); color:white; padding:24px; }
+  .checkout-modal-header h2 { font-family:'Bebas Neue',sans-serif; font-size:26px; letter-spacing:2px; }
+  .checkout-modal-body { padding:24px; }
+  .checkout-field { margin-bottom:16px; }
+  .checkout-field label { display:block; font-size:10px; font-weight:700; letter-spacing:2px; color:var(--gray); text-transform:uppercase; margin-bottom:6px; }
+  .checkout-field input,.checkout-field select { width:100%; border:1px solid var(--border); padding:12px 14px; font-family:'Montserrat',sans-serif; font-size:14px; outline:none; }
+  .checkout-field input:focus,.checkout-field select:focus { border-color:var(--blue); }
+  .pay-options { display:flex; flex-direction:column; gap:10px; margin:16px 0; }
+  .pay-opt { display:flex; align-items:center; gap:12px; border:2px solid var(--border); padding:14px; cursor:pointer; transition:all .2s; }
+  .pay-opt.selected { border-color:var(--blue); background:var(--blue-xs); }
+  .pay-opt input { width:auto; }
+  .checkout-submit { width:100%; background:var(--green); border:none; color:white; font-family:'Montserrat',sans-serif; font-size:14px; font-weight:900; letter-spacing:2px; text-transform:uppercase; padding:16px; cursor:pointer; }
+  .checkout-modal-close { background:var(--blue-xs); border:none; color:var(--gray); font-family:'Montserrat',sans-serif; padding:14px; width:100%; cursor:pointer; font-weight:700; letter-spacing:1px; text-transform:uppercase; font-size:12px; }
+
+  /* TOAST */
+  .toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(100px); background:var(--dark); color:white; padding:14px 28px; border-radius:8px; font-size:13px; font-weight:700; z-index:400; opacity:0; transition:all .3s; }
+  .toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
+
+  @media(max-width:700px){
+    nav { padding:0 20px; } .nav-links a:not(.cart-link) { display:none; }
+    .shop-header { padding:40px 20px; } .shop-header h1 { font-size:44px; }
+    .filters,.products { padding-left:20px; padding-right:20px; }
+    .cart-drawer { width:100vw; right:-100vw; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="https://wolverines.mx" class="nav-brand">
+    <img src="https://wolverines.mx/IMG_0019.png.jpeg" class="nav-logo" alt="Wolverines" onerror="this.style.display='none'">
+    <div><div class="nav-name">WOLVERINES TRC</div><div class="nav-sub">Tienda Oficial</div></div>
+  </a>
+  <div class="nav-links">
+    <a href="https://wolverines.mx">Inicio</a>
+    <a href="https://wolverines.mx/summercamp2026/">Summer Camp</a>
+    <button class="cart-btn" onclick="toggleCart()">🛒<span class="cart-count" id="cart-count" style="display:none">0</span></button>
+  </div>
+</nav>
+
+<div class="shop-header">
+  <h1>TIENDA OFICIAL</h1>
+  <p>Viste los colores de los campeones 🏈</p>
+</div>
+
+<div class="filters">
+  <button class="filter-btn active" onclick="filterProducts('todos',this)">Todos</button>
+  <button class="filter-btn" onclick="filterProducts('playeras',this)">Playeras</button>
+  <button class="filter-btn" onclick="filterProducts('shorts',this)">Shorts</button>
+  <button class="filter-btn" onclick="filterProducts('hoodies',this)">Hoodies</button>
+</div>
+
+<div class="products" id="products"></div>
+
+<!-- CART -->
+<div class="cart-overlay" id="cart-overlay" onclick="toggleCart()"></div>
+<div class="cart-drawer" id="cart-drawer">
+  <div class="cart-header">
+    <h2>🛒 Tu Carrito</h2>
+    <button class="cart-close" onclick="toggleCart()">✕</button>
+  </div>
+  <div class="cart-items" id="cart-items"></div>
+  <div class="cart-footer" id="cart-footer" style="display:none">
+    <div class="cart-total">
+      <span class="lbl">Total</span>
+      <span class="val" id="cart-total">$0</span>
+    </div>
+    <button class="checkout-btn" onclick="openCheckout()">Proceder al pago</button>
+  </div>
+</div>
+
+<!-- CHECKOUT -->
+<div class="checkout-overlay" id="checkout-overlay">
+  <div class="checkout-modal">
+    <div class="checkout-modal-header"><h2>Finalizar Compra</h2></div>
+    <div class="checkout-modal-body">
+      <div class="checkout-field"><label>Nombre completo</label><input type="text" id="co-name" placeholder="Tu nombre"></div>
+      <div class="checkout-field"><label>Teléfono</label><input type="tel" id="co-phone" placeholder="871 000 0000"></div>
+      <div class="checkout-field"><label>Email</label><input type="email" id="co-email" placeholder="tu@email.com"></div>
+      <div class="checkout-field"><label>Entrega</label>
+        <select id="co-delivery">
+          <option value="pickup">Recoger en la academia</option>
+          <option value="envio">Envío a domicilio</option>
+        </select>
+      </div>
+      <label style="font-size:10px;font-weight:700;letter-spacing:2px;color:var(--gray);text-transform:uppercase">Método de pago</label>
+      <div class="pay-options">
+        <label class="pay-opt selected"><input type="radio" name="pay" value="stripe" checked onchange="selectPay(this)">💳 Pago con tarjeta (Stripe)</label>
+        <label class="pay-opt"><input type="radio" name="pay" value="transfer" onchange="selectPay(this)">🏦 Transferencia bancaria</label>
+      </div>
+      <button class="checkout-submit" onclick="submitOrder()">Confirmar pedido</button>
+    </div>
+    <button class="checkout-modal-close" onclick="closeCheckout()">Cancelar</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══ PRODUCTOS DE EJEMPLO (cámbialos luego) ═══
+const PRODUCTS = [
+  { id:1, cat:'playeras', name:'Jersey Oficial Wolverines', price:450, emoji:'👕', tag:'Nuevo', img:'' },
+  { id:2, cat:'playeras', name:'Playera Entrenamiento', price:320, emoji:'👕', tag:'', img:'' },
+  { id:3, cat:'shorts', name:'Short Deportivo', price:280, emoji:'🩳', tag:'', img:'' },
+  { id:4, cat:'hoodies', name:'Hoodie Wolverines', price:650, emoji:'🧥', tag:'Top', img:'' },
+  { id:5, cat:'playeras', name:'Jersey Visitante', price:450, emoji:'👕', tag:'', img:'' },
+  { id:6, cat:'hoodies', name:'Sudadera con Gorro', price:580, emoji:'🧥', tag:'', img:'' },
+];
+
+const SIZES = ['CH','M','G','XG'];
+const TRANSFER_CLABE = '638180000152424651';
+let cart = [];
+let selectedSizes = {};
+
+function renderProducts(filter='todos') {
+  const cont = document.getElementById('products');
+  const list = filter==='todos' ? PRODUCTS : PRODUCTS.filter(p=>p.cat===filter);
+  cont.innerHTML = list.map(p => `
+    <div class="product">
+      <div class="product-img">
+        ${p.img ? `<img src="${p.img}" alt="${p.name}">` : p.emoji}
+        ${p.tag ? `<span class="product-tag">${p.tag}</span>` : ''}
+      </div>
+      <div class="product-info">
+        <div class="product-cat">${p.cat}</div>
+        <div class="product-name">${p.name}</div>
+        <div class="product-price">$${p.price}</div>
+        <div class="product-sizes">
+          ${SIZES.map(s=>`<button class="size-btn" onclick="selectSize(${p.id},'${s}',this)">${s}</button>`).join('')}
+        </div>
+        <button class="add-btn" id="add-${p.id}" onclick="addToCart(${p.id})">Agregar al carrito</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterProducts(cat, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderProducts(cat);
+}
+
+function selectSize(pid, size, btn) {
+  selectedSizes[pid] = size;
+  btn.parentElement.querySelectorAll('.size-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+function addToCart(pid) {
+  const size = selectedSizes[pid];
+  if (!size) { showToast('⚠️ Selecciona una talla'); return; }
+  const product = PRODUCTS.find(p=>p.id===pid);
+  const existing = cart.find(i=>i.id===pid && i.size===size);
+  if (existing) existing.qty++;
+  else cart.push({ ...product, size, qty:1 });
+  updateCart();
+  showToast('✅ Agregado al carrito');
+}
+
+function updateCart() {
+  const count = cart.reduce((s,i)=>s+i.qty,0);
+  const countEl = document.getElementById('cart-count');
+  countEl.textContent = count;
+  countEl.style.display = count>0 ? 'flex' : 'none';
+
+  const itemsEl = document.getElementById('cart-items');
+  const footerEl = document.getElementById('cart-footer');
+  if (!cart.length) {
+    itemsEl.innerHTML = '<div class="cart-empty"><span>🛒</span>Tu carrito está vacío</div>';
+    footerEl.style.display = 'none';
+    return;
+  }
+  itemsEl.innerHTML = cart.map((i,idx)=>`
+    <div class="cart-item">
+      <div class="cart-item-img">${i.img?`<img src="${i.img}">`:i.emoji}</div>
+      <div class="cart-item-info">
+        <div class="cart-item-name">${i.name}</div>
+        <div class="cart-item-meta">Talla: ${i.size}</div>
+        <div class="cart-item-price">$${i.price * i.qty}</div>
+        <div class="cart-qty">
+          <button class="qty-btn" onclick="changeQty(${idx},-1)">−</button>
+          <span class="qty-num">${i.qty}</span>
+          <button class="qty-btn" onclick="changeQty(${idx},1)">+</button>
+        </div>
+      </div>
+      <button class="cart-item-remove" onclick="removeItem(${idx})">🗑</button>
+    </div>
+  `).join('');
+  const total = cart.reduce((s,i)=>s+i.price*i.qty,0);
+  document.getElementById('cart-total').textContent = '$'+total;
+  footerEl.style.display = 'block';
+}
+
+function changeQty(idx, delta) {
+  cart[idx].qty += delta;
+  if (cart[idx].qty<=0) cart.splice(idx,1);
+  updateCart();
+}
+function removeItem(idx) { cart.splice(idx,1); updateCart(); }
+
+function toggleCart() {
+  document.getElementById('cart-drawer').classList.toggle('open');
+  document.getElementById('cart-overlay').classList.toggle('open');
+}
+
+function selectPay(radio) {
+  document.querySelectorAll('.pay-opt').forEach(o=>o.classList.remove('selected'));
+  radio.closest('.pay-opt').classList.add('selected');
+}
+
+function openCheckout() { document.getElementById('checkout-overlay').classList.add('open'); }
+function closeCheckout() { document.getElementById('checkout-overlay').classList.remove('open'); }
+
+function submitOrder() {
+  const name = document.getElementById('co-name').value.trim();
+  const phone = document.getElementById('co-phone').value.trim();
+  const email = document.getElementById('co-email').value.trim();
+  const delivery = document.getElementById('co-delivery').value;
+  const pay = document.querySelector('input[name="pay"]:checked').value;
+  if (!name||!phone||!email) { showToast('⚠️ Completa todos los campos'); return; }
+
+  const total = cart.reduce((s,i)=>s+i.price*i.qty,0);
+  const orderDetail = cart.map(i=>`${i.qty}x ${i.name} (${i.size})`).join(', ');
+
+  // Build WhatsApp message
+  const msg = `🏈 *NUEVO PEDIDO - Tienda Wolverines*%0A%0A` +
+    `*Cliente:* ${name}%0A*Tel:* ${phone}%0A*Email:* ${email}%0A` +
+    `*Entrega:* ${delivery==='pickup'?'Recoger en academia':'Envío a domicilio'}%0A` +
+    `*Pago:* ${pay==='stripe'?'Tarjeta (Stripe)':'Transferencia'}%0A%0A` +
+    `*Productos:*%0A${orderDetail.replace(/,/g,'%0A')}%0A%0A*TOTAL: $${total} MXN*`;
+
+  if (pay==='transfer') {
+    alert(`¡Pedido registrado! 🏈\n\nDatos para transferencia:\nBanco: Nu (Nubank)\nCLABE: ${TRANSFER_CLABE}\nMonto: $${total} MXN\n\nEnvía tu comprobante por WhatsApp.`);
+  }
+  // Open WhatsApp with order
+  window.open(`https://wa.me/528713420040?text=${msg}`, '_blank');
+  cart = [];
+  updateCart();
+  closeCheckout();
+  toggleCart();
+  showToast('✅ ¡Pedido enviado!');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2500);
+}
+
+renderProducts();
+</script>
+</body>
+</html>
