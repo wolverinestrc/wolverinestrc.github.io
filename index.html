@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wolverines TRC – Flag Football Academy | Torreón</title>
+<meta name="description" content="Academia de Flag Football, Atletismo y Basketball en Torreón, Coahuila. 5 campeonatos en 2026.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{--blue:#235498;--blue2:#1a3f72;--blue3:#2e6bc4;--blue-lt:#d6e4f7;--blue-xs:#eef4fc;--white:#ffffff;--gray:#6b7c93;--dark:#0f1e35;--text:#1a2a3a;--border:#d0dce8}
+  html{scroll-behavior:smooth}
+  body{background:var(--white);font-family:'Montserrat',sans-serif;color:var(--text);overflow-x:hidden}
+  nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(255,255,255,0.97);backdrop-filter:blur(12px);border-bottom:3px solid var(--blue);padding:0 60px;display:flex;align-items:center;justify-content:space-between;height:70px;box-shadow:0 2px 20px rgba(35,84,152,0.1)}
+  .nav-brand{display:flex;align-items:center;gap:12px;text-decoration:none}
+  .nav-logo{width:46px;height:46px;object-fit:contain}
+  .nav-name{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--blue)}
+  .nav-sub{font-size:8px;color:var(--gray);letter-spacing:2px;text-transform:uppercase}
+  .nav-links{display:flex;gap:36px;align-items:center}
+  .nav-links a{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text);text-decoration:none;transition:color .2s}
+  .nav-links a:hover{color:var(--blue)}
+  .nav-cta{background:var(--blue);color:var(--white);font-size:11px;font-weight:900;letter-spacing:2px;text-transform:uppercase;padding:11px 24px;text-decoration:none;transition:background .2s}
+  .nav-cta:hover{background:var(--blue2)}
+  .nav-toggle{display:none;background:none;border:none;cursor:pointer;flex-direction:column;gap:5px;padding:4px}
+  .nav-toggle span{display:block;width:24px;height:2px;background:var(--blue);border-radius:2px}
+  .hero{min-height:100vh;padding-top:70px;background:linear-gradient(135deg,var(--blue-xs) 0%,var(--white) 50%,var(--blue-lt) 100%);position:relative;overflow:hidden;display:flex;align-items:center}
+  .hero::before{content:'';position:absolute;top:0;right:0;width:50%;height:100%;background:var(--blue);clip-path:polygon(25% 0%,100% 0%,100% 100%,0% 100%);opacity:0.05}
+  .hero-inner{display:grid;grid-template-columns:1fr 1fr;min-height:calc(100vh - 70px);width:100%}
+  .hero-left{display:flex;flex-direction:column;justify-content:center;padding:80px 60px 80px 80px;position:relative;z-index:2}
+  .hero-badge{display:inline-flex;align-items:center;gap:8px;background:var(--blue-lt);border:1px solid rgba(35,84,152,0.25);padding:7px 16px;margin-bottom:28px;font-size:10px;font-weight:700;letter-spacing:3px;color:var(--blue);text-transform:uppercase;width:fit-content}
+  .hero-badge::before{content:'●';font-size:8px;color:#22c55e;animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+  .hero-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(68px,8vw,108px);line-height:0.9;letter-spacing:2px;margin-bottom:24px}
+  .hero-title .t1{color:var(--blue);display:block}
+  .hero-title .t2{color:var(--dark);display:block}
+  .hero-title .t3{color:var(--blue3);display:block;font-size:0.42em;letter-spacing:8px;margin-top:8px}
+  .hero-desc{font-size:16px;color:var(--gray);line-height:1.8;margin-bottom:36px;max-width:440px}
+  .hero-desc strong{color:var(--text)}
+  .hero-btns{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:52px}
+  .btn-blue{background:var(--blue);color:var(--white);font-size:13px;font-weight:900;letter-spacing:2px;text-transform:uppercase;padding:16px 30px;text-decoration:none;transition:all .2s;border:2px solid var(--blue)}
+  .btn-blue:hover{background:var(--blue2);border-color:var(--blue2);transform:translateY(-2px);box-shadow:0 8px 24px rgba(35,84,152,0.3)}
+  .btn-outline{background:transparent;color:var(--blue);font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:16px 30px;text-decoration:none;border:2px solid var(--blue);transition:all .2s}
+  .btn-outline:hover{background:var(--blue);color:var(--white)}
+  .hero-stats{display:flex;gap:36px;flex-wrap:wrap}
+  .h-stat .n{font-family:'Bebas Neue',sans-serif;font-size:44px;color:var(--blue);line-height:1}
+  .h-stat .l{font-size:10px;font-weight:700;letter-spacing:2px;color:var(--gray);text-transform:uppercase;margin-top:2px}
+  .hero-right{position:relative;overflow:hidden;background:var(--blue);clip-path:polygon(8% 0%,100% 0%,100% 100%,0% 100%)}
+  .hero-right img{width:100%;height:100%;object-fit:cover;opacity:0.75;mix-blend-mode:luminosity}
+  .hero-right-overlay{position:absolute;inset:0;background:linear-gradient(135deg,rgba(35,84,152,0.6) 0%,rgba(35,84,152,0.2) 100%)}
+  .hero-right-text{position:absolute;bottom:48px;left:48px;right:24px}
+  .hero-right-text h3{font-family:'Bebas Neue',sans-serif;font-size:48px;color:var(--white);letter-spacing:2px;line-height:1}
+  .hero-right-text p{font-size:13px;color:rgba(255,255,255,0.8);font-weight:600;margin-top:8px}
+  .logros-strip{background:var(--blue);padding:50px 80px;display:grid;grid-template-columns:repeat(5,1fr);gap:0}
+  .logro{text-align:center;padding:16px;position:relative}
+  .logro:not(:last-child)::after{content:'';position:absolute;right:0;top:20%;height:60%;width:1px;background:rgba(255,255,255,0.15)}
+  .logro .ln{font-family:'Bebas Neue',sans-serif;font-size:52px;color:var(--white);line-height:1}
+  .logro .ll{font-size:10px;font-weight:700;letter-spacing:2px;color:rgba(255,255,255,0.7);text-transform:uppercase;margin-top:4px}
+  .logro .ls{font-size:10px;color:rgba(255,255,255,0.45);margin-top:2px}
+  .programas{padding:100px 80px;background:var(--white)}
+  .sec-eye{font-size:10px;font-weight:700;letter-spacing:4px;color:var(--blue);text-transform:uppercase;margin-bottom:10px}
+  .sec-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(40px,5vw,62px);color:var(--dark);line-height:1;margin-bottom:14px}
+  .sec-title span{color:var(--blue)}
+  .sec-div{width:56px;height:3px;background:var(--blue);margin:16px 0 44px}
+  .sec-sub{font-size:15px;color:var(--gray);line-height:1.8;max-width:520px}
+  .prog-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;margin-top:48px}
+  .prog-card{background:var(--blue-xs);border-top:4px solid var(--blue);padding:40px 32px;transition:all .3s;position:relative;overflow:hidden}
+  .prog-card:hover{background:var(--blue);transform:translateY(-4px);box-shadow:0 16px 40px rgba(35,84,152,0.2)}
+  .prog-card:hover .pc-title,.prog-card:hover .pc-age,.prog-card:hover .pc-desc,.prog-card:hover .pc-item{color:var(--white)}
+  .prog-card:hover .pc-sched{background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.3);color:var(--white)}
+  .prog-card:hover .pc-dot{background:var(--white)}
+  .pc-icon{font-size:42px;margin-bottom:20px}
+  .pc-title{font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:2px;color:var(--blue);margin-bottom:6px;transition:color .3s}
+  .pc-age{font-size:10px;font-weight:700;letter-spacing:2px;color:var(--blue3);text-transform:uppercase;margin-bottom:14px;transition:color .3s}
+  .pc-desc{font-size:13px;color:var(--gray);line-height:1.7;margin-bottom:20px;transition:color .3s}
+  .pc-sched{display:inline-block;background:var(--blue-lt);border:1px solid rgba(35,84,152,0.2);padding:6px 14px;font-size:11px;font-weight:700;color:var(--blue);letter-spacing:1px;margin-bottom:20px;transition:all .3s}
+  .pc-items{list-style:none;display:flex;flex-direction:column;gap:8px}
+  .pc-item{font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:10px;transition:color .3s}
+  .pc-dot{width:5px;height:5px;background:var(--blue);transform:rotate(45deg);flex-shrink:0;transition:background .3s}
+  .summer-camp{background:var(--blue-xs);padding:0;overflow:hidden}
+  .sc-inner{display:grid;grid-template-columns:1.2fr 1fr}
+  .sc-left{background:var(--blue);padding:80px;position:relative;overflow:hidden}
+  .sc-left::before{content:'2026';font-family:'Bebas Neue',sans-serif;font-size:200px;color:rgba(255,255,255,0.04);position:absolute;bottom:-30px;left:-10px;line-height:1;pointer-events:none}
+  .sc-eye{font-size:10px;font-weight:700;letter-spacing:4px;color:rgba(255,255,255,0.5);text-transform:uppercase;margin-bottom:12px}
+  .sc-title{font-family:'Bebas Neue',sans-serif;font-size:80px;color:var(--white);line-height:0.9;margin-bottom:20px}
+  .sc-sub{font-size:16px;color:rgba(255,255,255,0.8);font-weight:500;margin-bottom:32px;line-height:1.7}
+  .sc-dates-row{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:36px}
+  .sc-date{background:rgba(255,255,255,0.12);padding:14px 20px;border:1px solid rgba(255,255,255,0.15)}
+  .sc-date .dl{font-size:9px;font-weight:700;letter-spacing:3px;color:rgba(255,255,255,0.5);text-transform:uppercase;margin-bottom:4px}
+  .sc-date .dv{font-size:14px;font-weight:900;color:var(--white)}
+  .sc-btns{display:flex;gap:12px;flex-wrap:wrap}
+  .sc-btn1{background:var(--white);color:var(--blue);font-family:'Montserrat',sans-serif;font-size:13px;font-weight:900;letter-spacing:2px;text-transform:uppercase;padding:16px 28px;text-decoration:none;transition:all .2s}
+  .sc-btn1:hover{background:var(--blue-lt)}
+  .sc-btn2{background:transparent;color:var(--white);font-family:'Montserrat',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:16px 28px;text-decoration:none;border:2px solid rgba(255,255,255,0.4);transition:all .2s}
+  .sc-btn2:hover{border-color:var(--white);background:rgba(255,255,255,0.08)}
+  .sc-right{padding:80px 60px;display:flex;flex-direction:column;justify-content:center;gap:20px}
+  .sc-right h3{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--dark);letter-spacing:2px;margin-bottom:8px}
+  .price-card{background:var(--white);border:1px solid var(--border);padding:28px 32px;position:relative;transition:all .3s}
+  .price-card:hover{border-color:var(--blue);box-shadow:0 8px 30px rgba(35,84,152,0.12)}
+  .price-card.featured{border:2px solid var(--blue)}
+  .price-card .rec{position:absolute;top:0;right:0;background:var(--blue);color:var(--white);font-size:9px;font-weight:900;letter-spacing:2px;padding:5px 12px;text-transform:uppercase}
+  .price-card .pt{font-size:10px;font-weight:700;letter-spacing:3px;color:var(--blue3);text-transform:uppercase;margin-bottom:8px}
+  .price-card .pp{font-family:'Bebas Neue',sans-serif;font-size:52px;color:var(--blue);line-height:1;margin-bottom:6px}
+  .price-card .pi{font-size:12px;color:var(--gray)}
+  .price-card .pi span{display:block;padding:2px 0}
+  .coaches{padding:100px 80px;background:var(--white)}
+  .coaches-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:24px;margin-top:48px}
+  .coach-card{background:var(--blue-xs);border:1px solid var(--border);padding:36px 28px;text-align:center;transition:all .3s}
+  .coach-card:hover{border-color:var(--blue);transform:translateY(-4px);box-shadow:0 10px 30px rgba(35,84,152,0.12)}
+  .coach-av{width:90px;height:90px;border-radius:50%;background:var(--blue);border:3px solid var(--blue);display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 18px;overflow:hidden}
+  .coach-av img{width:100%;height:100%;object-fit:cover}
+  .coach-name{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:var(--dark);margin-bottom:4px}
+  .coach-role{font-size:10px;font-weight:700;letter-spacing:3px;color:var(--blue);text-transform:uppercase;margin-bottom:12px}
+  .coach-bio{font-size:12px;color:var(--gray);line-height:1.7}
+  .galeria{padding:100px 80px;background:var(--blue-xs)}
+  .ig-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:48px}
+  .ig-item{aspect-ratio:1;background:var(--blue-lt);position:relative;overflow:hidden;cursor:pointer}
+  .ig-item img{width:100%;height:100%;object-fit:cover;transition:transform .4s}
+  .ig-item:hover img{transform:scale(1.08)}
+  .ig-overlay{position:absolute;inset:0;background:rgba(35,84,152,0.85);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .3s}
+  .ig-item:hover .ig-overlay{opacity:1}
+  .ig-overlay span{font-size:32px;color:var(--white)}
+  .ig-cta{display:flex;justify-content:center;margin-top:36px}
+  .ig-cta a{display:flex;align-items:center;gap:10px;background:var(--blue);color:var(--white);padding:16px 32px;text-decoration:none;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;transition:background .2s}
+  .ig-cta a:hover{background:var(--blue2)}
+  .contacto{padding:100px 80px;background:var(--white)}
+  .contacto-inner{display:grid;grid-template-columns:1fr 1fr;gap:60px;margin-top:48px}
+  .contact-cards{display:flex;flex-direction:column;gap:16px}
+  .cc{display:flex;align-items:center;gap:18px;background:var(--blue-xs);border-left:4px solid var(--blue);padding:20px 24px;transition:all .2s}
+  .cc:hover{background:var(--blue-lt)}
+  .cc-icon{font-size:24px;flex-shrink:0}
+  .cc-label{font-size:9px;font-weight:700;letter-spacing:2px;color:var(--blue3);text-transform:uppercase}
+  .cc-val{font-size:16px;font-weight:900;color:var(--dark)}
+  .cc-val a{color:var(--blue);text-decoration:none}
+  .map-box{background:var(--blue-xs);border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;min-height:320px}
+  .map-box span{font-size:48px}
+  .map-box h4{font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--dark);letter-spacing:2px}
+  .map-box p{font-size:13px;color:var(--gray)}
+  .map-box a{background:var(--blue);color:var(--white);padding:12px 24px;font-size:11px;font-weight:900;letter-spacing:2px;text-transform:uppercase;text-decoration:none;margin-top:8px;transition:background .2s}
+  .map-box a:hover{background:var(--blue2)}
+  footer{background:var(--dark);padding:60px 80px 32px}
+  .ft{display:flex;gap:60px;flex-wrap:wrap;margin-bottom:48px}
+  .ft-brand .fn{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:3px;color:var(--white)}
+  .ft-brand .fs{font-size:9px;color:rgba(255,255,255,0.4);letter-spacing:3px;text-transform:uppercase;margin-bottom:16px}
+  .ft-brand p{font-size:13px;color:rgba(255,255,255,0.5);line-height:1.8;max-width:260px}
+  .ft-col h4{font-size:10px;font-weight:700;letter-spacing:3px;color:#5B7FA6;text-transform:uppercase;margin-bottom:16px}
+  .ft-col a{display:block;font-size:13px;color:rgba(255,255,255,0.5);text-decoration:none;margin-bottom:10px;transition:color .2s}
+  .ft-col a:hover{color:var(--white)}
+  .ft-bottom{border-top:1px solid rgba(255,255,255,0.08);padding-top:24px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
+  .ft-bottom p{font-size:11px;color:rgba(255,255,255,0.3)}
+  .ft-bottom span{color:#5B7FA6}
+  @media(max-width:960px){
+    nav{padding:0 20px}
+    .nav-links,.nav-cta{display:none}
+    .nav-toggle{display:flex}
+    .hero-inner{grid-template-columns:1fr}
+    .hero-right{min-height:300px;clip-path:none}
+    .hero-left{padding:40px 24px}
+    .logros-strip{grid-template-columns:repeat(3,1fr);padding:40px 24px}
+    .programas,.coaches,.galeria,.contacto{padding:70px 24px}
+    .prog-grid{grid-template-columns:1fr}
+    .sc-inner{grid-template-columns:1fr}
+    .sc-left{padding:60px 24px}
+    .sc-right{padding:48px 24px}
+    .contacto-inner{grid-template-columns:1fr}
+    .ig-grid{grid-template-columns:repeat(2,1fr)}
+    footer{padding:48px 24px 32px}
+    .ft{flex-direction:column;gap:36px}
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="#inicio" class="nav-brand">
+    <img src="IMG_0019.png.jpeg" class="nav-logo" alt="Wolverines TRC" onerror="this.style.display='none'">
+    <div>
+      <div class="nav-name">WOLVERINES TRC</div>
+      <div class="nav-sub">Flag Football Academy · Torreón</div>
+    </div>
+  </a>
+  <div class="nav-links">
+    <a href="#programas">Programas</a>
+    <a href="#summer-camp">Summer Camp</a>
+    <a href="#coaches">Coaches</a>
+    <a href="#galeria">Galería</a>
+    <a href="#contacto">Contacto</a>
+    <a href="https://wolverines.mx/tienda.html" style="color:var(--blue);font-weight:900;">🛒 Tienda</a>
+  </div>
+  <a href="#summer-camp" class="nav-cta">🏈 Inscríbete</a>
+  <button class="nav-toggle" onclick="document.querySelector('.nav-links').style.display=document.querySelector('.nav-links').style.display==='flex'?'none':'flex';document.querySelector('.nav-links').style.flexDirection='column';document.querySelector('.nav-links').style.position='absolute';document.querySelector('.nav-links').style.top='70px';document.querySelector('.nav-links').style.left='0';document.querySelector('.nav-links').style.right='0';document.querySelector('.nav-links').style.background='white';document.querySelector('.nav-links').style.padding='20px';">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<section class="hero" id="inicio">
+  <div class="hero-inner">
+    <div class="hero-left">
+      <div class="hero-badge">🏆 5 Campeonatos · Temporada Enero–Junio 2026</div>
+      <h1 class="hero-title">
+        <span class="t1">WOLVERINES</span>
+        <span class="t2">TRC</span>
+        <span class="t3">Torreón · Coahuila</span>
+      </h1>
+      <p class="hero-desc">Academia de <strong>Flag Football, Atletismo y Basketball</strong> en Torreón. Formamos atletas de élite con disciplina, pasión y excelencia deportiva.</p>
+      <div class="hero-btns">
+        <a href="#summer-camp" class="btn-blue">🏈 Summer Camp 2026</a>
+        <a href="#programas" class="btn-outline">Ver programas</a>
+      </div>
+      <div class="hero-stats">
+        <div class="h-stat"><div class="n">9/11</div><div class="l">Finales ganadas</div></div>
+        <div class="h-stat"><div class="n">5</div><div class="l">Campeonatos 2026</div></div>
+        <div class="h-stat"><div class="n">2</div><div class="l">Categorías</div></div>
+      </div>
+    </div>
+    <div class="hero-right">
+      <img src="fotos/_MG_9924.JPG" alt="Wolverines TRC" style="width:100%;height:100%;object-fit:cover;">
+      <div class="hero-right-overlay"></div>
+      <div class="hero-right-text">
+        <h3>DO IT LIKE A WOLVE</h3>
+        <p>@wolverinestrc · Torreón, Coahuila</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="logros-strip">
+  <div class="logro"><div class="ln">9/11</div><div class="ll">Finales ganadas</div><div class="ls">Temporada 2026</div></div>
+  <div class="logro"><div class="ln">5</div><div class="ll">Campeonatos</div><div class="ls">Ene–Jun 2026</div></div>
+  <div class="logro"><div class="ln">3</div><div class="ll">Disciplinas</div><div class="ls">Flag · Atletismo · Basketball</div></div>
+  <div class="logro"><div class="ln">2</div><div class="ll">Categorías</div><div class="ls">Infantil y Juvenil</div></div>
+  <div class="logro"><div class="ln">🏆</div><div class="ll">Academia #1</div><div class="ls">La Laguna 2026</div></div>
+</div>
+
+<section class="programas" id="programas">
+  <div class="sec-eye">Nuestros programas</div>
+  <h2 class="sec-title">ENTRENA CON LOS <span>MEJORES</span></h2>
+  <div class="sec-div"></div>
+  <p class="sec-sub">Entrenamiento todo el año en el Tec de Monterrey, Torreón. Coaches certificados y metodología de alto rendimiento.</p>
+  <div class="prog-grid">
+    <div class="prog-card">
+      <div class="pc-icon">🏈</div>
+      <div class="pc-title">FLAG FOOTBALL</div>
+      <div class="pc-age">Infantil (4–12) · Juvenil (13+)</div>
+      <p class="pc-desc">Táctica, velocidad y trabajo en equipo con el sistema de banderas. Skills por posición para juveniles.</p>
+      <div class="pc-sched">⏰ 6:00 – 8:00 pm · Lun a Jue</div>
+      <ul class="pc-items">
+        <li><span class="pc-dot"></span>Táctica y jugadas</li>
+        <li><span class="pc-dot"></span>Tackle</li>
+        <li><span class="pc-dot"></span>Skills por posición</li>
+        <li><span class="pc-dot"></span>Competencias AFFL</li>
+      </ul>
+    </div>
+    <div class="prog-card">
+      <div class="pc-icon">🏃</div>
+      <div class="pc-title">ATLETISMO</div>
+      <div class="pc-age">Todas las categorías</div>
+      <p class="pc-desc">Velocidad, resistencia y técnica de carrera con entrenadores especializados. Integrado al programa de Flag Football.</p>
+      <div class="pc-sched">⏰ Integrado al programa</div>
+      <ul class="pc-items">
+        <li><span class="pc-dot"></span>Velocidad explosiva</li>
+        <li><span class="pc-dot"></span>Técnica de carrera</li>
+        <li><span class="pc-dot"></span>Resistencia y agilidad</li>
+      </ul>
+    </div>
+    <div class="prog-card">
+      <div class="pc-icon">🏀</div>
+      <div class="pc-title">BASKETBALL</div>
+      <div class="pc-age">Categoría Infantil</div>
+      <p class="pc-desc">Fundamentos, coordinación y trabajo en equipo como complemento atlético integral para cada jugador.</p>
+      <div class="pc-sched">⏰ 6:00 – 8:00 pm · Lun a Jue</div>
+      <ul class="pc-items">
+        <li><span class="pc-dot"></span>Fundamentos básicos</li>
+        <li><span class="pc-dot"></span>Coordinación motriz</li>
+        <li><span class="pc-dot"></span>Trabajo en equipo</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<div class="summer-camp" id="summer-camp">
+  <div class="sc-inner">
+    <div class="sc-left">
+      <div class="sc-eye">📅 Julio 2026 · Tec de Monterrey · Torreón</div>
+      <h2 class="sc-title">SUMMER<br>CAMP<br>2026</h2>
+      <p class="sc-sub">El mejor verano deportivo de La Laguna.<br>¡Cupo limitado, inscríbete ya!</p>
+      <div class="sc-dates-row">
+        <div class="sc-date"><div class="dl">Inicio</div><div class="dv">Lunes 6 de Julio</div></div>
+        <div class="sc-date"><div class="dl">Fin</div><div class="dv">Jueves 30 de Julio</div></div>
+        <div class="sc-date"><div class="dl">Días</div><div class="dv">Lunes a Jueves</div></div>
+      </div>
+      <div class="sc-btns">
+        <a href="https://wolverines.mx/summercamp2026/" class="sc-btn1">🏈 Inscribirme – Playmkr</a>
+        <a href="https://wolverines.mx/summercamp2026/registro_wolverines.html" class="sc-btn2">Registro Wolverines</a>
+      </div>
+    </div>
+    <div class="sc-right">
+      <h3>PRECIOS EXCLUSIVOS</h3>
+      <div class="price-card">
+        <div class="pt">Solo Summer Camp</div>
+        <div class="pp">$1,350</div>
+        <div class="pi">
+          <span>✦ Entrenamiento completo</span>
+          <span>✦ Playera de entrenamiento</span>
+          <span>✦ Tazón AFFL · Torneo relámpago de tochito</span>
+        </div>
+      </div>
+      <div class="price-card featured">
+        <div class="rec">RECOMENDADO</div>
+        <div class="pt">Paquete Completo</div>
+        <div class="pp">$1,900</div>
+        <div class="pi">
+          <span>✦ Entrenamiento completo</span>
+          <span>✦ Playera de entrenamiento</span>
+          <span>✦ Tazón AFFL · Torneo relámpago de tochito</span>
+          <span>✦ Libra Training Academy (RESET)</span>
+        </div>
+      </div>
+      <p style="font-size:11px;color:var(--gray);font-weight:600">⚠️ Límite de inscripciones: <strong style="color:var(--blue)">26 de Junio 2026</strong></p>
+    </div>
+  </div>
+</div>
+
+<section class="coaches" id="coaches">
+  <div class="sec-eye">Nuestro staff</div>
+  <h2 class="sec-title">COACHES <span>CERTIFICADOS</span></h2>
+  <div class="sec-div"></div>
+  <p class="sec-sub">Profesionales apasionados por el desarrollo atlético y humano de cada jugador.</p>
+  <div class="coaches-grid">
+    <div class="coach-card">
+      <div class="coach-av"><img src="coaches/enrique.JPG" alt="Enrique Tejada" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"></div>
+      <div class="coach-name">ENRIQUE TEJADA</div>
+      <div class="coach-role">Head Coach</div>
+      <p class="coach-bio">Director técnico y fundador de Wolverines TRC. Líder del programa más exitoso de La Laguna en 2026. 9 de 11 finales esta temporada.</p>
+    </div>
+    <div class="coach-card">
+      <div class="coach-av"><img src="coaches/alberto.JPG" alt="Alberto Muro" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"></div>
+      <div class="coach-name">ALBERTO MURO</div>
+      <div class="coach-role">HC Juvenil</div>
+      <p class="coach-bio">Más de 15 años de trayectoria con importantes títulos. Referente del flag football en La Laguna.</p>
+    </div>
+    <div class="coach-card">
+      <div class="coach-av"><img src="coaches/luis.jpg" alt="Luis Arriaga" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"></div>
+      <div class="coach-name">LUIS ARRIAGA</div>
+      <div class="coach-role">HC Infantiles</div>
+      <p class="coach-bio">Importante coach a nivel futbol americano y flag football, dedicado al desarrollo de los atletas más jóvenes.</p>
+    </div>
+    <div class="coach-card">
+      <div class="coach-av"><img src="coaches/gabriel.JPG" alt="Gabriel Alanis" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"></div>
+      <div class="coach-name">GABRIEL ALANIS</div>
+      <div class="coach-role">Preparador Físico</div>
+      <p class="coach-bio">Especialista en acondicionamiento físico, velocidad y rendimiento deportivo para atletas de todas las categorías.</p>
+    </div>
+  </div>
+</section>
+
+<section class="galeria" id="galeria">
+  <div class="sec-eye">@wolverinestrc</div>
+  <h2 class="sec-title">GALERÍA <span>WOLVERINES</span></h2>
+  <div class="sec-div"></div>
+  <p class="sec-sub">Los mejores momentos del equipo. Síguenos en Instagram y Facebook.</p>
+  <div class="ig-grid">
+    <div class="ig-item"><img src="fotos/_MG_0121.JPG" alt="Wolverines TRC" loading="lazy"><div class="ig-overlay"><span>🏈</span></div></div>
+    <div class="ig-item"><img src="fotos/_MG_0128.JPG" alt="Wolverines TRC" loading="lazy"><div class="ig-overlay"><span>🏈</span></div></div>
+    <div class="ig-item"><img src="fotos/_MG_0142.JPG" alt="Wolverines TRC" loading="lazy"><div class="ig-overlay"><span>🏈</span></div></div>
+    <div class="ig-item"><img src="fotos/_MG_0172.JPG" alt="Wolverines TRC" loading="lazy"><div class="ig-overlay"><span>🏈</span></div></div>
+    <div class="ig-item"><img src="fotos/_MG_9189.JPG" alt="Wolverines TRC" loading="lazy"><div class="ig-overlay"><span>🏈</span></div></div>
+    <div class="ig-item"><img src="fotos/_MG_9340.JPG" alt="Wolverines TRC" loading="lazy"><div class="ig-overlay"><span>🏈</span></div></div>
+    <div class="ig-item"><img src="fotos/_MG_9947.JPG" alt="Wolverines TRC" loading="lazy"><div class="ig-overlay"><span>🏈</span></div></div>
+    <div class="ig-item"><img src="fotos/_MG_9924.JPG" alt="Wolverines TRC" loading="lazy"><div class="ig-overlay"><span>🏈</span></div></div>
+  </div>
+  <div class="ig-cta">
+    <a href="https://instagram.com/wolverinestrc" target="_blank">📸 &nbsp; Seguir en Instagram @wolverinestrc</a>
+  </div>
+</section>
+
+<section class="contacto" id="contacto">
+  <div class="sec-eye">Únete a Wolverines TRC</div>
+  <h2 class="sec-title">CONTÁCTANOS</h2>
+  <div class="sec-div"></div>
+  <div class="contacto-inner">
+    <div class="contact-cards">
+      <div class="cc"><span class="cc-icon">🏈</span><div><div class="cc-label">Academia Wolverines</div><div class="cc-val"><a href="https://wa.me/528713420040?text=Hola,%20me%20interesa%20información%20sobre%20Wolverines%20TRC" target="_blank">871 342 0040</a></div></div></div>
+      <div class="cc"><span class="cc-icon">📱</span><div><div class="cc-label">Soporte Playmkr</div><div class="cc-val"><a href="https://wa.me/528713510362?text=Hola,%20me%20interesa%20información%20sobre%20Wolverines%20TRC" target="_blank">871 351 0362</a></div></div></div>
+      <div class="cc"><span class="cc-icon">👩</span><div><div class="cc-label">Viky Tejada</div><div class="cc-val"><a href="https://wa.me/528713957332?text=Hola,%20me%20interesa%20información%20sobre%20Wolverines%20TRC" target="_blank">871 395 7332</a></div></div></div>
+      <div class="cc"><span class="cc-icon">📍</span><div><div class="cc-label">Sede</div><div class="cc-val">Tec de Monterrey, Torreón</div></div></div>
+      <div class="cc"><span class="cc-icon">📸</span><div><div class="cc-label">Instagram</div><div class="cc-val"><a href="https://instagram.com/wolverinestrc" target="_blank">@wolverinestrc</a></div></div></div>
+    </div>
+    <div class="map-box">
+      <span>📍</span>
+      <h4>TEC DE MONTERREY</h4>
+      <p>Torreón, Coahuila, México</p>
+      <a href="https://maps.google.com/?q=Tecnologico+de+Monterrey+Torreon" target="_blank">VER EN MAPS →</a>
+    </div>
+  </div>
+</section>
+
+<div style="background:var(--blue);padding:60px 80px;text-align:center;position:relative;overflow:hidden;">
+  <div style="position:absolute;font-family:'Bebas Neue',sans-serif;font-size:200px;color:rgba(255,255,255,0.04);top:50%;left:50%;transform:translate(-50%,-50%);white-space:nowrap;pointer-events:none;">TIENDA</div>
+  <div style="position:relative;z-index:1;">
+    <p style="font-size:10px;font-weight:700;letter-spacing:4px;color:rgba(255,255,255,0.6);text-transform:uppercase;margin-bottom:12px;">Nueva sección</p>
+    <h2 style="font-family:'Bebas Neue',sans-serif;font-size:56px;color:#ffffff;letter-spacing:2px;margin-bottom:12px;line-height:1;">TIENDA OFICIAL</h2>
+    <p style="font-size:16px;color:rgba(255,255,255,0.8);margin-bottom:32px;">Playeras, shorts y hoodies oficiales de Wolverines TRC</p>
+    <a href="https://wolverines.mx/tienda.html" style="background:#ffffff;color:var(--blue);font-family:'Montserrat',sans-serif;font-size:14px;font-weight:900;letter-spacing:2px;text-transform:uppercase;padding:16px 36px;text-decoration:none;display:inline-block;">🛒 IR A LA TIENDA</a>
+  </div>
+</div>
+
+<footer>
+  <div class="ft">
+    <div class="ft-brand">
+      <div class="fn">WOLVERINES TRC</div>
+      <div class="fs">Flag Football Academy · Torreón</div>
+      <p>Formando atletas de élite con disciplina, pasión y excelencia deportiva en Torreón, Coahuila.</p>
+    </div>
+    <div class="ft-col">
+      <h4>Programas</h4>
+      <a href="#programas">Flag Football</a>
+      <a href="#programas">Atletismo</a>
+      <a href="#programas">Basketball</a>
+      <a href="#summer-camp">Summer Camp 2026</a>
+    </div>
+    <div class="ft-col">
+      <h4>Registros</h4>
+      <a href="https://wolverines.mx/summercamp2026/">Registro Playmkr</a>
+      <a href="https://wolverines.mx/summercamp2026/registro_wolverines.html">Registro Wolverines</a>
+      <a href="https://wolverines.mx/summercamp2026/admin_wolverines.html">Admin</a>
+      <a href="https://wolverines.mx/tienda.html">Tienda Oficial</a>
+    </div>
+    <div class="ft-col">
+      <h4>Contacto</h4>
+      <a href="https://wa.me/528713420040?text=Hola,%20me%20interesa%20información%20sobre%20Wolverines%20TRC" target="_blank">871 342 0040</a>
+      <a href="https://wa.me/528713510362?text=Hola,%20me%20interesa%20información%20sobre%20Wolverines%20TRC" target="_blank">871 351 0362</a>
+      <a href="https://instagram.com/wolverinestrc" target="_blank">@wolverinestrc</a>
+    </div>
+  </div>
+  <div class="ft-bottom">
+    <p>© 2026 Wolverines TRC · Todos los derechos reservados</p>
+    <p>Powered by <span>Playmkr</span></p>
+  </div>
+</footer>
+
+<a href="https://wa.me/528713420040?text=Hola,%20me%20interesa%20información%20sobre%20Wolverines%20TRC" target="_blank" style="position:fixed;bottom:28px;right:28px;z-index:999;background:#25D366;color:white;width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;box-shadow:0 4px 20px rgba(37,211,102,0.4);text-decoration:none;transition:transform .2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">💬</a>
+
+</body>
+</html>
