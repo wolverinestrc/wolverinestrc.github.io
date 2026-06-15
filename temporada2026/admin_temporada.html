@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Temporada 2026 – Wolverines TRC</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;600;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--blue:#235498;--blue2:#1a3f72;--blue3:#2e6bc4;--blue-lt:#d6e4f7;--blue-xs:#eef4fc;--white:#fff;--gray:#6b7c93;--dark:#0f1e35;--text:#1a2a3a;--border:#d0dce8;--green:#22c55e;--red:#e53e3e;--gold:#f59e0b}
+body{background:#07111e;font-family:'Montserrat',sans-serif;color:#c8d8e8}
+#login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#07111e,#0f2040)}
+.login-box{background:#0d1f3c;border:1px solid rgba(91,127,166,0.2);border-top:3px solid var(--blue);padding:40px;width:100%;max-width:380px;text-align:center}
+.login-box img{width:70px;margin-bottom:16px}
+.login-box h1{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:3px;color:white;margin-bottom:4px}
+.login-box p{font-size:12px;color:var(--gray);margin-bottom:28px}
+.login-box input{width:100%;background:#07111e;border:1px solid rgba(91,127,166,0.3);color:white;padding:14px;font-family:'Montserrat',sans-serif;font-size:14px;margin-bottom:12px;outline:none}
+.login-box input:focus{border-color:var(--blue)}
+.login-btn{width:100%;background:var(--blue);border:none;color:white;font-family:'Montserrat',sans-serif;font-size:13px;font-weight:900;letter-spacing:2px;text-transform:uppercase;padding:14px;cursor:pointer}
+.login-btn:hover{background:var(--blue2)}
+.login-err{color:var(--red);font-size:12px;margin-top:8px;display:none}
+#main{display:none}
+nav{background:#0d1f3c;border-bottom:2px solid var(--blue);padding:0 24px;height:64px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:8px}
+.nav-brand{display:flex;align-items:center;gap:10px}
+.nav-logo{width:38px;height:38px;object-fit:contain}
+.nav-title{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;color:white}
+.nav-sub{font-size:9px;color:var(--gray);letter-spacing:2px;text-transform:uppercase}
+.nav-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.nav-count{background:rgba(35,84,152,0.3);border:1px solid rgba(35,84,152,0.4);padding:6px 12px;font-size:11px;font-weight:700;color:var(--blue3)}
+.tab-btn{background:rgba(35,84,152,0.2);border:1px solid rgba(35,84,152,0.3);color:var(--gray);font-size:11px;font-weight:700;letter-spacing:1px;padding:7px 14px;cursor:pointer;font-family:'Montserrat',sans-serif;transition:all .2s}
+.tab-btn.active,.tab-btn:hover{background:var(--blue);border-color:var(--blue);color:white}
+.logout-btn{background:none;border:1px solid rgba(91,127,166,0.3);color:var(--gray);padding:6px 12px;font-size:11px;cursor:pointer;font-family:'Montserrat',sans-serif}
+.logout-btn:hover{border-color:var(--red);color:var(--red)}
+.stats-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:20px 24px;background:#07111e}
+.stat{background:#0d1f3c;border:1px solid rgba(91,127,166,0.15);border-top:2px solid var(--blue);padding:16px}
+.stat .sn{font-family:'Bebas Neue',sans-serif;font-size:40px;color:white;line-height:1}
+.stat .sl{font-size:10px;font-weight:700;letter-spacing:2px;color:var(--gray);text-transform:uppercase;margin-top:4px}
+.controls{padding:16px 24px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;background:#07111e;border-bottom:1px solid rgba(91,127,166,0.1)}
+.search-box{background:#0d1f3c;border:1px solid rgba(91,127,166,0.2);color:white;padding:10px 14px;font-family:'Montserrat',sans-serif;font-size:13px;outline:none;flex:1;min-width:180px}
+.search-box::placeholder{color:var(--gray)}
+.search-box:focus{border-color:var(--blue)}
+.filter-select{background:#0d1f3c;border:1px solid rgba(91,127,166,0.2);color:white;padding:10px 14px;font-family:'Montserrat',sans-serif;font-size:12px;outline:none;cursor:pointer}
+.btn-action{background:var(--blue);border:none;color:white;font-family:'Montserrat',sans-serif;font-size:11px;font-weight:900;letter-spacing:2px;text-transform:uppercase;padding:10px 18px;cursor:pointer}
+.btn-action:hover{background:var(--blue2)}
+.btn-red{background:var(--red)}
+.btn-red:hover{background:#c0392b}
+.table-wrap{padding:0 24px 40px;overflow-x:auto}
+table{width:100%;border-collapse:collapse;margin-top:16px;min-width:1000px}
+thead tr{background:#0d1f3c;border-bottom:2px solid var(--blue)}
+th{font-size:10px;font-weight:700;letter-spacing:2px;color:var(--gray);text-transform:uppercase;padding:12px;text-align:left;white-space:nowrap}
+tbody tr{border-bottom:1px solid rgba(91,127,166,0.08);transition:background .15s}
+tbody tr:hover{background:rgba(35,84,152,0.08)}
+td{font-size:12px;font-weight:600;color:#c8d8e8;padding:10px 12px;white-space:nowrap}
+td.name{color:white;font-weight:700}
+.badge{display:inline-block;font-size:9px;font-weight:900;letter-spacing:1px;padding:3px 8px;text-transform:uppercase}
+.badge-pend{background:rgba(229,62,62,0.15);color:var(--red);border:1px solid rgba(229,62,62,0.3)}
+.badge-comp{background:rgba(34,197,94,0.15);color:var(--green);border:1px solid rgba(34,197,94,0.3)}
+.badge-exent{background:rgba(59,130,246,0.15);color:var(--blue3);border:1px solid rgba(59,130,246,0.3)}
+.pago-cell{cursor:pointer;font-size:16px;text-align:center;padding:6px!important;user-select:none}
+.pago-cell:hover{background:rgba(35,84,152,0.2)}
+.foto-thumb{width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--blue)}
+.foto-ph{width:36px;height:36px;border-radius:50%;background:rgba(35,84,152,0.3);display:flex;align-items:center;justify-content:center;font-size:14px}
+.doc-link{color:var(--blue3);text-decoration:none;font-size:11px;font-weight:700;margin-right:4px}
+.doc-link:hover{color:white}
+.action-btn{background:none;border:1px solid rgba(91,127,166,0.3);color:var(--gray);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:4px 8px;cursor:pointer;font-family:'Montserrat',sans-serif;transition:all .2s;margin-right:3px}
+.action-btn:hover{border-color:var(--blue);color:white}
+.action-btn.del:hover{border-color:var(--red);color:var(--red)}
+.empty{text-align:center;color:var(--gray);padding:60px;font-size:14px}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:#0d1f3c;border:1px solid rgba(91,127,166,0.2);border-top:3px solid var(--blue);width:100%;max-width:520px;max-height:90vh;overflow-y:auto}
+.modal-header{padding:18px 24px;border-bottom:1px solid rgba(91,127,166,0.1);display:flex;align-items:center;justify-content:space-between}
+.modal-header h3{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:white}
+.modal-close{background:none;border:none;color:var(--gray);font-size:22px;cursor:pointer}
+.modal-body{padding:24px}
+.modal-foto{width:90px;height:90px;border-radius:50%;object-fit:cover;border:3px solid var(--blue);margin:0 auto 16px;display:block}
+.modal-foto-ph{width:90px;height:90px;border-radius:50%;background:rgba(35,84,152,0.3);display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 16px}
+.d-label{font-size:10px;font-weight:700;letter-spacing:1px;color:var(--gray);text-transform:uppercase;margin-bottom:4px}
+.d-val{font-size:13px;font-weight:600;color:white;margin-bottom:12px}
+.d-section{font-size:10px;font-weight:700;letter-spacing:2px;color:var(--blue3);text-transform:uppercase;margin:16px 0 10px;padding-bottom:6px;border-bottom:1px solid rgba(91,127,166,0.1)}
+.d-select{background:#07111e;border:1px solid rgba(91,127,166,0.3);color:white;padding:10px 14px;font-family:'Montserrat',sans-serif;font-size:13px;outline:none;width:100%;margin-bottom:10px}
+.d-input{background:#07111e;border:1px solid rgba(91,127,166,0.3);color:white;padding:10px 14px;font-family:'Montserrat',sans-serif;font-size:13px;outline:none;width:100%;margin-bottom:10px}
+.save-btn{width:100%;background:var(--blue);border:none;color:white;font-family:'Montserrat',sans-serif;font-size:13px;font-weight:900;letter-spacing:2px;text-transform:uppercase;padding:14px;cursor:pointer}
+.save-btn:hover{background:var(--blue2)}
+.doc-btn{background:rgba(35,84,152,0.2);border:1px solid rgba(35,84,152,0.3);color:var(--blue3);font-size:11px;font-weight:700;padding:6px 12px;text-decoration:none;display:inline-block;margin:3px}
+.doc-btn:hover{background:rgba(35,84,152,0.4);color:white}
+.cred-card{background:var(--blue);padding:24px;text-align:center;position:relative;overflow:hidden}
+.cred-card::before{content:'WOLVERINES';font-family:'Bebas Neue',sans-serif;font-size:100px;color:rgba(255,255,255,0.05);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);white-space:nowrap;pointer-events:none}
+.cred-logo{width:50px;height:50px;object-fit:contain;margin-bottom:8px}
+.cred-photo{width:90px;height:90px;border-radius:50%;object-fit:cover;border:3px solid white;margin:12px auto;display:block}
+.cred-photo-ph{width:90px;height:90px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:36px;margin:12px auto}
+.cred-name{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;color:white}
+.cred-cat{font-size:11px;color:rgba(255,255,255,0.7);letter-spacing:2px;text-transform:uppercase;margin-top:4px}
+.cred-num{font-family:'Bebas Neue',sans-serif;font-size:48px;color:#FFCB05;line-height:1;margin-top:6px}
+.cred-info{padding:14px 24px}
+.cred-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(91,127,166,0.1);font-size:12px}
+.cred-qr{padding:14px 24px;text-align:center;border-top:1px solid rgba(91,127,166,0.1)}
+.cred-qr canvas{margin:0 auto;display:block}
+.cred-qr-label{font-size:10px;color:var(--gray);letter-spacing:2px;text-transform:uppercase;margin-top:6px}
+.print-btn{width:100%;background:var(--blue);border:none;color:white;font-family:'Montserrat',sans-serif;font-size:12px;font-weight:900;letter-spacing:2px;text-transform:uppercase;padding:14px;cursor:pointer}
+.print-btn:hover{background:var(--blue2)}
+.pagos-section{padding:20px 24px;display:none}
+.pagos-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px}
+.mes-card{background:#0d1f3c;border:1px solid rgba(91,127,166,0.15);border-top:2px solid var(--blue);padding:16px;text-align:center}
+.mes-card .mc-mes{font-family:'Bebas Neue',sans-serif;font-size:20px;color:white;letter-spacing:1px}
+.mes-card .mc-pag{font-family:'Bebas Neue',sans-serif;font-size:36px;color:var(--green);line-height:1}
+.mes-card .mc-pend{font-size:11px;color:var(--red);margin-top:4px}
+.morosos-section{padding:20px 24px;display:none}
+.mor-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px}
+.mor-title{font-family:'Bebas Neue',sans-serif;font-size:28px;color:white;letter-spacing:2px}
+.mor-sub{font-size:12px;color:var(--gray);margin-top:2px}
+#loading{text-align:center;padding:60px;color:var(--gray)}
+.spinner{display:inline-block;width:32px;height:32px;border:3px solid rgba(35,84,152,0.2);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:700px){.stats-bar{grid-template-columns:repeat(2,1fr)}.pagos-grid{grid-template-columns:repeat(2,1fr)}}
+@media print{body{background:white;color:black}nav,.controls,.stats-bar,.modal-overlay{display:none!important}.table-wrap{padding:0}table{font-size:10px}td,th{color:black!important;border:1px solid #ccc}thead tr{background:#235498!important;-webkit-print-color-adjust:exact}th{color:white!important}}
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-box">
+    <img src="https://wolverines.mx/IMG_0019_transparent.png" alt="Wolverines" onerror="this.style.display='none'">
+    <h1>ADMIN PANEL</h1>
+    <p>Temporada Agosto–Diciembre 2026</p>
+    <input type="password" id="pwd" placeholder="Contraseña" onkeydown="if(event.key==='Enter')login()">
+    <button class="login-btn" onclick="login()">ENTRAR</button>
+    <div class="login-err" id="login-err">Contraseña incorrecta</div>
+  </div>
+</div>
+
+<div id="main">
+  <nav>
+    <div class="nav-brand">
+      <img src="https://wolverines.mx/IMG_0019_transparent.png" class="nav-logo" alt="W" onerror="this.style.display='none'">
+      <div><div class="nav-title">WOLVERINES TRC</div><div class="nav-sub">Admin · Temporada 2026</div></div>
+    </div>
+    <div class="nav-right">
+      <div class="nav-count" id="nav-count">0 jugadores</div>
+      <button class="tab-btn active" id="tb-jugadores" onclick="switchTab('jugadores')">👥 Jugadores</button>
+      <button class="tab-btn" id="tb-pagos" onclick="switchTab('pagos')">💰 Pagos</button>
+      <button class="tab-btn" id="tb-morosos" onclick="switchTab('morosos')">⚠️ Atrasos</button>
+      <button class="logout-btn" onclick="logout()">Salir</button>
+    </div>
+  </nav>
+
+  <div class="stats-bar">
+    <div class="stat"><div class="sn" id="s-total">0</div><div class="sl">Jugadores</div></div>
+    <div class="stat"><div class="sn" id="s-pend" style="color:var(--red)">0</div><div class="sl">Pago pendiente</div></div>
+    <div class="stat"><div class="sn" id="s-comp" style="color:var(--green)">0</div><div class="sl">Al corriente</div></div>
+    <div class="stat"><div class="sn" id="s-cats">0</div><div class="sl">Categorías</div></div>
+  </div>
+
+  <!-- JUGADORES -->
+  <div id="section-jugadores">
+    <div class="controls">
+      <input class="search-box" type="text" id="search" placeholder="🔍 Buscar jugador..." oninput="renderTable()">
+      <select class="filter-select" id="cat-filter" onchange="renderTable()">
+        <option value="">Todas las categorías</option>
+        <option>U6 (2020-2021)</option>
+        <option>U8 (2018-2019)</option>
+        <option>U10 (2016-2017)</option>
+        <option>U12 (2014-2015)</option>
+        <option>U14 (2012-2013)</option>
+        <option>U16 (2010-2011)</option>
+        <option>U18 / Libre (2008-2009)</option>
+        <option>Moms +30</option>
+      </select>
+      <select class="filter-select" id="pago-filter" onchange="renderTable()">
+        <option value="">Todos</option>
+        <option value="atrasado">Con atraso</option>
+        <option value="alcorriente">Al corriente</option>
+      </select>
+      <button class="btn-action" onclick="window.print()">🖨️ Roster</button>
+    </div>
+    <div class="table-wrap">
+      <div id="loading"><div class="spinner"></div><br>Cargando...</div>
+      <table id="players-table" style="display:none">
+        <thead><tr>
+          <th>#</th><th>Foto</th><th>Nombre</th><th>Categoría</th><th>Género</th>
+          <th>Tutor</th><th>Teléfono</th>
+          <th>Ago</th><th>Sep</th><th>Oct</th><th>Nov</th><th>Dic</th>
+          <th>Docs</th><th>Acciones</th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div id="empty-msg" class="empty" style="display:none">No se encontraron jugadores.</div>
+    </div>
+  </div>
+
+  <!-- PAGOS -->
+  <div class="pagos-section" id="section-pagos">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:white;letter-spacing:2px;margin-bottom:16px">RESUMEN DE MENSUALIDADES · $850 c/u</div>
+    <div class="pagos-grid" id="pagos-grid"></div>
+    <div style="font-size:12px;color:var(--gray);margin-top:8px">💡 Haz clic en ❌/✅/🔵 en la tabla de jugadores para cambiar el estado de cada mensualidad</div>
+  </div>
+
+  <!-- MOROSOS -->
+  <div class="morosos-section" id="section-morosos">
+    <div class="mor-header">
+      <div>
+        <div class="mor-title">JUGADORES CON ATRASOS</div>
+        <div class="mor-sub">Mensualidades vencidas después del día 5</div>
+      </div>
+      <button class="btn-action btn-red" onclick="notificarAtrasos()">📱 Notificar por WhatsApp</button>
+    </div>
+    <div id="morosos-content"></div>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="modal-overlay" id="detail-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-title">JUGADOR</h3>
+      <button class="modal-close" onclick="closeModal('detail-modal')">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<!-- CREDENCIAL MODAL -->
+<div class="modal-overlay" id="cred-modal">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-header">
+      <h3>CREDENCIAL</h3>
+      <button class="modal-close" onclick="closeModal('cred-modal')">✕</button>
+    </div>
+    <div id="cred-content"></div>
+    <button class="print-btn" onclick="window.print()">🖨️ Imprimir</button>
+  </div>
+</div>
+
+<script>
+const AT_KEY   = 'pat4VXuDH4eeQlfn1.0a31c96b01892d76412d74fed99ba7112cd636cdf06567c52c94aca200060911';
+const AT_BASE  = 'appDMdCeVFQ1mdsBZ';
+const AT_TABLE = 'tblCq4kHZEAhLfxzv';
+const PWD      = 'Wolverines2026';
+const MESES    = ['Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const MENSUALIDAD = 850;
+
+let allRecords = [];
+let currentId  = null;
+
+// ── AUTH ──
+function login() {
+  if (document.getElementById('pwd').value === PWD) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('main').style.display = 'block';
+    loadData();
+  } else {
+    document.getElementById('login-err').style.display = 'block';
+  }
+}
+function logout() {
+  document.getElementById('main').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('pwd').value = '';
+}
+
+// ── LOAD ──
+async function loadData() {
+  try {
+    let records = [], offset = '';
+    do {
+      const url = 'https://api.airtable.com/v0/' + AT_BASE + '/' + AT_TABLE + '?pageSize=100' + (offset ? '&offset=' + offset : '');
+      const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + AT_KEY } });
+      const data = await res.json();
+      records = records.concat(data.records || []);
+      offset = data.offset || '';
+    } while (offset);
+    allRecords = records;
+    updateStats();
+    renderTable();
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('players-table').style.display = 'table';
+  } catch(e) {
+    document.getElementById('loading').innerHTML = '<div style="color:var(--red)">Error: ' + e.message + '</div>';
+  }
+}
+
+// ── STATS ──
+function updateStats() {
+  const total = allRecords.length;
+  const atrasados = allRecords.filter(r => tieneAtraso(r)).length;
+  const alcorriente = total - atrasados;
+  const cats = new Set(allRecords.map(r => r.fields['Categoría']).filter(Boolean)).size;
+  document.getElementById('s-total').textContent = total;
+  document.getElementById('s-pend').textContent  = atrasados;
+  document.getElementById('s-comp').textContent  = alcorriente;
+  document.getElementById('s-cats').textContent  = cats;
+  document.getElementById('nav-count').textContent = total + ' jugador' + (total !== 1 ? 'es' : '');
+}
+
+function tieneAtraso(rec) {
+  const mesesVencidos = getMesesVencidos();
+  return mesesVencidos.some(function(m) {
+    return (rec.fields['Pago ' + m] || 'Pendiente') === 'Pendiente';
+  });
+}
+
+// ── TABS ──
+function switchTab(tab) {
+  ['jugadores','pagos','morosos'].forEach(function(t) {
+    var btn = document.getElementById('tb-' + t);
+    if (btn) btn.classList.remove('active');
+    var sec = document.getElementById('section-' + t);
+    if (sec) sec.style.display = 'none';
+  });
+  var activeBtn = document.getElementById('tb-' + tab);
+  if (activeBtn) activeBtn.classList.add('active');
+  var activeSection = document.getElementById('section-' + tab);
+  if (activeSection) activeSection.style.display = 'block';
+
+  if (tab === 'pagos') renderPagos();
+  if (tab === 'morosos') renderMorosos();
+}
+
+// ── TABLE ──
+function renderTable() {
+  const search = document.getElementById('search').value.toLowerCase();
+  const catF   = document.getElementById('cat-filter').value;
+  const pagoF  = document.getElementById('pago-filter').value;
+  const tbody  = document.getElementById('tbody');
+  const empty  = document.getElementById('empty-msg');
+
+  var recs = allRecords;
+  if (search) recs = recs.filter(function(r) {
+    var f = r.fields;
+    return ((f['Nombre']||'') + ' ' + (f['Apellidos']||'') + ' ' + (f['CURP']||'')).toLowerCase().includes(search);
+  });
+  if (catF) recs = recs.filter(function(r) { return r.fields['Categoría'] === catF; });
+  if (pagoF === 'atrasado') recs = recs.filter(function(r) { return tieneAtraso(r); });
+  if (pagoF === 'alcorriente') recs = recs.filter(function(r) { return !tieneAtraso(r); });
+
+  tbody.innerHTML = '';
+  empty.style.display = recs.length ? 'none' : 'block';
+
+  recs.forEach(function(rec, i) {
+    var f = rec.fields;
+    var tr = document.createElement('tr');
+
+    // Foto cell
+    var fotoCell = document.createElement('td');
+    fotoCell.style.cssText = 'color:var(--gray)';
+    fotoCell.textContent = i + 1;
+    tr.appendChild(fotoCell);
+
+    var fotoTd = document.createElement('td');
+    if (f['Foto']) {
+      var img = document.createElement('img');
+      img.src = f['Foto'];
+      img.className = 'foto-thumb';
+      img.onclick = function(e) { e.stopPropagation(); openCred(rec.id); };
+      fotoTd.appendChild(img);
+    } else {
+      fotoTd.innerHTML = '<div class="foto-ph">👤</div>';
+    }
+    tr.appendChild(fotoTd);
+
+    // Name
+    var nameTd = document.createElement('td');
+    nameTd.className = 'name';
+    nameTd.textContent = (f['Nombre']||'') + ' ' + (f['Apellidos']||'');
+    tr.appendChild(nameTd);
+
+    // Simple text cells
+    var cells = [
+      { v: f['Categoría']||'—', s: 'color:var(--gray);font-size:11px' },
+      { v: f['Género']||'—', s: 'color:var(--gray)' },
+      { v: f['Tutor']||'—', s: 'color:var(--gray)' },
+      { v: f['Teléfono']||'—', s: 'color:var(--gray)' },
+    ];
+    cells.forEach(function(c) {
+      var td = document.createElement('td');
+      td.style.cssText = c.s;
+      td.textContent = c.v;
+      tr.appendChild(td);
+    });
+
+    // Monthly payment cells
+    MESES.forEach(function(mes) {
+      var td = document.createElement('td');
+      td.className = 'pago-cell';
+      var estado = f['Pago ' + mes] || 'Pendiente';
+      td.textContent = estado === 'Pagado' ? '✅' : estado === 'Exento' ? '🔵' : '❌';
+      td.title = mes + ': ' + estado + ' (clic para cambiar)';
+      td.onclick = function(e) {
+        e.stopPropagation();
+        togglePago(mes, rec.id);
+      };
+      tr.appendChild(td);
+    });
+
+    // Docs
+    var docsTd = document.createElement('td');
+    var docsHtml = '';
+    if (f['Acta de Nacimiento']) docsHtml += '<a href="' + f['Acta de Nacimiento'] + '" target="_blank" class="doc-link">📄</a>';
+    if (f['CURP Documento']) docsHtml += '<a href="' + f['CURP Documento'] + '" target="_blank" class="doc-link">📋</a>';
+    if (f['Seguro Médico']) docsHtml += '<a href="' + f['Seguro Médico'] + '" target="_blank" class="doc-link">🏥</a>';
+    docsTd.innerHTML = docsHtml || '<span style="color:var(--gray)">—</span>';
+    tr.appendChild(docsTd);
+
+    // Actions
+    var actTd = document.createElement('td');
+    actTd.innerHTML = '<button class="action-btn" onclick="openDetail(\'' + rec.id + '\');event.stopPropagation()">✏️ Editar</button>' +
+      '<button class="action-btn" onclick="openCred(\'' + rec.id + '\');event.stopPropagation()">🪪 Cred.</button>' +
+      '<button class="action-btn del" onclick="deleteRecord(\'' + rec.id + '\',\'' + ((f['Nombre']||'') + ' ' + (f['Apellidos']||'')).replace(/'/g,'') + '\');event.stopPropagation()">🗑</button>';
+    tr.appendChild(actTd);
+
+    tr.onclick = function() { openDetail(rec.id); };
+    tbody.appendChild(tr);
+  });
+}
+
+// ── TOGGLE PAGO ──
+async function togglePago(mes, id) {
+  var rec = allRecords.find(function(r) { return r.id === id; });
+  if (!rec) return;
+  var campo = 'Pago ' + mes;
+  var actual = rec.fields[campo] || 'Pendiente';
+  var siguiente = actual === 'Pendiente' ? 'Pagado' : actual === 'Pagado' ? 'Exento' : 'Pendiente';
+  try {
+    var fields = {};
+    fields[campo] = siguiente;
+    await fetch('https://api.airtable.com/v0/' + AT_BASE + '/' + AT_TABLE + '/' + id, {
+      method: 'PATCH',
+      headers: { 'Authorization': 'Bearer ' + AT_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fields: fields, typecast: true })
+    });
+    rec.fields[campo] = siguiente;
+    updateStats();
+    renderTable();
+    if (document.getElementById('section-pagos').style.display !== 'none') renderPagos();
+    if (document.getElementById('section-morosos').style.display !== 'none') renderMorosos();
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
+// ── PAGOS ──
+function renderPagos() {
+  var grid = document.getElementById('pagos-grid');
+  var html = '';
+  MESES.forEach(function(mes) {
+    var pagados  = allRecords.filter(function(r) { return r.fields['Pago ' + mes] === 'Pagado'; }).length;
+    var pendientes = allRecords.filter(function(r) { return (r.fields['Pago ' + mes] || 'Pendiente') === 'Pendiente'; }).length;
+    var total = pagados * MENSUALIDAD;
+    html += '<div class="mes-card">' +
+      '<div class="mc-mes">' + mes + '</div>' +
+      '<div class="mc-pag">' + pagados + '</div>' +
+      '<div style="font-size:11px;color:var(--green);margin-top:2px">$' + total.toLocaleString() + ' cobrado</div>' +
+      '<div class="mc-pend">' + pendientes + ' pendientes</div>' +
+      '</div>';
+  });
+  grid.innerHTML = html;
+}
+
+// ── MOROSOS ──
+function getMesesVencidos() {
+  var now = new Date();
+  var mes = now.getMonth() + 1; // 1-12
+  var dia = now.getDate();
+  // Temporada: Ago=8, Sep=9, Oct=10, Nov=11, Dic=12
+  var resultado = [];
+  MESES.forEach(function(nombre, idx) {
+    var numMes = 8 + idx;
+    if (numMes < mes || (numMes === mes && dia > 5)) {
+      resultado.push(nombre);
+    }
+  });
+  return resultado;
+}
+
+function renderMorosos() {
+  var mesesVencidos = getMesesVencidos();
+  var container = document.getElementById('morosos-content');
+
+  if (!mesesVencidos.length) {
+    container.innerHTML = '<div class="empty">⏳ La temporada aún no ha comenzado. Los atrasos se mostrarán a partir de Agosto.</div>';
+    return;
+  }
+
+  var morosos = allRecords.filter(function(r) {
+    return mesesVencidos.some(function(m) {
+      return (r.fields['Pago ' + m] || 'Pendiente') === 'Pendiente';
+    });
+  });
+
+  if (!morosos.length) {
+    container.innerHTML = '<div class="empty">🎉 ¡Todos los jugadores están al corriente con sus pagos!</div>';
+    return;
+  }
+
+  var table = document.createElement('table');
+  table.style.cssText = 'width:100%;border-collapse:collapse;min-width:700px;background:#0d1f3c';
+
+  var thead = '<thead><tr style="background:rgba(229,62,62,0.1);border-bottom:2px solid var(--red)">';
+  thead += '<th style="padding:12px;text-align:left;font-size:10px;font-weight:700;letter-spacing:2px;color:var(--gray);text-transform:uppercase">Jugador</th>';
+  thead += '<th style="padding:12px;text-align:left;font-size:10px;font-weight:700;letter-spacing:2px;color:var(--gray);text-transform:uppercase">Categoría</th>';
+  thead += '<th style="padding:12px;text-align:left;font-size:10px;font-weight:700;letter-spacing:2px;color:var(--gray);text-transform:uppercase">Tutor</th>';
+  thead += '<th style="padding:12px;text-align:left;font-size:10px;font-weight:700;letter-spacing:2px;color:var(--gray);text-transform:uppercase">Teléfono</th>';
+  mesesVencidos.forEach(function(m) {
+    thead += '<th style="padding:12px;text-align:center;font-size:10px;font-weight:700;letter-spacing:2px;color:var(--gray);text-transform:uppercase">' + m + '</th>';
+  });
+  thead += '<th style="padding:12px;text-align:right;font-size:10px;font-weight:700;letter-spacing:2px;color:var(--red);text-transform:uppercase">Deuda</th>';
+  thead += '</tr></thead>';
+
+  var tbody = '<tbody>';
+  var totalDeuda = 0;
+  morosos.forEach(function(rec) {
+    var f = rec.fields;
+    var mesesPend = mesesVencidos.filter(function(m) {
+      return (f['Pago ' + m] || 'Pendiente') === 'Pendiente';
+    });
+    var deuda = mesesPend.length * MENSUALIDAD;
+    totalDeuda += deuda;
+
+    tbody += '<tr style="border-bottom:1px solid rgba(91,127,166,0.08)">';
+    tbody += '<td style="padding:12px;color:white;font-weight:700">' + (f['Nombre']||'') + ' ' + (f['Apellidos']||'') + '</td>';
+    tbody += '<td style="padding:12px;color:var(--gray);font-size:11px">' + (f['Categoría']||'—') + '</td>';
+    tbody += '<td style="padding:12px;color:var(--gray)">' + (f['Tutor']||'—') + '</td>';
+    tbody += '<td style="padding:12px;color:var(--gray)">' + (f['Teléfono']||'—') + '</td>';
+    mesesVencidos.forEach(function(m) {
+      var est = f['Pago ' + m] || 'Pendiente';
+      tbody += '<td style="padding:12px;text-align:center">' + (est === 'Pendiente' ? '❌' : '✅') + '</td>';
+    });
+    tbody += '<td style="padding:12px;text-align:right;color:var(--red);font-weight:900;font-family:\'Bebas Neue\',sans-serif;font-size:18px">$' + deuda.toLocaleString() + '</td>';
+    tbody += '</tr>';
+  });
+  tbody += '</tbody>';
+
+  table.innerHTML = thead + tbody;
+  container.innerHTML = '';
+  var wrap = document.createElement('div');
+  wrap.style.cssText = 'overflow-x:auto;background:#0d1f3c;border:1px solid rgba(229,62,62,0.2)';
+  wrap.appendChild(table);
+  container.appendChild(wrap);
+
+  var summary = document.createElement('div');
+  summary.style.cssText = 'margin-top:12px;font-size:13px;color:var(--gray);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px';
+  summary.innerHTML = '<span>' + morosos.length + ' jugador' + (morosos.length !== 1 ? 'es' : '') + ' con atrasos</span>' +
+    '<span style="color:var(--red);font-weight:700">Deuda total: $' + totalDeuda.toLocaleString() + ' MXN</span>';
+  container.appendChild(summary);
+}
+
+// ── NOTIFICAR ──
+function notificarAtrasos() {
+  var mesesVencidos = getMesesVencidos();
+  var morosos = allRecords.filter(function(r) {
+    return mesesVencidos.some(function(m) {
+      return (r.fields['Pago ' + m] || 'Pendiente') === 'Pendiente';
+    });
+  });
+
+  if (!morosos.length) { alert('✅ No hay jugadores con atrasos.'); return; }
+
+  var lista = morosos.map(function(r) {
+    var f = r.fields;
+    var pend = mesesVencidos.filter(function(m) { return (f['Pago ' + m]||'Pendiente') === 'Pendiente'; });
+    return '%E2%80%A2 ' + (f['Nombre']||'') + ' ' + (f['Apellidos']||'') + ' (' + pend.join(', ') + ')';
+  }).join('%0A');
+
+  var msg = '%F0%9F%8F%88 *WOLVERINES TRC - Reporte Atrasos*%0A%0AJugadores con mensualidades vencidas:%0A' + lista +
+    '%0A%0AMensualidad: $850 MXN%0AFecha: ' + new Date().toLocaleDateString('es-MX');
+
+  window.open('https://wa.me/528713420040?text=' + msg, '_blank');
+}
+
+// ── DETAIL MODAL ──
+function openDetail(id) {
+  currentId = id;
+  var rec = allRecords.find(function(r) { return r.id === id; });
+  if (!rec) return;
+  var f = rec.fields;
+  var pago = f['Pago'] || 'Pendiente';
+
+  document.getElementById('modal-title').textContent = (f['Nombre']||'') + ' ' + (f['Apellidos']||'');
+
+  var fotoHtml = f['Foto']
+    ? '<img src="' + f['Foto'] + '" class="modal-foto">'
+    : '<div class="modal-foto-ph">👤</div>';
+
+  var docsHtml = '';
+  if (f['Acta de Nacimiento']) docsHtml += '<a href="' + f['Acta de Nacimiento'] + '" target="_blank" class="doc-btn">📄 Acta</a>';
+  if (f['CURP Documento']) docsHtml += '<a href="' + f['CURP Documento'] + '" target="_blank" class="doc-btn">📋 CURP</a>';
+  if (f['Seguro Médico']) docsHtml += '<a href="' + f['Seguro Médico'] + '" target="_blank" class="doc-btn">🏥 Seguro</a>';
+  if (!docsHtml) docsHtml = '<span style="color:var(--gray);font-size:12px">Sin documentos</span>';
+
+  var pagosHtml = '';
+  MESES.forEach(function(mes) {
+    var estado = f['Pago ' + mes] || 'Pendiente';
+    var icon = estado === 'Pagado' ? '✅' : estado === 'Exento' ? '🔵' : '❌';
+    pagosHtml += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(91,127,166,0.1)">' +
+      '<span style="font-size:13px;color:white">' + mes + '</span>' +
+      '<span style="font-size:16px">' + icon + ' <span style="font-size:12px;color:var(--gray)">' + estado + '</span></span>' +
+      '</div>';
+  });
+
+  document.getElementById('modal-body').innerHTML = fotoHtml +
+    '<div class="d-section">Datos del jugador</div>' +
+    '<div class="d-label">Nombre</div><div class="d-val">' + (f['Nombre']||'') + ' ' + (f['Apellidos']||'') + '</div>' +
+    '<div class="d-label">Categoría</div><div class="d-val">' + (f['Categoría']||'—') + '</div>' +
+    '<div class="d-label">Género</div><div class="d-val">' + (f['Género']||'—') + '</div>' +
+    '<div class="d-label">Fecha de Nacimiento</div><div class="d-val">' + (f['Fecha de Nacimiento']||'—') + '</div>' +
+    '<div class="d-label">CURP</div><div class="d-val" style="font-size:11px;letter-spacing:1px">' + (f['CURP']||'—') + '</div>' +
+    '<div class="d-section">Tutor</div>' +
+    '<div class="d-label">Nombre</div><div class="d-val">' + (f['Tutor']||'—') + '</div>' +
+    '<div class="d-label">Teléfono</div><div class="d-val">' + (f['Teléfono']||'—') + '</div>' +
+    '<div class="d-label">Email</div><div class="d-val">' + (f['Email']||'—') + '</div>' +
+    '<div class="d-section">Documentos</div>' +
+    '<div style="margin-bottom:16px">' + docsHtml + '</div>' +
+    '<div class="d-section">Mensualidades</div>' +
+    pagosHtml +
+    '<div class="d-section" style="margin-top:16px">Número de jugador</div>' +
+    '<input type="number" id="modal-num" class="d-input" value="' + (f['Número Jugador']||'') + '" placeholder="Ej: 12">' +
+    '<button class="save-btn" onclick="saveDetail()">💾 Guardar número</button>';
+
+  document.getElementById('detail-modal').classList.add('open');
+}
+
+async function saveDetail() {
+  var num = parseInt(document.getElementById('modal-num').value) || null;
+  if (!num) { alert('Ingresa un número válido'); return; }
+  try {
+    await fetch('https://api.airtable.com/v0/' + AT_BASE + '/' + AT_TABLE + '/' + currentId, {
+      method: 'PATCH',
+      headers: { 'Authorization': 'Bearer ' + AT_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fields: { 'Número Jugador': num }, typecast: true })
+    });
+    var idx = allRecords.findIndex(function(r) { return r.id === currentId; });
+    if (idx >= 0) allRecords[idx].fields['Número Jugador'] = num;
+    renderTable();
+    closeModal('detail-modal');
+    alert('✅ Número guardado');
+  } catch(e) { alert('❌ Error: ' + e.message); }
+}
+
+// ── CREDENCIAL ──
+function openCred(id) {
+  var rec = allRecords.find(function(r) { return r.id === id; });
+  if (!rec) return;
+  var f = rec.fields;
+
+  var fotoHtml = f['Foto']
+    ? '<img src="' + f['Foto'] + '" class="cred-photo">'
+    : '<div class="cred-photo-ph">👤</div>';
+
+  document.getElementById('cred-content').innerHTML =
+    '<div class="cred-card">' +
+      '<img src="https://wolverines.mx/IMG_0019_transparent.png" class="cred-logo" onerror="this.style.display=\'none\'">' +
+      '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:18px;letter-spacing:3px;color:white">WOLVERINES TRC</div>' +
+      '<div style="font-size:10px;color:rgba(255,255,255,0.6);letter-spacing:2px;text-transform:uppercase">Temporada Ago–Dic 2026</div>' +
+      fotoHtml +
+      '<div class="cred-name">' + (f['Nombre']||'') + ' ' + (f['Apellidos']||'') + '</div>' +
+      '<div class="cred-cat">' + (f['Categoría']||'') + '</div>' +
+      '<div class="cred-num">#' + (f['Número Jugador']||'00') + '</div>' +
+    '</div>' +
+    '<div class="cred-info">' +
+      '<div class="cred-row"><span style="color:var(--gray)">Género</span><span style="color:white;font-weight:700">' + (f['Género']||'—') + '</span></div>' +
+      '<div class="cred-row"><span style="color:var(--gray)">Fecha Nac.</span><span style="color:white;font-weight:700">' + (f['Fecha de Nacimiento']||'—') + '</span></div>' +
+      '<div class="cred-row"><span style="color:var(--gray)">CURP</span><span style="color:white;font-size:10px;letter-spacing:1px">' + (f['CURP']||'—') + '</span></div>' +
+      '<div class="cred-row"><span style="color:var(--gray)">Tutor</span><span style="color:white;font-weight:700">' + (f['Tutor']||'—') + '</span></div>' +
+    '</div>' +
+    '<div class="cred-qr"><div id="qr-box"></div><div class="cred-qr-label">Escanea para verificar</div></div>';
+
+  document.getElementById('cred-modal').classList.add('open');
+
+  setTimeout(function() {
+    var qrBox = document.getElementById('qr-box');
+    if (qrBox && typeof QRCode !== 'undefined') {
+      qrBox.innerHTML = '';
+      new QRCode(qrBox, {
+        text: JSON.stringify({n:(f['Nombre']||'')+(f['Apellidos']||''),curp:f['CURP']||'',cat:f['Categoría']||'',num:f['Número Jugador']||''}),
+        width: 100, height: 100,
+        colorDark: '#235498', colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M
+      });
+    }
+  }, 200);
+}
+
+// ── DELETE ──
+async function deleteRecord(id, nombre) {
+  if (!confirm('¿Seguro que quieres eliminar a "' + nombre + '"?\n\nEsta acción no se puede deshacer.')) return;
+  try {
+    await fetch('https://api.airtable.com/v0/' + AT_BASE + '/' + AT_TABLE + '/' + id, {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + AT_KEY }
+    });
+    allRecords = allRecords.filter(function(r) { return r.id !== id; });
+    updateStats();
+    renderTable();
+  } catch(e) { alert('❌ Error: ' + e.message); }
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+</script>
+</body>
+</html>
