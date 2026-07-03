@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registro – Playmkr Summer Camp 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;600;900&display=swap" rel="stylesheet">
+<style>
+  /* ── CONFIG ── Cambia AIRTABLE_API_KEY y AIRTABLE_BASE_ID en el script de abajo */
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy:    #070f1e;
+    --navy2:   #0d1f3c;
+    --card:    #111d36;
+    --lite:    #162545;
+    --gold:    #FFCB05;
+    --gold-dk: #d4a800;
+    --white:   #ffffff;
+    --gray:    #8899bb;
+    --light:   #ccdaff;
+    --red:     #ff4d6d;
+    --green:   #22c55e;
+  }
+
+  body {
+    background: var(--navy);
+    font-family: 'Montserrat', sans-serif;
+    color: var(--white);
+    min-height: 100vh;
+    padding: 0 0 60px;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--navy2);
+    border-bottom: 3px solid var(--gold);
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  header img.logo {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    filter: brightness(0) invert(1);
+  }
+  .header-text h1 {
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--gold);
+    letter-spacing: 1px;
+  }
+  .header-text p {
+    font-size: 12px;
+    color: var(--gray);
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* ── HERO STRIP ── */
+  .hero {
+    background: var(--gold);
+    padding: 14px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .hero-item { text-align: center; }
+  .hero-item .label { font-size: 9px; font-weight: 600; color: var(--gold-dk); letter-spacing: 3px; text-transform: uppercase; }
+  .hero-item .value { font-size: 15px; font-weight: 900; color: var(--navy); }
+  .hero-sep { width: 1px; height: 36px; background: rgba(0,0,0,0.15); }
+
+  /* ── FORM CONTAINER ── */
+  .container {
+    max-width: 680px;
+    margin: 36px auto 0;
+    padding: 0 20px;
+  }
+
+  .section-title {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 4px;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin: 32px 0 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--lite);
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--lite);
+    border-top: 3px solid var(--gold);
+    padding: 28px 28px 24px;
+    border-radius: 2px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .row.triple { grid-template-columns: 1fr 1fr 1fr; }
+  @media(max-width: 520px) { .row, .row.triple { grid-template-columns: 1fr; } }
+
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field.full { grid-column: 1 / -1; }
+
+  label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    color: var(--gray);
+    text-transform: uppercase;
+  }
+  label span.req { color: var(--gold); margin-left: 2px; }
+
+  input, select, textarea {
+    background: var(--lite);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 2px;
+    color: var(--white);
+    font-family: 'Montserrat', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 11px 14px;
+    width: 100%;
+    transition: border-color .2s;
+    outline: none;
+    -webkit-appearance: none;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--gold);
+  }
+  select option { background: var(--card); }
+  textarea { resize: vertical; min-height: 80px; }
+  input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.5); }
+
+  /* ── PACKAGE SELECTOR ── */
+  .packages { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media(max-width:440px) { .packages { grid-template-columns: 1fr; } }
+
+  .pkg-label { cursor: pointer; }
+  .pkg-label input[type="radio"] { display: none; }
+  .pkg-box {
+    border: 2px solid var(--lite);
+    border-radius: 2px;
+    padding: 16px 18px;
+    transition: border-color .2s, background .2s;
+    position: relative;
+  }
+  .pkg-label input[type="radio"]:checked + .pkg-box {
+    border-color: var(--gold);
+    background: rgba(255,203,5,0.07);
+  }
+  .pkg-box .pkg-name { font-size: 11px; font-weight: 600; letter-spacing: 2px; color: var(--gray); margin-bottom: 4px; }
+  .pkg-box .pkg-price { font-size: 32px; font-weight: 900; color: var(--white); line-height: 1; margin-bottom: 10px; }
+  .pkg-label input[type="radio"]:checked + .pkg-box .pkg-price { color: var(--gold); }
+  .pkg-box ul { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+  .pkg-box ul li { font-size: 11px; color: var(--light); font-weight: 600; }
+  .pkg-box ul li::before { content: '✦  '; color: var(--gold); }
+  .pkg-box .badge {
+    position: absolute; top: 0; right: 0;
+    background: var(--gold); color: var(--navy);
+    font-size: 8px; font-weight: 900; letter-spacing: 2px;
+    padding: 3px 10px;
+  }
+
+  /* ── TALLAS ── */
+  .sizes { display: flex; gap: 10px; flex-wrap: wrap; }
+  .size-label { cursor: pointer; }
+  .size-label input[type="radio"] { display: none; }
+  .size-box {
+    width: 52px; height: 44px;
+    border: 2px solid var(--lite);
+    border-radius: 2px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 600; color: var(--gray);
+    transition: all .2s;
+  }
+  .size-label input[type="radio"]:checked + .size-box {
+    border-color: var(--gold);
+    background: rgba(255,203,5,0.1);
+    color: var(--gold);
+  }
+
+  /* ── CHECKBOX ── */
+  .check-row { display: flex; align-items: flex-start; gap: 12px; }
+  .check-row input[type="checkbox"] {
+    width: 22px; height: 22px; min-width: 22px;
+    accent-color: var(--gold);
+    margin-top: 2px;
+    cursor: pointer;
+    appearance: checkbox;
+    -webkit-appearance: checkbox;
+    opacity: 1;
+    position: relative;
+    z-index: 1;
+  }
+  .check-row label {
+    font-size: 12px; letter-spacing: 0; text-transform: none;
+    color: var(--light); line-height: 1.6; cursor: pointer;
+  }
+  .check-row label a { color: var(--gold); }
+
+  /* ── GÉNERO ── */
+  .gender-group { display: flex; gap: 12px; }
+  .gender-label { cursor: pointer; flex: 1; }
+  .gender-label input[type="radio"] { display: none; }
+  .gender-box {
+    border: 2px solid var(--lite);
+    border-radius: 2px;
+    padding: 12px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--gray);
+    transition: all .2s;
+  }
+  .gender-label input[type="radio"]:checked + .gender-box {
+    border-color: var(--gold);
+    background: rgba(255,203,5,0.1);
+    color: var(--gold);
+  }
+
+  /* ── SUBMIT ── */
+  .submit-btn {
+    background: var(--gold);
+    border: none;
+    color: var(--navy);
+    font-family: 'Montserrat', sans-serif;
+    font-size: 16px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    padding: 18px;
+    width: 100%;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: background .2s, transform .1s;
+    margin-top: 8px;
+    border-radius: 2px;
+  }
+  .submit-btn:hover  { background: #ffd740; }
+  .submit-btn:active { transform: scale(0.99); }
+  .submit-btn:disabled { background: var(--lite); color: var(--gray); cursor: not-allowed; }
+
+  /* ── ALERTS ── */
+  .alert {
+    border-radius: 2px;
+    padding: 16px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    display: none;
+    margin-top: 16px;
+    line-height: 1.5;
+  }
+  .alert.error   { background: rgba(255,77,109,0.12); border: 1px solid var(--red);   color: var(--red); }
+  .alert.success { background: rgba(34,197,94,0.10);  border: 1px solid var(--green); color: var(--green); }
+  .alert.show    { display: block; }
+
+  /* ── SUCCESS SCREEN ── */
+  #success-screen {
+    display: none;
+    text-align: center;
+    padding: 60px 20px;
+  }
+  #success-screen .icon  { font-size: 64px; margin-bottom: 20px; }
+  #success-screen h2     { font-size: 28px; font-weight: 900; color: var(--gold); margin-bottom: 12px; }
+  #success-screen p      { color: var(--light); font-size: 15px; line-height: 1.7; }
+
+  /* ── POSICION (solo Juvenil) ── */
+  #posicion-group { display: none; }
+
+  .spinner {
+    display: inline-block;
+    width: 16px; height: 16px;
+    border: 2px solid var(--navy);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-text">
+    <h1>PLAYMKR 🏈</h1>
+    <p>Summer Camp 2026 · Registro</p>
+  </div>
+</header>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-item">
+    <div class="label">Inicio</div>
+    <div class="value">Lunes 6 de Julio</div>
+  </div>
+  <div class="hero-sep"></div>
+  <div class="hero-item">
+    <div class="label">Sede</div>
+    <div class="value">Tec de Monterrey</div>
+  </div>
+  <div class="hero-sep"></div>
+  <div class="hero-item">
+    <div class="label">Límite de inscripción</div>
+    <div class="value">26 de Junio 2026</div>
+  </div>
+  <div class="hero-sep"></div>
+  <div class="hero-item">
+    <div class="label">Final</div>
+    <div class="value">Tazón AFFL · Jul 30, Ago 1-2</div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- FORM -->
+  <form id="reg-form" novalidate>
+
+    <!-- PARTICIPANTE -->
+    <div class="section-title">Datos del participante</div>
+    <div class="card">
+      <div class="row">
+        <div class="field">
+          <label>Nombre(s) <span class="req">*</span></label>
+          <input type="text" id="nombre" placeholder="Ej. Carlos" required>
+        </div>
+        <div class="field">
+          <label>Apellidos <span class="req">*</span></label>
+          <input type="text" id="apellidos" placeholder="Ej. López García" required>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Foto del participante <span class="req">*</span></label>
+        <input type="file" id="foto" accept="image/*" style="background:var(--lite);border:1px solid rgba(255,255,255,0.08);color:var(--gray);padding:11px 14px;width:100%;font-family:Montserrat,sans-serif;font-size:13px;cursor:pointer;">
+        <div id="foto-preview" style="display:none;margin-top:8px"><img id="foto-img" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--gold);"></div>
+      </div>
+
+      <div class="field">
+        <label>Género <span class="req">*</span></label>
+        <div class="gender-group">
+          <label class="gender-label"><input type="radio" name="genero" value="Masculino"><div class="gender-box">👦 Masculino</div></label>
+          <label class="gender-label"><input type="radio" name="genero" value="Femenino"><div class="gender-box">👧 Femenino</div></label>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label>Fecha de nacimiento <span class="req">*</span></label>
+          <input type="date" id="fecha_nac" required>
+        </div>
+        <div class="field">
+          <label>Categoría</label>
+          <input type="text" id="categoria" readonly placeholder="Se calcula automáticamente" style="color:var(--gold);cursor:default;">
+        </div>
+      </div>
+
+      <!-- Solo Juvenil -->
+      <div class="field" id="posicion-group">
+        <label>Posición <span class="req">*</span></label>
+        <select id="posicion">
+          <option value="">— Selecciona tu posición —</option>
+          <option>Quarterback</option>
+          <option>Wide Receiver</option>
+          <option>Rusher</option>
+          <option>Linebacker</option>
+          <option>Cornerback</option>
+          <option>Safety</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Talla de playera <span class="req">*</span></label>
+        <div class="sizes" id="tallas-container">
+          <span style="color:var(--gray);font-size:13px;font-weight:600;">Ingresa la fecha de nacimiento primero</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TUTOR -->
+    <div class="section-title">Datos del padre / tutor</div>
+    <div class="card">
+      <div class="row">
+        <div class="field">
+          <label>Nombre completo <span class="req">*</span></label>
+          <input type="text" id="tutor_nombre" placeholder="Nombre del tutor" required>
+        </div>
+        <div class="field">
+          <label>Teléfono <span class="req">*</span></label>
+          <input type="tel" id="tutor_tel" placeholder="871 000 0000" required>
+        </div>
+      </div>
+      <div class="field">
+        <label>Correo electrónico <span class="req">*</span></label>
+        <input type="email" id="tutor_email" placeholder="correo@ejemplo.com" required>
+      </div>
+    </div>
+
+    <!-- SALUD -->
+    <div class="section-title">Información médica</div>
+    <div class="card">
+      <div class="field">
+        <label>Alergias o condiciones médicas relevantes</label>
+        <textarea id="medico" placeholder="Escribe aquí si el participante tiene alguna alergia, condición o medicamento que el staff deba conocer. Si no aplica, deja en blanco."></textarea>
+      </div>
+    </div>
+
+    <!-- PAQUETE -->
+    <div class="section-title">Paquete de inscripción</div>
+    <div class="card">
+      <div class="packages">
+
+        <label class="pkg-label">
+          <input type="radio" name="paquete" value="Summer Camp · $1,500" required>
+          <div class="pkg-box">
+            <div class="pkg-name">Solo Summer Camp</div>
+            <div class="pkg-price">$1,500</div>
+            <ul>
+              <li>Entrenamiento completo</li>
+              <li>Playera de entrenamiento</li>
+              <li>Tazón AFFL</li>
+            </ul>
+          </div>
+        </label>
+
+        <label class="pkg-label">
+          <input type="radio" name="paquete" value="Paquete Completo · $2,150" required>
+          <div class="pkg-box">
+            <div class="badge">RECOMENDADO</div>
+            <div class="pkg-name">Paquete Completo</div>
+            <div class="pkg-price">$2,150</div>
+            <ul>
+              <li>Entrenamiento completo</li>
+              <li>Playera de entrenamiento</li>
+              <li>Tazón AFFL</li>
+              <li>Libra Training Academy</li>
+            </ul>
+          </div>
+        </label>
+
+      </div>
+    </div>
+
+    <!-- TÉRMINOS -->
+    <div class="section-title">Autorización</div>
+    <div class="card">
+      <div class="check-row" onclick="document.getElementById('auth_img').click()" style="cursor:pointer">
+        <input type="checkbox" id="auth_img" onclick="event.stopPropagation()">
+        <label for="auth_img" onclick="event.preventDefault()">Autorizo el uso de fotografías y videos del participante para fines promocionales del equipo Wolverines.</label>
+      </div>
+      <div class="check-row" onclick="document.getElementById('terminos').click()" style="cursor:pointer">
+        <input type="checkbox" id="terminos" onclick="event.stopPropagation()">
+        <label for="terminos" onclick="event.preventDefault()">He leído y acepto los términos del Summer Camp. Confirmo que los datos proporcionados son correctos. <span class="req">*</span></label>
+      </div>
+    </div>
+
+    <div class="alert error" id="alert-error"></div>
+    <button type="submit" class="submit-btn" id="submit-btn">Enviar registro</button>
+
+  </form>
+
+  <!-- SUCCESS -->
+  <div id="success-screen">
+    <div class="icon">🏆</div>
+    <h2>¡Registro enviado!</h2>
+    <p id="success-msg">Tu registro fue recibido correctamente.<br>Nos pondremos en contacto contigo pronto.</p>
+  </div>
+
+</div>
+
+<script>
+// ════════════════════════════════════════════
+// ⚙️  CONFIGURACIÓN — Completa estos 3 datos
+// ════════════════════════════════════════════
+const AIRTABLE_API_KEY = 'patBt3TNLXcQjjU0P.1e91be82fac7b295b93fc3650834acff330a4fc29a31fc35619be7f182f80483';      // Personal Access Token de Airtable
+const AIRTABLE_BASE_ID = 'app9qMFY9r4yhI1sy';      // ej. appXXXXXXXXXXXXXX
+const AIRTABLE_TABLE   = 'Registros';             // Nombre exacto de tu tabla
+// ════════════════════════════════════════════
+
+// ── Foto preview ──
+const IMGBB_KEY = '94419de23f448dd3bfe316eb03525f53';
+document.getElementById('foto').addEventListener('change', function() {
+  const file = this.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('foto-img').src = e.target.result;
+      document.getElementById('foto-preview').style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  }
+});
+
+async function uploadFoto(file) {
+  const formData = new FormData();
+  formData.append('image', file);
+  const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, {
+    method: 'POST', body: formData
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error('Error subiendo foto');
+  return data.data.url;
+}
+
+// ── Tallas por categoría ──
+const tallasInfantil = ['4','6','8','10','12','14','16'];
+const tallasJuvenil  = ['XS','S','M','L','XL','XXL'];
+
+function renderTallas(tallas) {
+  const container = document.getElementById('tallas-container');
+  container.innerHTML = tallas.map(t =>
+    `<label class="size-label"><input type="radio" name="talla" value="${t}"><div class="size-box">${t}</div></label>`
+  ).join('');
+}
+
+// ── Auto-detectar categoría por edad ──
+document.getElementById('fecha_nac').addEventListener('change', function() {
+  const dob    = new Date(this.value);
+  const today  = new Date();
+  let age = today.getFullYear() - dob.getFullYear();
+  const m = today.getMonth() - dob.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
+
+  const catField  = document.getElementById('categoria');
+  const posGroup  = document.getElementById('posicion-group');
+  const posSelect = document.getElementById('posicion');
+
+  if (age >= 4 && age <= 12) {
+    catField.value = 'Infantil (4–12 años) · 6:30–8:00 pm';
+    posGroup.style.display = 'none';
+    posSelect.required = false;
+    renderTallas(tallasInfantil);
+  } else if (age >= 13) {
+    catField.value = 'Juvenil (13+ años) · 7:00–8:30 pm';
+    posGroup.style.display = 'flex';
+    posSelect.required = true;
+    renderTallas(tallasJuvenil);
+  } else {
+    catField.value = '';
+  }
+});
+
+// ── Validación ──
+function showError(msg) {
+  const el = document.getElementById('alert-error');
+  el.textContent = msg;
+  el.classList.add('show');
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+function hideError() {
+  document.getElementById('alert-error').classList.remove('show');
+}
+
+// ── Submit ──
+document.getElementById('reg-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  hideError();
+
+  const nombre     = document.getElementById('nombre').value.trim();
+  const apellidos  = document.getElementById('apellidos').value.trim();
+  const genero     = document.querySelector('input[name="genero"]:checked')?.value || '';
+  const fecha_nac  = document.getElementById('fecha_nac').value;
+  const categoria  = document.getElementById('categoria').value;
+  const posicion   = document.getElementById('posicion').value;
+  const talla      = document.querySelector('input[name="talla"]:checked')?.value || '';
+  const tutor      = document.getElementById('tutor_nombre').value.trim();
+  const tel        = document.getElementById('tutor_tel').value.trim();
+  const email      = document.getElementById('tutor_email').value.trim();
+  const medico     = document.getElementById('medico').value.trim();
+  const paquete    = document.querySelector('input[name="paquete"]:checked')?.value || '';
+  const auth_img   = document.getElementById('auth_img').checked;
+  const terminos   = document.getElementById('terminos').checked;
+
+  // Validar
+  if (!nombre || !apellidos) return showError('⚠️ Por favor ingresa el nombre completo del participante.');
+  if (!genero) return showError('⚠️ Por favor selecciona el género.');
+  if (!fecha_nac || !categoria) return showError('⚠️ Por favor ingresa la fecha de nacimiento.');
+  if (categoria.startsWith('Juvenil') && !posicion) return showError('⚠️ Por favor selecciona la posición del jugador.');
+  if (!talla) return showError('⚠️ Por favor selecciona la talla de playera.');
+  if (!tutor) return showError('⚠️ Por favor ingresa el nombre del tutor.');
+  if (!tel)   return showError('⚠️ Por favor ingresa el teléfono de contacto.');
+  if (!email || !email.includes('@')) return showError('⚠️ Por favor ingresa un correo válido.');
+  if (!paquete) return showError('⚠️ Por favor selecciona un paquete.');
+  if (!terminos) return showError('⚠️ Debes aceptar los términos para continuar.');
+
+  // Check config
+  if (AIRTABLE_API_KEY === 'TU_API_KEY_AQUI' || AIRTABLE_BASE_ID === 'TU_BASE_ID_AQUI') {
+    return showError('⚙️ El formulario aún no está configurado. Agrega tu API Key y Base ID de Airtable en el script.');
+  }
+
+  // Spinner
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Enviando...';
+
+    // Subir foto a ImgBB
+  let fotoUrl = null;
+  const fotoFile = document.getElementById('foto').files[0];
+  if (fotoFile) {
+    try {
+      btn.innerHTML = '<span class="spinner"></span> Subiendo foto...';
+      fotoUrl = await uploadFoto(fotoFile);
+    } catch(e) {
+      showError('❌ Error al subir la foto: ' + e.message);
+      btn.disabled = false;
+      btn.innerHTML = 'Enviar registro';
+      return;
+    }
+  }
+
+  const fields = {
+    'Nombre':             nombre,
+    'Género':             genero,
+    'Apellidos':          apellidos,
+    'Fecha de Nacimiento': fecha_nac,
+    'Categoría':          categoria,
+    ...(posicion ? {'Posición': posicion} : {}),
+    'Talla Playera':      talla,
+    'Tutor':              tutor,
+    'Teléfono':           tel,
+    'Email':              email,
+    'Info Médica':        medico || 'Sin observaciones',
+    'Paquete':            paquete,
+    'Autoriza Imágenes':  auth_img ? 'Sí' : 'No',
+    'Fecha de Registro':  new Date().toISOString().split('T')[0],
+    ...(fotoUrl ? {'Foto': [{ url: fotoUrl }]} : {}),
+  };
+
+  try {
+    const res = await fetch(
+      `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(AIRTABLE_TABLE)}`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${AIRTABLE_API_KEY}`,
+          'Content-Type':  'application/json',
+        },
+        body: JSON.stringify({ fields, typecast: true }),
+      }
+    );
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err?.error?.message || `Error ${res.status}`);
+    }
+
+    // Success
+    document.getElementById('reg-form').style.display = 'none';
+    const sc = document.getElementById('success-screen');
+    sc.style.display = 'block';
+    document.getElementById('success-msg').innerHTML =
+      `<strong style="color:var(--gold)">${nombre} ${apellidos}</strong> quedó registrado correctamente.<br><br>
+       <div style="background:#111d36;border:1px solid rgba(201,162,39,0.3);border-left:4px solid #FFCB05;padding:20px;margin:16px 0;text-align:left;border-radius:2px">
+         <div style="font-size:10px;letter-spacing:3px;color:#8899bb;font-weight:700;margin-bottom:12px">🏦 DATOS DE PAGO — TRANSFERENCIA</div>
+         <div style="font-size:13px;color:#ccdaff;margin-bottom:6px">Banco: <strong style="color:#fff">Nu (Nubank)</strong></div>
+         <div style="font-size:13px;color:#ccdaff;margin-bottom:6px">CLABE: <strong style="color:#FFCB05;font-size:16px;letter-spacing:2px">638180000152424651</strong></div>
+         <button onclick="navigator.clipboard.writeText('638180000152424651').then(()=>this.textContent='✅ Copiado!')" style="background:#FFCB05;border:none;color:#070f1e;font-family:Montserrat,sans-serif;font-size:11px;font-weight:900;padding:8px 16px;cursor:pointer;letter-spacing:2px;margin-top:8px">📋 COPIAR CLABE</button>
+       </div>
+       <div style="font-size:13px;color:#8899bb">Monto: <strong style="color:#FFCB05">${paquete.includes('1,900') ? '$2,150' : '$1,500'}</strong> · Envía tu comprobante al <strong style="color:#fff">871 342 0040</strong></div><br>
+       ¡Nos vemos en el campo! 🏈`;
+
+  } catch(err) {
+    showError('❌ Error al enviar: ' + err.message);
+    btn.disabled = false;
+    btn.innerHTML = 'Enviar registro';
+  }
+});
+</script>
+</body>
+</html>

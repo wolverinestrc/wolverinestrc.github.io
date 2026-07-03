@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Asistencia – Wolverines Summer Camp 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root { --navy:#080808; --navy2:#111111; --card:#161616; --lite:#1e1e1e; --gold:#22b022; --white:#ffffff; --gray:#888888; --light:#cccccc; --red:#ff4d6d; --green:#22c55e; }
+  body { background:var(--navy); font-family:'Montserrat',sans-serif; color:var(--white); min-height:100vh; }
+
+  header { background:var(--navy2); border-bottom:3px solid var(--gold); padding:16px 24px; display:flex; align-items:center; justify-content:space-between; }
+  header h1 { font-size:18px; font-weight:900; color:var(--gold); }
+  header p  { font-size:11px; color:var(--gray); font-weight:600; letter-spacing:2px; }
+
+  .container { max-width:600px; margin:0 auto; padding:24px 20px; }
+
+  /* DÍA SELECTOR */
+  .dia-section { margin-bottom:24px; }
+  .dia-label { font-size:10px; font-weight:700; letter-spacing:3px; color:var(--gold); text-transform:uppercase; margin-bottom:12px; }
+  .dia-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+  .dia-btn { background:var(--lite); border:2px solid transparent; color:var(--gray); font-family:'Montserrat',sans-serif; font-size:13px; font-weight:700; padding:14px 8px; cursor:pointer; text-align:center; transition:all .2s; }
+  .dia-btn.active { border-color:var(--gold); color:var(--gold); background:rgba(34,176,34,0.1); }
+  .dia-btn:hover { border-color:var(--gold); }
+
+  /* SCANNER */
+  .scanner-card { background:var(--card); border:1px solid var(--lite); border-top:3px solid var(--gold); padding:24px; margin-bottom:20px; }
+  .scanner-card h2 { font-size:14px; font-weight:900; color:var(--white); margin-bottom:4px; }
+  .scanner-card p  { font-size:11px; color:var(--gray); margin-bottom:16px; }
+  #reader { width:100%; border-radius:2px; overflow:hidden; }
+  .scan-btn { width:100%; background:var(--gold); border:none; color:var(--navy); font-family:'Montserrat',sans-serif; font-size:14px; font-weight:900; padding:14px; cursor:pointer; letter-spacing:2px; text-transform:uppercase; margin-top:12px; transition:background .2s; }
+  .scan-btn:hover { background:#28cc28; }
+  .scan-btn.stop { background:var(--red); color:var(--white); }
+
+  /* MANUAL */
+  .manual-card { background:var(--card); border:1px solid var(--lite); padding:20px; margin-bottom:20px; }
+  .manual-card h3 { font-size:11px; font-weight:700; letter-spacing:3px; color:var(--gray); text-transform:uppercase; margin-bottom:12px; }
+  .manual-row { display:flex; gap:10px; }
+  .manual-input { flex:1; background:var(--lite); border:1px solid rgba(255,255,255,0.08); color:var(--white); font-family:'Montserrat',sans-serif; font-size:14px; font-weight:600; padding:12px 16px; outline:none; }
+  .manual-input:focus { border-color:var(--gold); }
+  .manual-btn { background:var(--lite); border:1px solid var(--gold); color:var(--gold); font-family:'Montserrat',sans-serif; font-size:12px; font-weight:700; padding:12px 20px; cursor:pointer; letter-spacing:1px; white-space:nowrap; }
+  .manual-btn:hover { background:rgba(34,176,34,0.1); }
+
+  /* RESULT */
+  .result-card { padding:20px; margin-bottom:20px; display:none; border-left:4px solid var(--green); background:rgba(34,197,94,0.08); }
+  .result-card.error { border-left-color:var(--red); background:rgba(255,77,109,0.08); }
+  .result-card.warn  { border-left-color:var(--yellow); background:rgba(251,191,36,0.08); }
+  .result-card h3 { font-size:18px; font-weight:900; color:var(--white); margin-bottom:4px; }
+  .result-card .sub { font-size:11px; color:var(--gray); letter-spacing:2px; text-transform:uppercase; margin-bottom:12px; }
+  .result-card .msg { font-size:14px; font-weight:700; }
+  .result-card.error .msg { color:var(--red); }
+  .result-card.warn  .msg { color:var(--yellow); }
+  .result-card .msg { color:var(--green); }
+
+  /* LOG */
+  .log-card { background:var(--card); border:1px solid var(--lite); padding:20px; }
+  .log-card h3 { font-size:11px; font-weight:700; letter-spacing:3px; color:var(--gold); text-transform:uppercase; margin-bottom:12px; }
+  .log-item { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--lite); }
+  .log-item:last-child { border-bottom:none; }
+  .log-icon { font-size:20px; }
+  .log-name { font-size:13px; font-weight:700; color:var(--white); }
+  .log-cat  { font-size:10px; color:var(--gray); }
+  .log-time { font-size:11px; color:var(--gray); margin-left:auto; }
+  .log-empty { text-align:center; color:var(--gray); padding:20px; font-size:13px; }
+
+  .badge { display:inline-block; font-size:9px; font-weight:900; letter-spacing:2px; padding:3px 8px; text-transform:uppercase; margin-left:8px; }
+  .badge-infantil { background:rgba(34,197,94,0.15); color:#22c55e; }
+  .badge-juvenil  { background:rgba(59,130,246,0.15); color:#60a5fa; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>🏈 WOLVERINES — ASISTENCIA</h1>
+    <p>Summer Camp 2026 · Control de entrada</p>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- DÍA -->
+  <div class="dia-section">
+    <div class="dia-label">📅 Día de entrenamiento</div>
+    <div class="dia-grid">
+      <button class="dia-btn active" onclick="selDia('Lunes',this)">LUN</button>
+      <button class="dia-btn" onclick="selDia('Martes',this)">MAR</button>
+      <button class="dia-btn" onclick="selDia('Miércoles',this)">MIÉ</button>
+      <button class="dia-btn" onclick="selDia('Jueves',this)">JUE</button>
+    </div>
+  </div>
+
+  <!-- SCANNER -->
+  <div class="scanner-card">
+    <h2>📷 Escanear QR</h2>
+    <p>Apunta la cámara al código QR de la credencial del jugador</p>
+    <div id="reader"></div>
+    <button class="scan-btn" id="scan-btn" onclick="toggleScanner()">Activar cámara</button>
+  </div>
+
+  <!-- MANUAL -->
+  <div class="manual-card">
+    <h3>🔍 Buscar manualmente</h3>
+    <div class="manual-row">
+      <input class="manual-input" id="manual-input" type="text" placeholder="Nombre del participante..." oninput="buscarManual()">
+    </div>
+    <div id="manual-results" style="margin-top:10px"></div>
+  </div>
+
+  <!-- RESULTADO -->
+  <div class="result-card" id="result-card">
+    <h3 id="result-nombre"></h3>
+    <div class="sub" id="result-cat"></div>
+    <div class="msg" id="result-msg"></div>
+  </div>
+
+  <!-- LOG -->
+  <div class="log-card">
+    <h3>📋 Registros de hoy</h3>
+    <div id="log-list"><div class="log-empty">Aún no hay registros hoy</div></div>
+  </div>
+
+</div>
+
+<script>
+const AIRTABLE_KEY   = 'patBt3TNLXcQjjU0P.1e91be82fac7b295b93fc3650834acff330a4fc29a31fc35619be7f182f80483';
+const AIRTABLE_BASE  = 'app9qMFY9r4yhI1sy';
+const AIRTABLE_TABLE = 'tblr6Q3w6EJXz9HWh';
+const AT_HEADERS     = { 'Authorization': `Bearer ${AIRTABLE_KEY}`, 'Content-Type': 'application/json' };
+
+let diaSeleccionado = 'Lunes';
+let scanner = null;
+let scanning = false;
+let allRecords = [];
+let logHoy = [];
+
+// Cargar registros
+async function loadRecords() {
+  let offset = '';
+  try {
+    do {
+      const url = `https://api.airtable.com/v0/${AIRTABLE_BASE}/${AIRTABLE_TABLE}?pageSize=100${offset?'&offset='+offset:''}`;
+      const res = await fetch(url, { headers: AT_HEADERS });
+      const data = await res.json();
+      allRecords = allRecords.concat(data.records || []);
+      offset = data.offset || '';
+    } while(offset);
+  } catch(e) { console.error(e); }
+}
+loadRecords();
+
+// Seleccionar día
+function selDia(dia, btn) {
+  diaSeleccionado = dia;
+  document.querySelectorAll('.dia-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// Scanner
+function toggleScanner() {
+  if (!scanning) startScanner();
+  else stopScanner();
+}
+
+function startScanner() {
+  scanner = new Html5Qrcode('reader');
+  scanner.start(
+    { facingMode: 'environment' },
+    { fps: 10, qrbox: { width: 250, height: 250 } },
+    (decodedText) => { stopScanner(); registrarAsistencia(decodedText); },
+    () => {}
+  ).then(() => {
+    scanning = true;
+    document.getElementById('scan-btn').textContent = '⏹ Detener cámara';
+    document.getElementById('scan-btn').classList.add('stop');
+  }).catch(err => { alert('No se pudo acceder a la cámara: ' + err); });
+}
+
+function stopScanner() {
+  if (scanner && scanning) {
+    scanner.stop().then(() => {
+      scanning = false;
+      document.getElementById('scan-btn').textContent = 'Activar cámara';
+      document.getElementById('scan-btn').classList.remove('stop');
+    });
+  }
+}
+
+// Buscar manual
+function buscarManual() {
+  const q = document.getElementById('manual-input').value.toLowerCase();
+  const div = document.getElementById('manual-results');
+  if (q.length < 2) { div.innerHTML = ''; return; }
+  const matches = allRecords.filter(r =>
+    `${r.fields['Nombre']||''} ${r.fields['Apellidos']||''}`.toLowerCase().includes(q)
+  ).slice(0, 5);
+  if (!matches.length) { div.innerHTML = '<div style="color:var(--gray);font-size:12px;padding:8px">No encontrado</div>'; return; }
+  div.innerHTML = matches.map(r => {
+    const nombre = `${r.fields['Nombre']||''} ${r.fields['Apellidos']||''}`;
+    const cat = (r.fields['Categoría']||'').includes('Infantil') ? 'Infantil' : 'Juvenil';
+    return `<div onclick="registrarAsistencia('${r.id}')" style="padding:10px;cursor:pointer;border-bottom:1px solid var(--lite);display:flex;align-items:center;gap:10px;transition:background .2s" onmouseover="this.style.background='rgba(34,176,34,0.05)'" onmouseout="this.style.background=''">
+      <span style="font-weight:700;color:var(--white)">${nombre}</span>
+      <span class="badge badge-${cat.toLowerCase()}">${cat}</span>
+    </div>`;
+  }).join('');
+}
+
+// Registrar asistencia
+async function registrarAsistencia(recordId) {
+  document.getElementById('manual-input').value = '';
+  document.getElementById('manual-results').innerHTML = '';
+
+  const rec = allRecords.find(r => r.id === recordId);
+  const resultCard = document.getElementById('result-card');
+  resultCard.className = 'result-card';
+  resultCard.style.display = 'block';
+
+  if (!rec) {
+    resultCard.classList.add('error');
+    document.getElementById('result-nombre').textContent = 'Participante no encontrado';
+    document.getElementById('result-cat').textContent = '';
+    document.getElementById('result-msg').textContent = '❌ El QR no corresponde a ningún registro';
+    return;
+  }
+
+  const f = rec.fields;
+  const nombre = `${f['Nombre']||''} ${f['Apellidos']||''}`;
+  const cat = (f['Categoría']||'').includes('Infantil') ? 'Infantil' : 'Juvenil';
+  const campo = `Asistencia ${diaSeleccionado}`;
+
+  document.getElementById('result-nombre').textContent = nombre;
+  document.getElementById('result-cat').textContent = `${cat} · ${diaSeleccionado}`;
+
+  if (f[campo]) {
+    resultCard.classList.add('warn');
+    document.getElementById('result-msg').textContent = `⚠️ Ya tiene asistencia registrada este ${diaSeleccionado}`;
+    return;
+  }
+
+  try {
+    const res = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${AIRTABLE_TABLE}/${recordId}`, {
+      method: 'PATCH', headers: AT_HEADERS,
+      body: JSON.stringify({ fields: { [campo]: true } })
+    });
+    if (!res.ok) throw new Error('Error guardando');
+    rec.fields[campo] = true;
+    document.getElementById('result-msg').textContent = `✅ Asistencia registrada para el ${diaSeleccionado}`;
+    addLog(nombre, cat);
+  } catch(e) {
+    resultCard.classList.add('error');
+    document.getElementById('result-msg').textContent = '❌ Error al guardar: ' + e.message;
+  }
+
+  setTimeout(() => { resultCard.style.display = 'none'; }, 4000);
+}
+
+// Log
+function addLog(nombre, cat) {
+  const time = new Date().toLocaleTimeString('es-MX', { hour:'2-digit', minute:'2-digit' });
+  logHoy.unshift({ nombre, cat, time });
+  const list = document.getElementById('log-list');
+  list.innerHTML = logHoy.map(l => `
+    <div class="log-item">
+      <span class="log-icon">${l.cat === 'Infantil' ? '🧒' : '🏃'}</span>
+      <div><div class="log-name">${l.nombre}</div><div class="log-cat">${l.cat}</div></div>
+      <span class="log-time">${l.time}</span>
+    </div>`).join('');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,417 @@
+<!-- WOLVERINES TRC - AGENTE DE INSCRIPCIONES -->
+<!-- Pega este código antes de </body> en tu index.html -->
+
+<style>
+#wlv-chat-btn {
+  position: fixed; bottom: 100px; right: 28px; z-index: 998;
+  width: 60px; height: 60px; border-radius: 50%;
+  background: #235498; border: none; cursor: pointer;
+  box-shadow: 0 4px 20px rgba(35,84,152,0.45);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; transition: transform .2s;
+  color: white; text-decoration: none;
+}
+#wlv-chat-btn:hover { transform: scale(1.1); }
+#wlv-chat-btn .badge {
+  position: absolute; top: -4px; right: -4px;
+  background: #e53e3e; color: white; border-radius: 50%;
+  width: 18px; height: 18px; font-size: 10px; font-weight: 900;
+  display: flex; align-items: center; justify-content: center;
+}
+
+#wlv-chat-panel {
+  position: fixed; bottom: 170px; right: 28px; z-index: 997;
+  width: 360px; height: 520px;
+  background: #fff; border-radius: 16px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+  display: none; flex-direction: column; overflow: hidden;
+  font-family: 'Montserrat', sans-serif;
+  border: 1px solid rgba(35,84,152,0.15);
+}
+#wlv-chat-panel.open { display: flex; }
+
+.wlv-header {
+  background: #235498; color: white;
+  padding: 16px 18px; display: flex; align-items: center; gap: 12px;
+}
+.wlv-header-avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; flex-shrink: 0;
+}
+.wlv-header-info h4 { font-size: 14px; font-weight: 900; margin: 0; letter-spacing: 1px; }
+.wlv-header-info p  { font-size: 10px; opacity: 0.75; margin: 2px 0 0; }
+.wlv-header-close {
+  margin-left: auto; background: none; border: none;
+  color: white; font-size: 20px; cursor: pointer; opacity: 0.7;
+  padding: 0 4px;
+}
+.wlv-header-close:hover { opacity: 1; }
+
+.wlv-messages {
+  flex: 1; overflow-y: auto; padding: 16px; display: flex;
+  flex-direction: column; gap: 12px;
+  background: #f8fafd;
+}
+.wlv-messages::-webkit-scrollbar { width: 4px; }
+.wlv-messages::-webkit-scrollbar-thumb { background: #d0dce8; border-radius: 4px; }
+
+.wlv-msg { display: flex; gap: 8px; align-items: flex-end; }
+.wlv-msg.user { flex-direction: row-reverse; }
+
+.wlv-msg-avatar {
+  width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+  background: #235498; display: flex; align-items: center;
+  justify-content: center; font-size: 13px; color: white;
+}
+.wlv-msg.user .wlv-msg-avatar { background: #e2e8f0; }
+
+.wlv-msg-bubble {
+  max-width: 75%; padding: 10px 14px; border-radius: 16px;
+  font-size: 13px; line-height: 1.5; color: #1a2a3a;
+  background: white; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  border-bottom-left-radius: 4px;
+}
+.wlv-msg.user .wlv-msg-bubble {
+  background: #235498; color: white;
+  border-bottom-left-radius: 16px; border-bottom-right-radius: 4px;
+}
+.wlv-msg-time { font-size: 9px; color: #a0aec0; margin-top: 4px; }
+
+.wlv-quick-replies {
+  padding: 8px 16px; display: flex; gap: 8px; flex-wrap: wrap;
+}
+.wlv-qr {
+  background: #eef4fc; border: 1px solid rgba(35,84,152,0.25);
+  color: #235498; font-family: 'Montserrat',sans-serif;
+  font-size: 11px; font-weight: 700; padding: 6px 12px;
+  border-radius: 20px; cursor: pointer; transition: all .2s;
+  white-space: nowrap;
+}
+.wlv-qr:hover { background: #235498; color: white; }
+
+.wlv-input-row {
+  padding: 12px 14px; border-top: 1px solid #e2e8f0;
+  display: flex; gap: 8px; background: white;
+}
+.wlv-input {
+  flex: 1; border: 1px solid #d0dce8; border-radius: 22px;
+  padding: 9px 16px; font-family: 'Montserrat',sans-serif;
+  font-size: 13px; outline: none; color: #1a2a3a;
+  background: #f8fafd;
+}
+.wlv-input:focus { border-color: #235498; }
+.wlv-send {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: #235498; border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; color: white; flex-shrink: 0;
+  transition: background .2s;
+}
+.wlv-send:hover { background: #1a3f72; }
+.wlv-send:disabled { background: #a0aec0; cursor: not-allowed; }
+
+.wlv-typing {
+  display: flex; align-items: center; gap: 4px; padding: 8px 12px;
+  background: white; border-radius: 16px; border-bottom-left-radius: 4px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08); width: fit-content;
+}
+.wlv-typing span {
+  width: 6px; height: 6px; background: #235498; border-radius: 50%;
+  animation: typing 1.2s infinite;
+}
+.wlv-typing span:nth-child(2) { animation-delay: 0.2s; }
+.wlv-typing span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typing { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
+</style>
+
+<!-- Chat Button -->
+<button id="wlv-chat-btn" onclick="wlvToggleChat()" title="Asistente Wolverines">
+  <img src="https://wolverines.mx/IMG_0019.png.jpeg" alt="Wolverines" style="width:42px;height:42px;object-fit:contain;border-radius:50%;background:white;padding:3px;">
+  <span class="badge">1</span>
+</button>
+
+<!-- Chat Panel -->
+<div id="wlv-chat-panel">
+  <div class="wlv-header">
+    <div class="wlv-header-avatar" style="background:white;"><img src="https://wolverines.mx/IMG_0019.png.jpeg" alt="Wolverines" style="width:32px;height:32px;object-fit:contain;"></div>
+    <div class="wlv-header-info">
+      <h4>WOLVERINES TRC</h4>
+      <p>🟢 Asistente en línea · Summer Camp 2026</p>
+    </div>
+    <button class="wlv-header-close" onclick="wlvToggleChat()">✕</button>
+  </div>
+  <div class="wlv-messages" id="wlv-msgs"></div>
+  <div class="wlv-quick-replies" id="wlv-qr-container"></div>
+  <div class="wlv-input-row">
+    <input class="wlv-input" id="wlv-input" placeholder="Escribe tu pregunta..." onkeydown="if(event.key==='Enter')wlvSend()">
+    <button class="wlv-send" id="wlv-send-btn" onclick="wlvSend()">➤</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// ⚙️ CONFIGURACIÓN
+// ═══════════════════════════════════════════════
+const WORKER_URL     = 'https://wolverines-agente.wolverinestrc.workers.dev/';
+const AIRTABLE_KEY   = 'patBt3TNLXcQjjU0P.1e91be82fac7b295b93fc3650834acff330a4fc29a31fc35619be7f182f80483';
+const AIRTABLE_BASE  = 'app9qMFY9r4yhI1sy';
+const AIRTABLE_TABLE = 'tblr6Q3w6EJXz9HWh';
+// ═══════════════════════════════════════════════
+
+const SYSTEM_PROMPT = `Eres el asistente virtual oficial de Wolverines TRC, una academia de Flag Football en Torreón, Coahuila.
+
+Tu nombre es "Wolvy" y tu misión es ayudar a los papás a conocer la academia y registrar a sus hijos en el Summer Camp 2026.
+
+INFORMACIÓN DE LA ACADEMIA:
+- Nombre: Wolverines TRC
+- Ciudad: Torreón, Coahuila
+- Sede: Tecnológico de Monterrey, Torreón
+- Instagram: @wolverinestrc
+- Logros: 9 de 11 finales ganadas, 5 campeonatos en la temporada Enero-Junio 2026
+
+PROGRAMAS TODO EL AÑO:
+- Flag Football (Infantil 4-12 años y Juvenil 13+)
+- Atletismo (integrado al programa)
+- Basketball (categoría infantil)
+- Horario: Lunes a Jueves, 6:30-8:30 pm
+
+SUMMER CAMP 2026:
+- Fechas: Lunes 6 de Julio al Jueves 30 de Julio
+- Días: Lunes a Jueves
+- Sede: Tec de Monterrey, Torreón
+- Límite de inscripciones: 26 de Junio 2026
+- Actividad final: Tazón AFFL - 30 de Julio, 1 y 2 de Agosto
+
+CATEGORÍAS SUMMER CAMP:
+- INFANTIL (4-12 años): 6:30-8:00 pm | Tochito, Atletismo, Basketball
+- JUVENIL (13+ años): 7:00-8:30 pm | Skills por posición: QB, WR, Rusher, LB, CB, Safety
+
+LIBRA TRAINING ACADEMY (add-on):
+- Trabajo en gimnasio
+- Ubicación: Car 871
+- Horario: 10:00-11:30 am
+
+PRECIOS WOLVERINES:
+- Solo Summer Camp: $1,350 MXN
+- Paquete Completo (Camp + Libra Training): $1,950 MXN
+- Libra Training solo (add-on): $600 MXN
+
+CONTACTO:
+- Academia: 871 342 0040
+- Soporte Playmkr: 871 351 0362
+- Viky Tejada: 871 395 7332
+
+PROCESO DE REGISTRO:
+Cuando el papá quiera inscribir a su hijo, recopila estos datos uno por uno de forma amigable:
+1. Nombre del participante
+2. Apellidos
+3. Género (Masculino/Femenino)
+4. Fecha de nacimiento (para determinar categoría automáticamente)
+5. Nombre del tutor/papá
+6. Teléfono de contacto
+7. Email
+8. Paquete elegido (Solo Camp $1,350 o Paquete Completo $1,950)
+
+Cuando tengas TODOS los datos, di exactamente: "REGISTRAR:[nombre],[apellidos],[genero],[fecha_nac],[tutor],[telefono],[email],[paquete]"
+
+REGLAS:
+- Responde siempre en español, de forma amigable y entusiasta
+- Usa emojis moderadamente 🏈
+- Respuestas cortas y claras (máximo 3-4 oraciones)
+- Si preguntan algo que no sabes, sugiere llamar al 871 342 0040
+- Siempre motiva la inscripción mencionando los logros del equipo`;
+
+let wlvHistory = [];
+let wlvOpen = false;
+let wlvBadgeShown = true;
+
+function wlvToggleChat() {
+  const panel = document.getElementById('wlv-chat-panel');
+  const badge = document.querySelector('#wlv-chat-btn .badge');
+  wlvOpen = !wlvOpen;
+  panel.classList.toggle('open', wlvOpen);
+  if (wlvOpen && wlvBadgeShown) {
+    badge.style.display = 'none';
+    wlvBadgeShown = false;
+    setTimeout(() => wlvAddMsg('bot',
+      '¡Hola! 👋 Soy **Wolvy**, tu asistente de Wolverines TRC.\n\n¿En qué puedo ayudarte hoy?'
+    ), 400);
+    setTimeout(() => wlvShowQR([
+      '¿Qué es el Summer Camp?',
+      '¿Cuáles son los precios?',
+      '¿Qué categorías hay?',
+      'Quiero inscribir a mi hijo',
+    ]), 600);
+  }
+}
+
+function wlvTime() {
+  return new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+}
+
+function wlvAddMsg(role, text) {
+  const msgs = document.getElementById('wlv-msgs');
+  const isUser = role === 'user';
+  const div = document.createElement('div');
+  div.className = `wlv-msg ${isUser ? 'user' : ''}`;
+
+  const formatted = text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n/g, '<br>');
+
+  div.innerHTML = `
+    <div class="wlv-msg-avatar" style="${isUser ? '' : 'background:white;'}">${isUser ? '👤' : '<img src="https://wolverines.mx/IMG_0019.png.jpeg" alt="W" style="width:22px;height:22px;object-fit:contain;">'}</div>
+    <div>
+      <div class="wlv-msg-bubble">${formatted}</div>
+      <div class="wlv-msg-time">${wlvTime()}</div>
+    </div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function wlvShowTyping() {
+  const msgs = document.getElementById('wlv-msgs');
+  const div = document.createElement('div');
+  div.className = 'wlv-msg'; div.id = 'wlv-typing';
+  div.innerHTML = `<div class="wlv-msg-avatar">🏈</div><div class="wlv-typing"><span></span><span></span><span></span></div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function wlvHideTyping() {
+  const t = document.getElementById('wlv-typing');
+  if (t) t.remove();
+}
+
+function wlvShowQR(options) {
+  const container = document.getElementById('wlv-qr-container');
+  container.innerHTML = options.map(o =>
+    `<button class="wlv-qr" onclick="wlvSendText('${o}')">${o}</button>`
+  ).join('');
+}
+
+function wlvSendText(text) {
+  document.getElementById('wlv-input').value = text;
+  wlvSend();
+}
+
+async function wlvSend() {
+  const input = document.getElementById('wlv-input');
+  const text = input.value.trim();
+  if (!text) return;
+
+  input.value = '';
+  document.getElementById('wlv-qr-container').innerHTML = '';
+  document.getElementById('wlv-send-btn').disabled = true;
+
+  wlvAddMsg('user', text);
+  wlvHistory.push({ role: 'user', content: text });
+
+  wlvShowTyping();
+
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 500,
+        system: SYSTEM_PROMPT,
+        messages: wlvHistory
+      })
+    });
+
+    const data = await res.json();
+    if (data.error) {
+      wlvHideTyping();
+      wlvAddMsg('bot', '⚠️ Error: ' + (data.error.message || 'Verifica la conexión') + ' · Llama al 871 342 0040 🏈');
+      document.getElementById('wlv-send-btn').disabled = false;
+      return;
+    }
+    const reply = data.content?.[0]?.text || 'Lo siento, intenta de nuevo.';
+    wlvHistory.push({ role: 'assistant', content: reply });
+
+    wlvHideTyping();
+
+    // Check if registration data is ready
+    if (reply.includes('REGISTRAR:')) {
+      const dataStr = reply.split('REGISTRAR:')[1].split('\n')[0];
+      const [nombre, apellidos, genero, fecha_nac, tutor, telefono, email, paquete] = dataStr.split(',').map(s => s.trim());
+
+      const cleanReply = reply.replace(/REGISTRAR:.*/, '').trim();
+      if (cleanReply) wlvAddMsg('bot', cleanReply);
+
+      await wlvRegister({ nombre, apellidos, genero, fecha_nac, tutor, telefono, email, paquete });
+    } else {
+      wlvAddMsg('bot', reply);
+    }
+
+  } catch(e) {
+    wlvHideTyping();
+    console.error('Wolvy error:', e);
+    wlvAddMsg('bot', 'Lo siento, hubo un problema de conexión. Por favor intenta de nuevo o llama al 871 342 0040 🏈');
+  }
+
+  document.getElementById('wlv-send-btn').disabled = false;
+  document.getElementById('wlv-input').focus();
+}
+
+async function wlvRegister(data) {
+  try {
+    // Determine category from birthdate
+    const dob = new Date(data.fecha_nac);
+    const today = new Date();
+    let age = today.getFullYear() - dob.getFullYear();
+    const m = today.getMonth() - dob.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
+    const categoria = (age >= 4 && age <= 12)
+      ? 'Infantil (4–12 años) · 6:30–8:00 pm'
+      : 'Juvenil (13+ años) · 7:00–8:30 pm';
+    // Validate date is parseable; if not, omit it
+    const validDate = !isNaN(dob.getTime());
+
+    const fields = {
+      'Nombre':             data.nombre,
+      'Apellidos':          data.apellidos,
+      'Género':             data.genero,
+      ...(validDate ? {'Fecha de Nacimiento': data.fecha_nac} : {}),
+      'Categoría':          categoria,
+      'Tutor':              data.tutor,
+      'Teléfono':           data.telefono,
+      'Email':              data.email,
+      'Paquete':            data.paquete,
+      'Fecha de Registro':  new Date().toISOString().split('T')[0],
+      'Pago':               'Pendiente',
+    };
+
+    const res = await fetch(
+      `https://api.airtable.com/v0/${AIRTABLE_BASE}/${AIRTABLE_TABLE}`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${AIRTABLE_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ fields, typecast: true })
+      }
+    );
+
+    const result = await res.json();
+    if (res.ok) {
+      wlvAddMsg('bot',
+        `🎉 ¡**${data.nombre}** quedó registrado correctamente en Wolverines TRC Summer Camp 2026!\n\n` +
+        `📋 **Categoría:** ${categoria}\n` +
+        `💰 **Paquete:** ${data.paquete}\n\n` +
+        `Te contactaremos al **${data.telefono}** para coordinar el pago. ¡Nos vemos en el campo! 🏈`
+      );
+      wlvShowQR(['¿Cuáles son los métodos de pago?', 'Registrar otro jugador', 'Hablar con un asesor']);
+    } else {
+      throw new Error(result?.error?.message || result?.error?.type || 'Error desconocido');
+    }
+  } catch(e) {
+    wlvAddMsg('bot', '⚠️ Error al guardar: ' + e.message + ' · Llama al 871 342 0040.');
+  }
+}
+</script>
