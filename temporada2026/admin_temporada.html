@@ -6,6 +6,7 @@
 <title>Admin Temporada 2026 – Wolverines TRC</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;600;700;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--blue:#235498;--blue2:#1a3f72;--blue3:#2e6bc4;--blue-lt:#d6e4f7;--blue-xs:#eef4fc;--white:#fff;--gray:#6b7c93;--dark:#0f1e35;--text:#1a2a3a;--border:#d0dce8;--green:#22c55e;--red:#e53e3e;--gold:#f59e0b}
@@ -141,6 +142,8 @@ td.name{color:white;font-weight:700}
       <button class="tab-btn active" id="tb-jugadores" onclick="switchTab('jugadores')">👥 Jugadores</button>
       <button class="tab-btn" id="tb-pagos" onclick="switchTab('pagos')">💰 Pagos</button>
       <button class="tab-btn" id="tb-morosos" onclick="switchTab('morosos')">⚠️ Atrasos</button>
+      <button class="tab-btn" id="tb-uniformes" onclick="switchTab('uniformes')">🎽 Uniformes</button>
+      <button class="tab-btn" id="tb-tienda" onclick="switchTab('tienda')">🛒 Tienda</button>
       <button class="logout-btn" onclick="logout()">Salir</button>
     </div>
   </nav>
@@ -164,8 +167,9 @@ td.name{color:white;font-weight:700}
         <option>U12 (2014-2015)</option>
         <option>U14 (2012-2013)</option>
         <option>U16 (2010-2011)</option>
-        <option>U18 / Libre (2008-2009)</option>
+        <option>U18 / Libre</option>
         <option>Moms +30</option>
+        <option>30+</option>
       </select>
       <select class="filter-select" id="pago-filter" onchange="renderTable()">
         <option value="">Todos</option>
@@ -180,7 +184,11 @@ td.name{color:white;font-weight:700}
         <thead><tr>
           <th>#</th><th>Foto</th><th>Nombre</th><th>Categoría</th><th>Género</th>
           <th>Tutor</th><th>Teléfono</th>
-          <th>Ago</th><th>Sep</th><th>Oct</th><th>Nov</th><th>Dic</th>
+          <th title="Inscripción · 15 Ago · $1,200">Insc.</th>
+          <th title="Pago 2 · 15 Sep · $950">P2</th>
+          <th title="Pago 3 · 15 Oct · $950">P3</th>
+          <th title="Pago 4 · 1 Nov · $950">P4</th>
+          <th title="Pago 5 · 15 Nov · $950">P5</th>
           <th>Docs</th><th>Acciones</th>
         </tr></thead>
         <tbody id="tbody"></tbody>
@@ -191,9 +199,12 @@ td.name{color:white;font-weight:700}
 
   <!-- PAGOS -->
   <div class="pagos-section" id="section-pagos">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:white;letter-spacing:2px;margin-bottom:16px">RESUMEN DE MENSUALIDADES · $850 c/u</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:white;letter-spacing:2px">RESUMEN DE PAGOS · TEMPORADA $5,000</div>
+      <button class="btn-action" onclick="exportPagosRealizados()">📥 Exportar pagos realizados</button>
+    </div>
     <div class="pagos-grid" id="pagos-grid"></div>
-    <div style="font-size:12px;color:var(--gray);margin-top:8px">💡 Haz clic en ❌/✅/🔵 en la tabla de jugadores para cambiar el estado de cada mensualidad</div>
+    <div style="font-size:12px;color:var(--gray);margin-top:8px">💡 Haz clic en ❌/✅/🔵 en la tabla de jugadores para cambiar el estado de cada pago</div>
   </div>
 
   <!-- MOROSOS -->
@@ -201,11 +212,47 @@ td.name{color:white;font-weight:700}
     <div class="mor-header">
       <div>
         <div class="mor-title">JUGADORES CON ATRASOS</div>
-        <div class="mor-sub">Mensualidades vencidas después del día 5</div>
+        <div class="mor-sub">Pagos vencidos según su fecha límite (Insc. 15 Ago · P2 15 Sep · P3 15 Oct · P4 1 Nov · P5 15 Nov)</div>
       </div>
-      <button class="btn-action btn-red" onclick="notificarAtrasos()">📱 Notificar por WhatsApp</button>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn-action" onclick="exportPagosPendientes()">📥 Exportar Excel</button>
+        <button class="btn-action btn-red" onclick="notificarAtrasos()">📱 Notificar por WhatsApp</button>
+      </div>
     </div>
     <div id="morosos-content"></div>
+  </div>
+
+  <!-- UNIFORMES -->
+  <div class="morosos-section" id="section-uniformes">
+    <div class="mor-header">
+      <div>
+        <div class="mor-title">UNIFORMES</div>
+        <div class="mor-sub">Jersey $680 · Short $300 · Banderas $300 · Playera Blanca $350 — edita talla/estado desde "✏️ Editar" en cada jugador</div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn-action" onclick="exportPedidoUniformes()">📥 Pedido de uniformes (pagados)</button>
+        <button class="btn-action btn-red" onclick="exportUniformesPendientes()">📥 Pendientes de pago</button>
+      </div>
+    </div>
+    <div id="uniformes-content"></div>
+  </div>
+
+  <!-- TIENDA -->
+  <div class="morosos-section" id="section-tienda">
+    <div class="mor-header">
+      <div>
+        <div class="mor-title">TIENDA</div>
+        <div class="mor-sub">Ventas sueltas registradas manualmente (no ligadas a un jugador)</div>
+      </div>
+      <button class="btn-action" onclick="exportTienda()">📥 Exportar Excel</button>
+    </div>
+    <div class="controls" style="padding:0 0 16px;background:transparent;border:none">
+      <input class="search-box" type="text" id="tienda-producto" placeholder="Producto" style="flex:2">
+      <input class="search-box" type="text" id="tienda-cliente" placeholder="Cliente" style="flex:2">
+      <input class="search-box" type="number" id="tienda-monto" placeholder="Monto $" style="flex:1;min-width:100px">
+      <button class="btn-action" onclick="addTienda()">+ Agregar</button>
+    </div>
+    <div id="tienda-content"></div>
   </div>
 </div>
 
@@ -233,15 +280,33 @@ td.name{color:white;font-weight:700}
 </div>
 
 <script>
-const AT_KEY   = 'pat4VXuDH4eeQlfn1.0a31c96b01892d76412d74fed99ba7112cd636cdf06567c52c94aca200060911';
-const AT_BASE  = 'appDMdCeVFQ1mdsBZ';
-const AT_TABLE = 'tblCq4kHZEAhLfxzv';
-const PWD      = 'Wolverines2026';
-const MESES    = ['Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-const MENSUALIDAD = 850;
+const AT_KEY     = 'pat4VXuDH4eeQlfn1.0a31c96b01892d76412d74fed99ba7112cd636cdf06567c52c94aca200060911';
+const AT_BASE    = 'appDMdCeVFQ1mdsBZ';
+const AT_TABLE   = 'tblCq4kHZEAhLfxzv';
+const TIENDA_TABLE = 'tblYnoEvLgMgjAkbE';
+const PWD        = 'Wolverines2026';
 
-let allRecords = [];
-let currentId  = null;
+// Claves internas = nombres reales de los campos "Pago X" en Airtable (no se renombran para no romper Zapier/Airtable).
+// Las etiquetas/montos/fechas de vencimiento sí siguen el plan nuevo de 5 pagos.
+const MESES = ['Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const PAGOS_INFO = {
+  'Agosto':     { label: 'Inscripción', corto: 'Insc.', monto: 1200, mesVenc: 8,  diaVenc: 15, fechaTxt: '15 Ago' },
+  'Septiembre': { label: 'Pago 2',      corto: 'P2',    monto: 950,  mesVenc: 9,  diaVenc: 15, fechaTxt: '15 Sep' },
+  'Octubre':    { label: 'Pago 3',      corto: 'P3',    monto: 950,  mesVenc: 10, diaVenc: 15, fechaTxt: '15 Oct' },
+  'Noviembre':  { label: 'Pago 4',      corto: 'P4',    monto: 950,  mesVenc: 11, diaVenc: 1,  fechaTxt: '1 Nov'  },
+  'Diciembre':  { label: 'Pago 5',      corto: 'P5',    monto: 950,  mesVenc: 11, diaVenc: 15, fechaTxt: '15 Nov' },
+};
+
+const UNIFORME_ITEMS = [
+  { key: 'Jersey',         monto: 680 },
+  { key: 'Short',          monto: 300 },
+  { key: 'Banderas',       monto: 300 },
+  { key: 'Playera Blanca', monto: 350 },
+];
+
+let allRecords   = [];
+let tiendaRecords = [];
+let currentId    = null;
 
 // ── AUTH ──
 function login() {
@@ -260,17 +325,22 @@ function logout() {
 }
 
 // ── LOAD ──
+async function fetchAllRecords(tableId) {
+  let records = [], offset = '';
+  do {
+    const url = 'https://api.airtable.com/v0/' + AT_BASE + '/' + tableId + '?pageSize=100' + (offset ? '&offset=' + offset : '');
+    const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + AT_KEY } });
+    const data = await res.json();
+    records = records.concat(data.records || []);
+    offset = data.offset || '';
+  } while (offset);
+  return records;
+}
+
 async function loadData() {
   try {
-    let records = [], offset = '';
-    do {
-      const url = 'https://api.airtable.com/v0/' + AT_BASE + '/' + AT_TABLE + '?pageSize=100' + (offset ? '&offset=' + offset : '');
-      const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + AT_KEY } });
-      const data = await res.json();
-      records = records.concat(data.records || []);
-      offset = data.offset || '';
-    } while (offset);
-    allRecords = records;
+    allRecords = await fetchAllRecords(AT_TABLE);
+    tiendaRecords = await fetchAllRecords(TIENDA_TABLE);
     updateStats();
     renderTable();
     document.getElementById('loading').style.display = 'none';
@@ -302,7 +372,7 @@ function tieneAtraso(rec) {
 
 // ── TABS ──
 function switchTab(tab) {
-  ['jugadores','pagos','morosos'].forEach(function(t) {
+  ['jugadores','pagos','morosos','uniformes','tienda'].forEach(function(t) {
     var btn = document.getElementById('tb-' + t);
     if (btn) btn.classList.remove('active');
     var sec = document.getElementById('section-' + t);
@@ -315,6 +385,8 @@ function switchTab(tab) {
 
   if (tab === 'pagos') renderPagos();
   if (tab === 'morosos') renderMorosos();
+  if (tab === 'uniformes') renderUniformes();
+  if (tab === 'tienda') renderTienda();
 }
 
 // ── TABLE ──
@@ -379,13 +451,14 @@ function renderTable() {
       tr.appendChild(td);
     });
 
-    // Monthly payment cells
+    // Payment cells (Inscripción + Pagos 2-5)
     MESES.forEach(function(mes) {
+      var info = PAGOS_INFO[mes];
       var td = document.createElement('td');
       td.className = 'pago-cell';
       var estado = f['Pago ' + mes] || 'Pendiente';
       td.textContent = estado === 'Pagado' ? '✅' : estado === 'Exento' ? '🔵' : '❌';
-      td.title = mes + ': ' + estado + ' (clic para cambiar)';
+      td.title = info.label + ' ($' + info.monto.toLocaleString() + ', vence ' + info.fechaTxt + '): ' + estado + ' (clic para cambiar)';
       td.onclick = function(e) {
         e.stopPropagation();
         togglePago(mes, rec.id);
@@ -442,11 +515,13 @@ function renderPagos() {
   var grid = document.getElementById('pagos-grid');
   var html = '';
   MESES.forEach(function(mes) {
+    var info = PAGOS_INFO[mes];
     var pagados  = allRecords.filter(function(r) { return r.fields['Pago ' + mes] === 'Pagado'; }).length;
     var pendientes = allRecords.filter(function(r) { return (r.fields['Pago ' + mes] || 'Pendiente') === 'Pendiente'; }).length;
-    var total = pagados * MENSUALIDAD;
+    var total = pagados * info.monto;
     html += '<div class="mes-card">' +
-      '<div class="mc-mes">' + mes + '</div>' +
+      '<div class="mc-mes">' + info.label + '</div>' +
+      '<div style="font-size:10px;color:var(--gray)">$' + info.monto.toLocaleString() + ' · vence ' + info.fechaTxt + '</div>' +
       '<div class="mc-pag">' + pagados + '</div>' +
       '<div style="font-size:11px;color:var(--green);margin-top:2px">$' + total.toLocaleString() + ' cobrado</div>' +
       '<div class="mc-pend">' + pendientes + ' pendientes</div>' +
@@ -458,14 +533,13 @@ function renderPagos() {
 // ── MOROSOS ──
 function getMesesVencidos() {
   var now = new Date();
-  var mes = now.getMonth() + 1; // 1-12
-  var dia = now.getDate();
-  // Temporada: Ago=8, Sep=9, Oct=10, Nov=11, Dic=12
+  var mesActual = now.getMonth() + 1; // 1-12
+  var diaActual = now.getDate();
   var resultado = [];
-  MESES.forEach(function(nombre, idx) {
-    var numMes = 8 + idx;
-    if (numMes < mes || (numMes === mes && dia > 5)) {
-      resultado.push(nombre);
+  MESES.forEach(function(mes) {
+    var info = PAGOS_INFO[mes];
+    if (info.mesVenc < mesActual || (info.mesVenc === mesActual && diaActual > info.diaVenc)) {
+      resultado.push(mes);
     }
   });
   return resultado;
@@ -500,7 +574,7 @@ function renderMorosos() {
   thead += '<th style="padding:12px;text-align:left;font-size:10px;font-weight:700;letter-spacing:2px;color:var(--gray);text-transform:uppercase">Tutor</th>';
   thead += '<th style="padding:12px;text-align:left;font-size:10px;font-weight:700;letter-spacing:2px;color:var(--gray);text-transform:uppercase">Teléfono</th>';
   mesesVencidos.forEach(function(m) {
-    thead += '<th style="padding:12px;text-align:center;font-size:10px;font-weight:700;letter-spacing:2px;color:var(--gray);text-transform:uppercase">' + m + '</th>';
+    thead += '<th style="padding:12px;text-align:center;font-size:10px;font-weight:700;letter-spacing:2px;color:var(--gray);text-transform:uppercase">' + PAGOS_INFO[m].label + '</th>';
   });
   thead += '<th style="padding:12px;text-align:right;font-size:10px;font-weight:700;letter-spacing:2px;color:var(--red);text-transform:uppercase">Deuda</th>';
   thead += '</tr></thead>';
@@ -512,7 +586,7 @@ function renderMorosos() {
     var mesesPend = mesesVencidos.filter(function(m) {
       return (f['Pago ' + m] || 'Pendiente') === 'Pendiente';
     });
-    var deuda = mesesPend.length * MENSUALIDAD;
+    var deuda = mesesPend.reduce(function(sum, m) { return sum + PAGOS_INFO[m].monto; }, 0);
     totalDeuda += deuda;
 
     tbody += '<tr style="border-bottom:1px solid rgba(91,127,166,0.08)">';
@@ -557,11 +631,13 @@ function notificarAtrasos() {
   var lista = morosos.map(function(r) {
     var f = r.fields;
     var pend = mesesVencidos.filter(function(m) { return (f['Pago ' + m]||'Pendiente') === 'Pendiente'; });
-    return '%E2%80%A2 ' + (f['Nombre']||'') + ' ' + (f['Apellidos']||'') + ' (' + pend.join(', ') + ')';
+    var deuda = pend.reduce(function(s, m) { return s + PAGOS_INFO[m].monto; }, 0);
+    var pendLabels = pend.map(function(m) { return PAGOS_INFO[m].label; });
+    return '%E2%80%A2 ' + (f['Nombre']||'') + ' ' + (f['Apellidos']||'') + ' (' + pendLabels.join(', ') + ') - $' + deuda.toLocaleString();
   }).join('%0A');
 
-  var msg = '%F0%9F%8F%88 *WOLVERINES TRC - Reporte Atrasos*%0A%0AJugadores con mensualidades vencidas:%0A' + lista +
-    '%0A%0AMensualidad: $850 MXN%0AFecha: ' + new Date().toLocaleDateString('es-MX');
+  var msg = '%F0%9F%8F%88 *WOLVERINES TRC - Reporte Atrasos*%0A%0AJugadores con pagos vencidos:%0A' + lista +
+    '%0A%0AFecha: ' + new Date().toLocaleDateString('es-MX');
 
   window.open('https://wa.me/528713420040?text=' + msg, '_blank');
 }
@@ -596,6 +672,22 @@ function openDetail(id) {
       '</div>';
   });
 
+  var uniformeHtml = '';
+  UNIFORME_ITEMS.forEach(function(item) {
+    var talla = f[item.key + ' Talla'] || '';
+    var estado = f[item.key + ' Estado'] || 'No comprado';
+    uniformeHtml +=
+      '<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">' +
+        '<div style="flex:1;font-size:12px;color:white">' + item.key + '<div style="font-size:10px;color:var(--gray)">$' + item.monto + '</div></div>' +
+        '<input type="text" id="uni-talla-' + item.key.replace(/\s/g,'') + '" class="d-input" style="flex:1;margin-bottom:0" placeholder="Talla" value="' + talla + '">' +
+        '<select id="uni-estado-' + item.key.replace(/\s/g,'') + '" class="d-select" style="flex:1;margin-bottom:0">' +
+          ['No comprado','Pendiente','Pagado'].map(function(op) {
+            return '<option value="' + op + '"' + (op === estado ? ' selected' : '') + '>' + op + '</option>';
+          }).join('') +
+        '</select>' +
+      '</div>';
+  });
+
   document.getElementById('modal-body').innerHTML = fotoHtml +
     '<div class="d-section">Datos del jugador</div>' +
     '<div class="d-label">Nombre</div><div class="d-val">' + (f['Nombre']||'') + ' ' + (f['Apellidos']||'') + '</div>' +
@@ -613,7 +705,9 @@ function openDetail(id) {
     pagosHtml +
     '<div class="d-section" style="margin-top:16px">Número de jugador</div>' +
     '<input type="number" id="modal-num" class="d-input" value="' + (f['Número Jugador']||'') + '" placeholder="Ej: 12">' +
-    '<button class="save-btn" onclick="saveDetail()">💾 Guardar número</button>';
+    '<div class="d-section">Uniforme (talla + estado por pieza)</div>' +
+    uniformeHtml +
+    '<button class="save-btn" onclick="saveDetail()">💾 Guardar cambios</button>';
 
   document.getElementById('detail-modal').classList.add('open');
 }
@@ -621,17 +715,25 @@ function openDetail(id) {
 async function saveDetail() {
   var num = parseInt(document.getElementById('modal-num').value) || null;
   if (!num) { alert('Ingresa un número válido'); return; }
+
+  var fields = { 'Número Jugador': num };
+  UNIFORME_ITEMS.forEach(function(item) {
+    var key = item.key.replace(/\s/g,'');
+    fields[item.key + ' Talla'] = document.getElementById('uni-talla-' + key).value;
+    fields[item.key + ' Estado'] = document.getElementById('uni-estado-' + key).value;
+  });
+
   try {
     await fetch('https://api.airtable.com/v0/' + AT_BASE + '/' + AT_TABLE + '/' + currentId, {
       method: 'PATCH',
       headers: { 'Authorization': 'Bearer ' + AT_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fields: { 'Número Jugador': num }, typecast: true })
+      body: JSON.stringify({ fields: fields, typecast: true })
     });
     var idx = allRecords.findIndex(function(r) { return r.id === currentId; });
-    if (idx >= 0) allRecords[idx].fields['Número Jugador'] = num;
+    if (idx >= 0) Object.assign(allRecords[idx].fields, fields);
     renderTable();
     closeModal('detail-modal');
-    alert('✅ Número guardado');
+    alert('✅ Cambios guardados');
   } catch(e) { alert('❌ Error: ' + e.message); }
 }
 
@@ -691,6 +793,243 @@ async function deleteRecord(id, nombre) {
     updateStats();
     renderTable();
   } catch(e) { alert('❌ Error: ' + e.message); }
+}
+
+// ── UNIFORMES ──
+function renderUniformes() {
+  var container = document.getElementById('uniformes-content');
+  if (!allRecords.length) { container.innerHTML = '<div class="empty">No hay jugadores registrados.</div>'; return; }
+
+  var table = document.createElement('table');
+  table.style.cssText = 'width:100%;border-collapse:collapse;min-width:800px;background:#0d1f3c';
+
+  var thead = '<thead><tr style="background:#0d1f3c;border-bottom:2px solid var(--blue)">' +
+    '<th style="padding:12px;text-align:left;font-size:10px;font-weight:700;letter-spacing:2px;color:var(--gray);text-transform:uppercase">Jugador</th>' +
+    '<th style="padding:12px;text-align:left;font-size:10px;font-weight:700;letter-spacing:2px;color:var(--gray);text-transform:uppercase">Categoría</th>';
+  UNIFORME_ITEMS.forEach(function(item) {
+    thead += '<th style="padding:12px;text-align:center;font-size:10px;font-weight:700;letter-spacing:2px;color:var(--gray);text-transform:uppercase">' + item.key + '</th>';
+  });
+  thead += '<th style="padding:12px;text-align:right;font-size:10px;font-weight:700;letter-spacing:2px;color:var(--green);text-transform:uppercase">Pagado</th>' +
+    '<th style="padding:12px;text-align:right;font-size:10px;font-weight:700;letter-spacing:2px;color:var(--red);text-transform:uppercase">Pendiente</th></tr></thead>';
+
+  var tbody = '<tbody>';
+  var totalPagado = 0, totalPendiente = 0;
+  allRecords.forEach(function(rec) {
+    var f = rec.fields;
+    var pagado = 0, pendiente = 0;
+    var itemsHtml = '';
+    UNIFORME_ITEMS.forEach(function(item) {
+      var estado = f[item.key + ' Estado'] || 'No comprado';
+      var talla = f[item.key + ' Talla'] || '';
+      if (estado === 'Pagado') pagado += item.monto;
+      if (estado === 'Pendiente') pendiente += item.monto;
+      var icon = estado === 'Pagado' ? '✅' : estado === 'Pendiente' ? '❌' : '—';
+      itemsHtml += '<td style="padding:12px;text-align:center" title="' + estado + (talla ? ' · Talla ' + talla : '') + '">' + icon + (talla ? '<div style="font-size:9px;color:var(--gray)">' + talla + '</div>' : '') + '</td>';
+    });
+    totalPagado += pagado;
+    totalPendiente += pendiente;
+    tbody += '<tr style="border-bottom:1px solid rgba(91,127,166,0.08)">' +
+      '<td style="padding:12px;color:white;font-weight:700">' + (f['Nombre']||'') + ' ' + (f['Apellidos']||'') + '</td>' +
+      '<td style="padding:12px;color:var(--gray);font-size:11px">' + (f['Categoría']||'—') + '</td>' +
+      itemsHtml +
+      '<td style="padding:12px;text-align:right;color:var(--green);font-weight:700">$' + pagado.toLocaleString() + '</td>' +
+      '<td style="padding:12px;text-align:right;color:var(--red);font-weight:700">$' + pendiente.toLocaleString() + '</td>' +
+      '</tr>';
+  });
+  tbody += '</tbody>';
+
+  table.innerHTML = thead + tbody;
+  container.innerHTML = '';
+  var wrap = document.createElement('div');
+  wrap.style.cssText = 'overflow-x:auto;background:#0d1f3c;border:1px solid rgba(91,127,166,0.15)';
+  wrap.appendChild(table);
+  container.appendChild(wrap);
+
+  var summary = document.createElement('div');
+  summary.style.cssText = 'margin-top:12px;font-size:13px;color:var(--gray);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px';
+  summary.innerHTML = '<span style="color:var(--green);font-weight:700">Total cobrado: $' + totalPagado.toLocaleString() + ' MXN</span>' +
+    '<span style="color:var(--red);font-weight:700">Total pendiente: $' + totalPendiente.toLocaleString() + ' MXN</span>';
+  container.appendChild(summary);
+}
+
+// ── TIENDA ──
+function renderTienda() {
+  var container = document.getElementById('tienda-content');
+  if (!tiendaRecords.length) { container.innerHTML = '<div class="empty">Aún no hay ventas registradas.</div>'; return; }
+
+  var table = document.createElement('table');
+  table.style.cssText = 'width:100%;border-collapse:collapse;min-width:600px;background:#0d1f3c';
+  var thead = '<thead><tr style="background:#0d1f3c;border-bottom:2px solid var(--blue)">' +
+    '<th style="padding:12px;text-align:left;font-size:10px;font-weight:700;letter-spacing:2px;color:var(--gray);text-transform:uppercase">Fecha</th>' +
+    '<th style="padding:12px;text-align:left;font-size:10px;font-weight:700;letter-spacing:2px;color:var(--gray);text-transform:uppercase">Cliente</th>' +
+    '<th style="padding:12px;text-align:left;font-size:10px;font-weight:700;letter-spacing:2px;color:var(--gray);text-transform:uppercase">Producto</th>' +
+    '<th style="padding:12px;text-align:right;font-size:10px;font-weight:700;letter-spacing:2px;color:var(--gray);text-transform:uppercase">Monto</th>' +
+    '<th style="padding:12px"></th></tr></thead>';
+
+  var tbody = '<tbody>';
+  var total = 0;
+  tiendaRecords.forEach(function(rec) {
+    var f = rec.fields;
+    var monto = f['Monto'] || 0;
+    total += monto;
+    tbody += '<tr style="border-bottom:1px solid rgba(91,127,166,0.08)">' +
+      '<td style="padding:12px;color:var(--gray)">' + (f['Fecha']||'—') + '</td>' +
+      '<td style="padding:12px;color:white;font-weight:700">' + (f['Cliente']||'—') + '</td>' +
+      '<td style="padding:12px;color:var(--gray)">' + (f['Producto']||'—') + '</td>' +
+      '<td style="padding:12px;text-align:right;color:var(--green);font-weight:700">$' + monto.toLocaleString() + '</td>' +
+      '<td style="padding:12px;text-align:right"><button class="action-btn del" onclick="deleteTienda(\'' + rec.id + '\')">🗑</button></td>' +
+      '</tr>';
+  });
+  tbody += '</tbody>';
+
+  table.innerHTML = thead + tbody;
+  container.innerHTML = '';
+  var wrap = document.createElement('div');
+  wrap.style.cssText = 'overflow-x:auto;background:#0d1f3c;border:1px solid rgba(91,127,166,0.15)';
+  wrap.appendChild(table);
+  container.appendChild(wrap);
+
+  var summary = document.createElement('div');
+  summary.style.cssText = 'margin-top:12px;font-size:13px;color:var(--green);font-weight:700';
+  summary.textContent = 'Total tienda: $' + total.toLocaleString() + ' MXN';
+  container.appendChild(summary);
+}
+
+async function addTienda() {
+  var producto = document.getElementById('tienda-producto').value.trim();
+  var cliente = document.getElementById('tienda-cliente').value.trim();
+  var monto = parseFloat(document.getElementById('tienda-monto').value);
+  if (!producto || !cliente || !monto) { alert('Completa producto, cliente y monto'); return; }
+
+  try {
+    var res = await fetch('https://api.airtable.com/v0/' + AT_BASE + '/' + TIENDA_TABLE, {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + AT_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fields: {
+        'Producto': producto, 'Cliente': cliente, 'Monto': monto,
+        'Fecha': new Date().toISOString().slice(0,10)
+      }, typecast: true })
+    });
+    var data = await res.json();
+    tiendaRecords.push(data);
+    document.getElementById('tienda-producto').value = '';
+    document.getElementById('tienda-cliente').value = '';
+    document.getElementById('tienda-monto').value = '';
+    renderTienda();
+  } catch(e) { alert('❌ Error: ' + e.message); }
+}
+
+async function deleteTienda(id) {
+  if (!confirm('¿Eliminar esta venta?')) return;
+  try {
+    await fetch('https://api.airtable.com/v0/' + AT_BASE + '/' + TIENDA_TABLE + '/' + id, {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + AT_KEY }
+    });
+    tiendaRecords = tiendaRecords.filter(function(r) { return r.id !== id; });
+    renderTienda();
+  } catch(e) { alert('❌ Error: ' + e.message); }
+}
+
+// ── EXPORTAR EXCEL ──
+function downloadXlsx(rows, filename, sheetName) {
+  var ws = XLSX.utils.json_to_sheet(rows);
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, sheetName || 'Datos');
+  XLSX.writeFile(wb, filename);
+}
+
+function exportPagosRealizados() {
+  var rows = [];
+  allRecords.forEach(function(rec) {
+    var f = rec.fields;
+    MESES.forEach(function(mes) {
+      if (f['Pago ' + mes] === 'Pagado') {
+        rows.push({
+          Jugador: (f['Nombre']||'') + ' ' + (f['Apellidos']||''),
+          Categoría: f['Categoría']||'',
+          Pago: PAGOS_INFO[mes].label,
+          'Fecha de vencimiento': PAGOS_INFO[mes].fechaTxt,
+          Monto: PAGOS_INFO[mes].monto
+        });
+      }
+    });
+  });
+  if (!rows.length) { alert('No hay pagos realizados todavía.'); return; }
+  downloadXlsx(rows, 'pagos_realizados.xlsx', 'Pagos Realizados');
+}
+
+function exportPagosPendientes() {
+  var mesesVencidos = getMesesVencidos();
+  if (!mesesVencidos.length) { alert('Aún no hay pagos vencidos.'); return; }
+  var rows = [];
+  allRecords.forEach(function(rec) {
+    var f = rec.fields;
+    var pend = mesesVencidos.filter(function(m) { return (f['Pago ' + m]||'Pendiente') === 'Pendiente'; });
+    if (!pend.length) return;
+    var deuda = pend.reduce(function(s, m) { return s + PAGOS_INFO[m].monto; }, 0);
+    rows.push({
+      Jugador: (f['Nombre']||'') + ' ' + (f['Apellidos']||''),
+      Categoría: f['Categoría']||'',
+      Tutor: f['Tutor']||'',
+      Teléfono: f['Teléfono']||'',
+      'Pagos atrasados': pend.map(function(m) { return PAGOS_INFO[m].label; }).join(', '),
+      'Monto adeudado': deuda
+    });
+  });
+  if (!rows.length) { alert('🎉 No hay jugadores con atrasos.'); return; }
+  downloadXlsx(rows, 'pagos_pendientes.xlsx', 'Pagos Pendientes');
+}
+
+function exportPedidoUniformes() {
+  var rows = [];
+  allRecords.forEach(function(rec) {
+    var f = rec.fields;
+    UNIFORME_ITEMS.forEach(function(item) {
+      if ((f[item.key + ' Estado']||'No comprado') === 'Pagado') {
+        rows.push({
+          Jugador: (f['Nombre']||'') + ' ' + (f['Apellidos']||''),
+          Categoría: f['Categoría']||'',
+          Pieza: item.key,
+          Talla: f[item.key + ' Talla']||'',
+          Monto: item.monto
+        });
+      }
+    });
+  });
+  if (!rows.length) { alert('No hay uniformes pagados todavía.'); return; }
+  downloadXlsx(rows, 'pedido_uniformes.xlsx', 'Pedido Uniformes');
+}
+
+function exportUniformesPendientes() {
+  var rows = [];
+  allRecords.forEach(function(rec) {
+    var f = rec.fields;
+    UNIFORME_ITEMS.forEach(function(item) {
+      if ((f[item.key + ' Estado']||'No comprado') === 'Pendiente') {
+        rows.push({
+          Jugador: (f['Nombre']||'') + ' ' + (f['Apellidos']||''),
+          Categoría: f['Categoría']||'',
+          Tutor: f['Tutor']||'',
+          Teléfono: f['Teléfono']||'',
+          Pieza: item.key,
+          Talla: f[item.key + ' Talla']||'',
+          Monto: item.monto
+        });
+      }
+    });
+  });
+  if (!rows.length) { alert('🎉 No hay uniformes pendientes de pago.'); return; }
+  downloadXlsx(rows, 'uniformes_pendientes.xlsx', 'Uniformes Pendientes');
+}
+
+function exportTienda() {
+  if (!tiendaRecords.length) { alert('No hay ventas de tienda registradas.'); return; }
+  var rows = tiendaRecords.map(function(rec) {
+    var f = rec.fields;
+    return { Fecha: f['Fecha']||'', Cliente: f['Cliente']||'', Producto: f['Producto']||'', Monto: f['Monto']||0, Notas: f['Notas']||'' };
+  });
+  downloadXlsx(rows, 'tienda.xlsx', 'Tienda');
 }
 
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
