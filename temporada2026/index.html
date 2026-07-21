@@ -123,16 +123,21 @@ body{background:var(--blue-xs);font-family:'Montserrat',sans-serif;color:var(--t
   <div class="step-connector" id="conn-1"></div>
   <div class="step" id="prog-2">
     <div class="step-circle">2</div>
-    <div class="step-label">Documentos</div>
+    <div class="step-label">Médico</div>
   </div>
   <div class="step-connector" id="conn-2"></div>
   <div class="step" id="prog-3">
     <div class="step-circle">3</div>
-    <div class="step-label">Tutor</div>
+    <div class="step-label">Documentos</div>
   </div>
   <div class="step-connector" id="conn-3"></div>
   <div class="step" id="prog-4">
     <div class="step-circle">4</div>
+    <div class="step-label">Tutor</div>
+  </div>
+  <div class="step-connector" id="conn-4"></div>
+  <div class="step" id="prog-5">
+    <div class="step-circle">5</div>
     <div class="step-label">Pago</div>
   </div>
 </div>
@@ -188,8 +193,130 @@ body{background:var(--blue-xs);font-family:'Montserrat',sans-serif;color:var(--t
     </div>
   </div>
 
-  <!-- STEP 2: DOCUMENTOS -->
+  <!-- STEP 2: CUESTIONARIO MÉDICO -->
   <div id="step-2" style="display:none">
+    <div class="form-card">
+      <h2>SECCIÓN 1 · DATOS DEL JUGADOR</h2>
+      <p class="subtitle">Cuestionario médico — resumen del jugador</p>
+      <div class="field">
+        <label>Jugador</label>
+        <div style="background:var(--blue-xs);border-radius:8px;padding:14px 16px;font-size:13px">
+          <div style="font-weight:700;color:var(--dark)" id="recap-nombre">—</div>
+          <div style="color:var(--gray);margin-top:4px">Categoría: <span id="recap-cat">—</span> · Nacimiento: <span id="recap-dob">—</span></div>
+        </div>
+      </div>
+      <div class="field" id="f-sangre">
+        <label>Tipo de Sangre <span>*</span></label>
+        <select id="sangre">
+          <option value="">Selecciona...</option>
+          <option>O+</option><option>O-</option>
+          <option>A+</option><option>A-</option>
+          <option>B+</option><option>B-</option>
+          <option>AB+</option><option>AB-</option>
+          <option>No lo sé</option>
+        </select>
+        <div class="field-error">Este campo es requerido</div>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <h2>SECCIÓN 2 · CONDICIONES MÉDICAS</h2>
+      <p class="subtitle">Marca Sí o No en cada condición. Si marcas "Sí", detalla en el campo que aparece.</p>
+      <div id="condiciones-container"></div>
+      <div class="field">
+        <label>¿Otra condición que el staff deba conocer?</label>
+        <textarea id="otra-condicion" rows="3" placeholder="Opcional"></textarea>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <h2>SECCIÓN 3 · EN CASO DE EMERGENCIA</h2>
+      <p class="subtitle">Contactos y datos médicos para emergencias</p>
+
+      <p style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--blue);text-transform:uppercase;margin-bottom:10px">Contacto de emergencia 1</p>
+      <div class="field" id="f-ce1-nombre">
+        <label>Nombre <span>*</span></label>
+        <input type="text" id="ce1-nombre" placeholder="Nombre completo">
+        <div class="field-error">Este campo es requerido</div>
+      </div>
+      <div class="field" id="f-ce1-parentesco">
+        <label>Parentesco <span>*</span></label>
+        <input type="text" id="ce1-parentesco" placeholder="Ej: Papá, tía, abuelo">
+        <div class="field-error">Este campo es requerido</div>
+      </div>
+      <div class="field" id="f-ce1-telefono">
+        <label>Teléfono <span>*</span></label>
+        <input type="tel" id="ce1-telefono" placeholder="871 000 0000">
+        <div class="field-error">Este campo es requerido</div>
+      </div>
+
+      <p style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--blue);text-transform:uppercase;margin:20px 0 10px">Contacto de emergencia 2</p>
+      <div class="field" id="f-ce2-nombre">
+        <label>Nombre <span>*</span></label>
+        <input type="text" id="ce2-nombre" placeholder="Nombre completo">
+        <div class="field-error">Este campo es requerido</div>
+      </div>
+      <div class="field" id="f-ce2-parentesco">
+        <label>Parentesco <span>*</span></label>
+        <input type="text" id="ce2-parentesco" placeholder="Ej: Papá, tía, abuelo">
+        <div class="field-error">Este campo es requerido</div>
+      </div>
+      <div class="field" id="f-ce2-telefono">
+        <label>Teléfono <span>*</span></label>
+        <input type="tel" id="ce2-telefono" placeholder="871 000 0000">
+        <div class="field-error">Este campo es requerido</div>
+      </div>
+
+      <p style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--blue);text-transform:uppercase;margin:20px 0 10px">Datos médicos</p>
+      <div class="field" id="f-aseguradora">
+        <label>Aseguradora <span>*</span></label>
+        <input type="text" id="aseguradora" placeholder="Ej: GNP, AXA, Sin seguro">
+        <div class="field-error">Este campo es requerido</div>
+      </div>
+      <div class="field" id="f-poliza">
+        <label>Número de Póliza <span>*</span></label>
+        <input type="text" id="poliza" placeholder="Número de póliza">
+        <div class="field-error">Este campo es requerido</div>
+      </div>
+      <div class="field" id="f-hospital">
+        <label>Hospital de preferencia en Torreón <span>*</span></label>
+        <input type="text" id="hospital" placeholder="Nombre del hospital">
+        <div class="field-error">Este campo es requerido</div>
+      </div>
+
+      <div class="field">
+        <label>¿Autoriza primeros auxilios y traslado médico de emergencia? <span>*</span></label>
+        <div class="gender-row">
+          <div class="gender-btn" id="autoriza-si" onclick="selectAutoriza('Sí',this)">Sí</div>
+          <div class="gender-btn" id="autoriza-no" onclick="selectAutoriza('No',this)">No</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <h2>SECCIÓN 4 · AUTORIZACIÓN</h2>
+      <div class="field" id="f-tutor-medico">
+        <label>Nombre completo del tutor <span>*</span></label>
+        <input type="text" id="tutor-medico" placeholder="Nombre del papá o mamá">
+        <div class="field-error">Este campo es requerido</div>
+      </div>
+      <div class="field" id="f-declaracion">
+        <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;text-transform:none;font-weight:400;font-size:13px;color:var(--text)">
+          <input type="checkbox" id="declaracion" style="width:auto;margin-top:2px">
+          <span>Declaro que la información proporcionada es verídica y completa. Autorizo al staff de Wolverines TRC a brindar primeros auxilios y contactar servicios de emergencia de ser necesario.</span>
+        </label>
+        <div class="field-error">Debes aceptar la declaración para continuar</div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-back" onclick="goStep(1)">← Atrás</button>
+      <button class="btn-next" onclick="goStep(3)">Continuar →</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: DOCUMENTOS -->
+  <div id="step-3" style="display:none">
     <div class="form-card">
       <h2>FOTO Y DOCUMENTOS</h2>
       <p class="subtitle">Sube una foto reciente y los documentos requeridos (foto o PDF)</p>
@@ -267,14 +394,14 @@ body{background:var(--blue-xs);font-family:'Montserrat',sans-serif;color:var(--t
       </div>
 
       <div class="btn-row">
-        <button class="btn-back" onclick="goStep(1)">← Atrás</button>
-        <button class="btn-next" onclick="goStep(3)">Continuar →</button>
+        <button class="btn-back" onclick="goStep(2)">← Atrás</button>
+        <button class="btn-next" onclick="goStep(4)">Continuar →</button>
       </div>
     </div>
   </div>
 
-  <!-- STEP 3: TUTOR -->
-  <div id="step-3" style="display:none">
+  <!-- STEP 4: TUTOR -->
+  <div id="step-4" style="display:none">
     <div class="form-card">
       <h2>DATOS DEL TUTOR</h2>
       <p class="subtitle">Información del padre, madre o tutor responsable</p>
@@ -296,14 +423,14 @@ body{background:var(--blue-xs);font-family:'Montserrat',sans-serif;color:var(--t
       </div>
 
       <div class="btn-row">
-        <button class="btn-back" onclick="goStep(2)">← Atrás</button>
-        <button class="btn-next" onclick="goStep(4)">Continuar →</button>
+        <button class="btn-back" onclick="goStep(3)">← Atrás</button>
+        <button class="btn-next" onclick="goStep(5)">Continuar →</button>
       </div>
     </div>
   </div>
 
-  <!-- STEP 4: PAGO -->
-  <div id="step-4" style="display:none">
+  <!-- STEP 5: PAGO -->
+  <div id="step-5" style="display:none">
     <div class="form-card">
       <h2>MÉTODO DE PAGO</h2>
       <p class="subtitle">Selecciona cómo deseas realizar tu pago de inscripción</p>
@@ -321,7 +448,7 @@ body{background:var(--blue-xs);font-family:'Montserrat',sans-serif;color:var(--t
       </div>
 
       <div class="btn-row">
-        <button class="btn-back" onclick="goStep(3)">← Atrás</button>
+        <button class="btn-back" onclick="goStep(4)">← Atrás</button>
         <button class="btn-next" id="btn-submit" onclick="submitForm()">✅ Completar Registro</button>
       </div>
     </div>
@@ -364,21 +491,77 @@ let state = {
   genero: '',
   categoria: '',
   pago: 'transfer',
-  uploads: { foto: '', acta: '', curpdoc: '', seguro: '' }
+  uploads: { foto: '', acta: '', curpdoc: '', seguro: '' },
+  condiciones: {},
+  autoriza: ''
 };
+
+const CONDICIONES = [
+  { key: 'asma', label: '¿Padece asma?', detalle: '¿Usa inhalador? ¿Lo traerá a entrenamientos y juegos?' },
+  { key: 'alergiasMed', label: '¿Alergias a medicamentos?', detalle: '¿A cuáles medicamentos?' },
+  { key: 'alergiasAliment', label: '¿Alergias a alimentos?', detalle: '¿A cuáles alimentos?' },
+  { key: 'alergiasInsectos', label: '¿Alergias a picaduras de insectos?', detalle: '¿Requiere epinefrina/EpiPen?' },
+  { key: 'diabetes', label: '¿Padece diabetes?', detalle: '¿Qué tipo? ¿Requiere insulina?' },
+  { key: 'epilepsia', label: '¿Epilepsia o convulsiones?', detalle: 'Detalla la condición' },
+  { key: 'cardiaca', label: '¿Condición cardíaca?', detalle: 'Detalla la condición' },
+  { key: 'neurologica', label: '¿Alguna enfermedad neurológica?', detalle: '¿Cuál? ¿Necesita atención especial?' },
+  { key: 'lesiones', label: '¿Lesiones deportivas importantes previas?', detalle: '¿Cuáles y cuándo?' },
+  { key: 'cirugias', label: '¿Cirugías en los últimos 2 años?', detalle: '¿Cuál cirugía?' },
+  { key: 'medicamento', label: '¿Toma medicamento regular?', detalle: '¿Cuál, dosis y horario?' },
+];
+
+function renderCondiciones() {
+  const cont = document.getElementById('condiciones-container');
+  cont.innerHTML = CONDICIONES.map(c => `
+    <div class="field">
+      <label>${c.label} <span>*</span></label>
+      <div class="gender-row">
+        <div class="gender-btn" onclick="selectCondicion('${c.key}','Sí',this)">Sí</div>
+        <div class="gender-btn" onclick="selectCondicion('${c.key}','No',this)">No</div>
+      </div>
+      <div id="detalle-${c.key}" style="display:none;margin-top:10px">
+        <textarea id="detalle-txt-${c.key}" rows="2" placeholder="${c.detalle}"></textarea>
+      </div>
+    </div>
+  `).join('');
+}
+
+function selectCondicion(key, val, el) {
+  state.condiciones[key] = val;
+  el.parentElement.querySelectorAll('.gender-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById(`detalle-${key}`).style.display = val === 'Sí' ? 'block' : 'none';
+}
+
+function selectAutoriza(val, el) {
+  state.autoriza = val;
+  el.parentElement.querySelectorAll('.gender-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function populateRecap() {
+  document.getElementById('recap-nombre').textContent =
+    (document.getElementById('nombre').value.trim() + ' ' + document.getElementById('apellidos').value.trim()).trim() || '—';
+  document.getElementById('recap-cat').textContent = state.categoria || '—';
+  document.getElementById('recap-dob').textContent = document.getElementById('dob').value || '—';
+}
 
 // ── STEP NAV ──
 function goStep(n) {
   if (n > state.step && !validateStep(state.step)) return;
   document.getElementById(`step-${state.step}`).style.display = 'none';
   state.step = n;
+  if (n === 2) populateRecap();
+  if (n === 4 && !document.getElementById('tutor').value.trim()) {
+    document.getElementById('tutor').value = document.getElementById('tutor-medico').value.trim();
+  }
   document.getElementById(`step-${n}`).style.display = 'block';
   updateProgress();
   window.scrollTo(0, 0);
 }
 
 function updateProgress() {
-  [1,2,3,4].forEach(i => {
+  [1,2,3,4,5].forEach(i => {
     const el = document.getElementById(`prog-${i}`);
     const conn = document.getElementById(`conn-${i}`);
     el.className = 'step' + (i === state.step ? ' active' : i < state.step ? ' done' : '');
@@ -403,13 +586,44 @@ function validateStep(s) {
     return ok;
   }
   if (s === 2) {
+    let ok = true;
+    if (!document.getElementById('sangre').value) { document.getElementById('f-sangre').classList.add('error'); ok = false; }
+    else document.getElementById('f-sangre').classList.remove('error');
+
+    CONDICIONES.forEach(c => {
+      const val = state.condiciones[c.key];
+      if (!val) { showToast('⚠️ Responde: ' + c.label); ok = false; return; }
+      if (val === 'Sí' && !document.getElementById(`detalle-txt-${c.key}`).value.trim()) {
+        showToast('⚠️ Detalla: ' + c.label); ok = false;
+      }
+    });
+
+    if (!v('ce1-nombre')) ok = false;
+    if (!v('ce1-parentesco')) ok = false;
+    if (!v('ce1-telefono')) ok = false;
+    if (!v('ce2-nombre')) ok = false;
+    if (!v('ce2-parentesco')) ok = false;
+    if (!v('ce2-telefono')) ok = false;
+    if (!v('aseguradora')) ok = false;
+    if (!v('poliza')) ok = false;
+    if (!v('hospital')) ok = false;
+    if (!state.autoriza) { showToast('⚠️ Indica si autorizas primeros auxilios'); ok = false; }
+    if (!v('tutor-medico')) ok = false;
+    if (!document.getElementById('declaracion').checked) {
+      document.getElementById('f-declaracion').classList.add('error'); ok = false;
+    } else {
+      document.getElementById('f-declaracion').classList.remove('error');
+    }
+    return ok;
+  }
+  if (s === 3) {
     if (!state.uploads.foto) { showToast('⚠️ Sube la foto de rostro'); return false; }
     if (!state.uploads.acta) { showToast('⚠️ Sube el acta de nacimiento'); return false; }
     if (!state.uploads.curpdoc) { showToast('⚠️ Sube el documento CURP'); return false; }
     if (!state.uploads.seguro) { showToast('⚠️ Sube el seguro médico'); return false; }
     return true;
   }
-  if (s === 3) {
+  if (s === 4) {
     let ok = true;
     if (!v('tutor')) ok = false;
     if (!v('telefono')) ok = false;
@@ -435,7 +649,7 @@ function v(id) {
 // ── GENDER & CATEGORY ──
 function selectGender(g, el) {
   state.genero = g;
-  document.querySelectorAll('.gender-btn').forEach(b => b.classList.remove('selected'));
+  el.parentElement.querySelectorAll('.gender-btn').forEach(b => b.classList.remove('selected'));
   el.classList.add('selected');
   calcCategoria();
 }
@@ -557,6 +771,12 @@ async function submitForm() {
   const telefono = document.getElementById('telefono').value.trim();
   const email = document.getElementById('email').value.trim();
 
+  const condicionesTexto = CONDICIONES.map(c => {
+    const val = state.condiciones[c.key] || '—';
+    const detalle = document.getElementById(`detalle-txt-${c.key}`).value.trim();
+    return c.label.replace('¿','').replace('?','') + ': ' + val + (val === 'Sí' && detalle ? ' — ' + detalle : '');
+  }).join('\n');
+
   const fields = {
     'Nombre': nombre,
     'Apellidos': apellidos,
@@ -573,6 +793,21 @@ async function submitForm() {
     'Email': email,
     'Pago': 'Pendiente',
     'Fecha de Registro': new Date().toISOString().split('T')[0],
+    'Tipo de Sangre': document.getElementById('sangre').value,
+    'Condiciones Médicas': condicionesTexto,
+    'Otra Condición Médica': document.getElementById('otra-condicion').value.trim(),
+    'Contacto Emergencia 1 Nombre': document.getElementById('ce1-nombre').value.trim(),
+    'Contacto Emergencia 1 Parentesco': document.getElementById('ce1-parentesco').value.trim(),
+    'Contacto Emergencia 1 Teléfono': document.getElementById('ce1-telefono').value.trim(),
+    'Contacto Emergencia 2 Nombre': document.getElementById('ce2-nombre').value.trim(),
+    'Contacto Emergencia 2 Parentesco': document.getElementById('ce2-parentesco').value.trim(),
+    'Contacto Emergencia 2 Teléfono': document.getElementById('ce2-telefono').value.trim(),
+    'Aseguradora': document.getElementById('aseguradora').value.trim(),
+    'Número de Póliza': document.getElementById('poliza').value.trim(),
+    'Hospital de Preferencia': document.getElementById('hospital').value.trim(),
+    'Autoriza Primeros Auxilios': state.autoriza,
+    'Tutor Autorización Médica': document.getElementById('tutor-medico').value.trim(),
+    'Fecha Autorización Médica': new Date().toISOString().split('T')[0],
   };
 
   try {
@@ -585,7 +820,7 @@ async function submitForm() {
     if (!res.ok) throw new Error('Error guardando');
 
     // Show success
-    document.getElementById('step-4').style.display = 'none';
+    document.getElementById('step-5').style.display = 'none';
     document.getElementById('step-success').style.display = 'block';
     document.getElementById('success-nombre').textContent = `${nombre} ${apellidos}`;
     document.getElementById('success-cat').textContent = state.categoria;
@@ -604,6 +839,8 @@ function showToast(msg) {
   t.textContent = msg; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 3000);
 }
+
+renderCondiciones();
 </script>
 </body>
 </html>
