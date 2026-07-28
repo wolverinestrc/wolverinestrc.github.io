@@ -156,8 +156,17 @@ nav{background:#0d1f3c;border-bottom:2px solid var(--blue);padding:0 24px;height
         <div class="field" id="f-ce2-telefono"><label>Teléfono <span>*</span></label><input type="tel" id="ce2-telefono"><div class="field-error">Este campo es requerido</div></div>
 
         <p style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--blue3);text-transform:uppercase;margin:20px 0 10px">Datos médicos</p>
-        <div class="field" id="f-aseguradora"><label>Aseguradora <span>*</span></label><input type="text" id="aseguradora"><div class="field-error">Este campo es requerido</div></div>
-        <div class="field" id="f-poliza"><label>Número de Póliza <span>*</span></label><input type="text" id="poliza"><div class="field-error">Este campo es requerido</div></div>
+        <div class="field">
+          <label>Seguro de Gastos Médicos <span>*</span></label>
+          <div class="opt-row">
+            <div class="opt-btn" id="tipo-seguro-wolverines" onclick="selectTipoSeguro('Póliza Wolverines (grupal)',this)">Póliza Wolverines</div>
+            <div class="opt-btn" id="tipo-seguro-propio" onclick="selectTipoSeguro('Seguro propio',this)">Seguro propio</div>
+          </div>
+        </div>
+        <div id="seguro-propio-campos" style="display:none">
+          <div class="field" id="f-aseguradora"><label>Aseguradora <span>*</span></label><input type="text" id="aseguradora"><div class="field-error">Este campo es requerido</div></div>
+          <div class="field" id="f-poliza"><label>Número de Póliza <span>*</span></label><input type="text" id="poliza"><div class="field-error">Este campo es requerido</div></div>
+        </div>
         <div class="field" id="f-hospital"><label>Hospital de preferencia en Torreón <span>*</span></label><input type="text" id="hospital"><div class="field-error">Este campo es requerido</div></div>
 
         <div class="field">
@@ -216,6 +225,14 @@ let allRecords = [];
 let selectedId = null;
 let condicionesState = {};
 let autorizaState = '';
+let tipoSeguroState = '';
+
+function selectTipoSeguro(val, el) {
+  tipoSeguroState = val;
+  el.parentElement.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('seguro-propio-campos').style.display = val === 'Seguro propio' ? 'block' : 'none';
+}
 
 // ── AUTH ──
 function login() {
@@ -328,6 +345,10 @@ function selectPlayer(id) {
   renderCondiciones();
   condicionesState = {};
   autorizaState = '';
+  tipoSeguroState = '';
+  document.getElementById('seguro-propio-campos').style.display = 'none';
+  document.getElementById('tipo-seguro-wolverines').classList.remove('selected');
+  document.getElementById('tipo-seguro-propio').classList.remove('selected');
 
   document.getElementById('sangre').value = f['Tipo de Sangre'] || '';
   document.getElementById('otra-condicion').value = f['Otra Condición Médica'] || '';
@@ -340,6 +361,11 @@ function selectPlayer(id) {
   document.getElementById('aseguradora').value = f['Aseguradora'] || '';
   document.getElementById('poliza').value = f['Número de Póliza'] || '';
   document.getElementById('hospital').value = f['Hospital de Preferencia'] || '';
+
+  if (f['Tipo de Seguro']) {
+    const btnId = f['Tipo de Seguro'] === 'Seguro propio' ? 'tipo-seguro-propio' : 'tipo-seguro-wolverines';
+    selectTipoSeguro(f['Tipo de Seguro'], document.getElementById(btnId));
+  }
   document.getElementById('tutor-medico').value = f['Tutor Autorización Médica'] || f['Tutor'] || '';
   document.getElementById('declaracion').checked = !!f['Fecha Autorización Médica'];
 
@@ -395,8 +421,11 @@ async function guardar() {
   if (!v('ce2-nombre')) ok = false;
   if (!v('ce2-parentesco')) ok = false;
   if (!v('ce2-telefono')) ok = false;
-  if (!v('aseguradora')) ok = false;
-  if (!v('poliza')) ok = false;
+  if (!tipoSeguroState) { showToast('⚠️ Indica si es póliza Wolverines o seguro propio'); ok = false; }
+  if (tipoSeguroState === 'Seguro propio') {
+    if (!v('aseguradora')) ok = false;
+    if (!v('poliza')) ok = false;
+  }
   if (!v('hospital')) ok = false;
   if (!autorizaState) { showToast('⚠️ Indica si autoriza primeros auxilios'); ok = false; }
   if (!v('tutor-medico')) ok = false;
@@ -427,8 +456,9 @@ async function guardar() {
     'Contacto Emergencia 2 Nombre': document.getElementById('ce2-nombre').value.trim(),
     'Contacto Emergencia 2 Parentesco': document.getElementById('ce2-parentesco').value.trim(),
     'Contacto Emergencia 2 Teléfono': document.getElementById('ce2-telefono').value.trim(),
-    'Aseguradora': document.getElementById('aseguradora').value.trim(),
-    'Número de Póliza': document.getElementById('poliza').value.trim(),
+    'Tipo de Seguro': tipoSeguroState,
+    'Aseguradora': tipoSeguroState === 'Seguro propio' ? document.getElementById('aseguradora').value.trim() : '',
+    'Número de Póliza': tipoSeguroState === 'Seguro propio' ? document.getElementById('poliza').value.trim() : '',
     'Hospital de Preferencia': document.getElementById('hospital').value.trim(),
     'Autoriza Primeros Auxilios': autorizaState,
     'Tutor Autorización Médica': document.getElementById('tutor-medico').value.trim(),
@@ -436,11 +466,15 @@ async function guardar() {
   };
 
   try {
-    await fetch('https://api.airtable.com/v0/' + AT_BASE + '/' + AT_TABLE + '/' + selectedId, {
+    const res = await fetch('https://api.airtable.com/v0/' + AT_BASE + '/' + AT_TABLE + '/' + selectedId, {
       method: 'PATCH',
       headers: { 'Authorization': 'Bearer ' + AT_KEY, 'Content-Type': 'application/json' },
       body: JSON.stringify({ fields, typecast: true })
     });
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => ({}));
+      throw new Error(errBody.error?.message || ('HTTP ' + res.status));
+    }
     const idx = allRecords.findIndex(r => r.id === selectedId);
     if (idx >= 0) Object.assign(allRecords[idx].fields, fields);
     showToast('✅ Cuestionario médico guardado');

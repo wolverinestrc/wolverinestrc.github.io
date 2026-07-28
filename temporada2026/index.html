@@ -268,15 +268,25 @@ body{background:var(--blue-xs);font-family:'Montserrat',sans-serif;color:var(--t
       </div>
 
       <p style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--blue);text-transform:uppercase;margin:20px 0 10px">Datos médicos</p>
-      <div class="field" id="f-aseguradora">
-        <label>Aseguradora <span>*</span></label>
-        <input type="text" id="aseguradora" placeholder="Ej: GNP, AXA, Sin seguro">
-        <div class="field-error">Este campo es requerido</div>
+      <div class="field">
+        <label>Seguro de Gastos Médicos <span>*</span></label>
+        <div class="gender-row">
+          <div class="gender-btn" onclick="selectTipoSeguro('Póliza Wolverines (grupal)',this)">Póliza Wolverines</div>
+          <div class="gender-btn" onclick="selectTipoSeguro('Seguro propio',this)">Seguro propio</div>
+        </div>
+        <div style="font-size:11px;color:var(--gray);margin-top:6px">Todos los jugadores deben tener un seguro de gastos médicos vigente: el de la póliza grupal de Wolverines TRC, o uno propio contratado aparte.</div>
       </div>
-      <div class="field" id="f-poliza">
-        <label>Número de Póliza <span>*</span></label>
-        <input type="text" id="poliza" placeholder="Número de póliza">
-        <div class="field-error">Este campo es requerido</div>
+      <div id="seguro-propio-campos" style="display:none">
+        <div class="field" id="f-aseguradora">
+          <label>Aseguradora <span>*</span></label>
+          <input type="text" id="aseguradora" placeholder="Ej: GNP, AXA">
+          <div class="field-error">Este campo es requerido</div>
+        </div>
+        <div class="field" id="f-poliza">
+          <label>Número de Póliza <span>*</span></label>
+          <input type="text" id="poliza" placeholder="Número de póliza">
+          <div class="field-error">Este campo es requerido</div>
+        </div>
       </div>
       <div class="field" id="f-hospital">
         <label>Hospital de preferencia en Torreón <span>*</span></label>
@@ -493,8 +503,16 @@ let state = {
   pago: 'transfer',
   uploads: { foto: '', acta: '', curpdoc: '', seguro: '' },
   condiciones: {},
-  autoriza: ''
+  autoriza: '',
+  tipoSeguro: ''
 };
+
+function selectTipoSeguro(val, el) {
+  state.tipoSeguro = val;
+  el.parentElement.querySelectorAll('.gender-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('seguro-propio-campos').style.display = val === 'Seguro propio' ? 'block' : 'none';
+}
 
 const CONDICIONES = [
   { key: 'asma', label: '¿Padece asma?', detalle: '¿Usa inhalador? ¿Lo traerá a entrenamientos y juegos?' },
@@ -604,8 +622,11 @@ function validateStep(s) {
     if (!v('ce2-nombre')) ok = false;
     if (!v('ce2-parentesco')) ok = false;
     if (!v('ce2-telefono')) ok = false;
-    if (!v('aseguradora')) ok = false;
-    if (!v('poliza')) ok = false;
+    if (!state.tipoSeguro) { showToast('⚠️ Indica si es póliza Wolverines o seguro propio'); ok = false; }
+    if (state.tipoSeguro === 'Seguro propio') {
+      if (!v('aseguradora')) ok = false;
+      if (!v('poliza')) ok = false;
+    }
     if (!v('hospital')) ok = false;
     if (!state.autoriza) { showToast('⚠️ Indica si autorizas primeros auxilios'); ok = false; }
     if (!v('tutor-medico')) ok = false;
@@ -802,8 +823,9 @@ async function submitForm() {
     'Contacto Emergencia 2 Nombre': document.getElementById('ce2-nombre').value.trim(),
     'Contacto Emergencia 2 Parentesco': document.getElementById('ce2-parentesco').value.trim(),
     'Contacto Emergencia 2 Teléfono': document.getElementById('ce2-telefono').value.trim(),
-    'Aseguradora': document.getElementById('aseguradora').value.trim(),
-    'Número de Póliza': document.getElementById('poliza').value.trim(),
+    'Tipo de Seguro': state.tipoSeguro,
+    'Aseguradora': state.tipoSeguro === 'Seguro propio' ? document.getElementById('aseguradora').value.trim() : '',
+    'Número de Póliza': state.tipoSeguro === 'Seguro propio' ? document.getElementById('poliza').value.trim() : '',
     'Hospital de Preferencia': document.getElementById('hospital').value.trim(),
     'Autoriza Primeros Auxilios': state.autoriza,
     'Tutor Autorización Médica': document.getElementById('tutor-medico').value.trim(),
