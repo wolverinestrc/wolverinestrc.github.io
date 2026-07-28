@@ -385,7 +385,7 @@ body{background:var(--blue-xs);font-family:'Montserrat',sans-serif;color:var(--t
         </div>
       </div>
 
-      <div class="field">
+      <div class="field" id="doc-seguro-campo" style="display:none">
         <label>Seguro de Gastos Médicos <span>*</span></label>
         <div class="file-upload" id="fu-seguro">
           <input type="file" accept="image/*,application/pdf" onchange="handleFile(this,'seguro')">
@@ -401,6 +401,9 @@ body{background:var(--blue-xs);font-family:'Montserrat',sans-serif;color:var(--t
             <div class="fp-name">✅ <span id="name-seguro"></span></div>
           </div>
         </div>
+      </div>
+      <div class="field" id="doc-seguro-nota" style="display:none">
+        <div style="background:var(--blue-xs);border-radius:8px;padding:14px 16px;font-size:12px;color:var(--gray)">🐺 Estás cubierto por la póliza grupal de Wolverines TRC — no necesitas subir un documento de seguro.</div>
       </div>
 
       <div class="btn-row">
@@ -564,12 +567,19 @@ function populateRecap() {
   document.getElementById('recap-dob').textContent = document.getElementById('dob').value || '—';
 }
 
+function toggleSeguroDoc() {
+  const necesitaDoc = state.tipoSeguro === 'Seguro propio';
+  document.getElementById('doc-seguro-campo').style.display = necesitaDoc ? 'block' : 'none';
+  document.getElementById('doc-seguro-nota').style.display = necesitaDoc ? 'none' : 'block';
+}
+
 // ── STEP NAV ──
 function goStep(n) {
   if (n > state.step && !validateStep(state.step)) return;
   document.getElementById(`step-${state.step}`).style.display = 'none';
   state.step = n;
   if (n === 2) populateRecap();
+  if (n === 3) toggleSeguroDoc();
   if (n === 4 && !document.getElementById('tutor').value.trim()) {
     document.getElementById('tutor').value = document.getElementById('tutor-medico').value.trim();
   }
@@ -641,7 +651,7 @@ function validateStep(s) {
     if (!state.uploads.foto) { showToast('⚠️ Sube la foto de rostro'); return false; }
     if (!state.uploads.acta) { showToast('⚠️ Sube el acta de nacimiento'); return false; }
     if (!state.uploads.curpdoc) { showToast('⚠️ Sube el documento CURP'); return false; }
-    if (!state.uploads.seguro) { showToast('⚠️ Sube el seguro médico'); return false; }
+    if (state.tipoSeguro === 'Seguro propio' && !state.uploads.seguro) { showToast('⚠️ Sube el documento de tu seguro médico'); return false; }
     return true;
   }
   if (s === 4) {
