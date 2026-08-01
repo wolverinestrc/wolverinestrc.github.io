@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Credencial · Wolverines TRC</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0a1730;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+  }
+
+  .wrap { width: 100%; max-width: 320px; text-align: center; }
+
+  #estado { color: rgba(255,255,255,0.7); font-size: 14px; padding: 40px 0; }
+
+  .cred-card{background:#0e1c33;position:relative;overflow:hidden;border-radius:16px;display:none}
+  .cred-ribbon{position:absolute;top:0;left:0;width:100%;height:230px;pointer-events:none}
+  .cred-top{position:relative;padding:22px 24px 16px;text-align:center}
+  .cred-logo{width:52px;height:52px;object-fit:contain;margin-bottom:10px}
+  .cred-wordmark-sm{display:block;font-size:11px;font-weight:600;letter-spacing:6px;color:rgba(255,255,255,0.85)}
+  .cred-wordmark-lg{display:block;font-size:27px;font-weight:900;letter-spacing:0.5px;color:white;line-height:1.15;margin-top:2px}
+  .cred-hex-outer{width:150px;height:150px;margin:16px auto 0;background:linear-gradient(160deg,#aab2bd,#6b7684);border-radius:50%;padding:5px}
+  .cred-hex-inner{width:100%;height:100%;border-radius:50%;overflow:hidden;background:#1b2942}
+  .cred-photo{width:100%;height:100%;object-fit:cover;display:block}
+  .cred-photo-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:44px;color:rgba(255,255,255,0.4)}
+  .cred-name{font-size:19px;font-weight:900;color:white;letter-spacing:0.5px;margin-top:14px;line-height:1.25}
+  .cred-dob{font-size:11px;color:rgba(255,255,255,0.6);letter-spacing:1.5px;text-transform:uppercase;margin-top:5px}
+  .cred-scan-wave{display:block;width:100%;height:22px;margin-bottom:-1px;position:relative}
+  .cred-scan{background:#48546a;background-image:repeating-linear-gradient(60deg,rgba(255,255,255,0.05) 0 1px,transparent 1px 22px),repeating-linear-gradient(-60deg,rgba(255,255,255,0.05) 0 1px,transparent 1px 22px);padding:20px 24px 22px;text-align:center}
+  .cred-qr-box{background:white;display:inline-block;padding:10px;border-radius:10px}
+  .cred-qr-box canvas{margin:0 auto;display:block}
+  .cred-scan-label{font-size:11px;font-weight:800;letter-spacing:2px;color:white;margin-top:10px}
+
+  .download-btn{
+    display:none; width:100%; margin-top:16px; background:#2563eb; border:none; color:white;
+    font-family:inherit; font-size:14px; font-weight:700; padding:14px; cursor:pointer; border-radius:10px;
+  }
+  .download-btn:hover{background:#1d4ed8}
+  .hint{color:rgba(255,255,255,0.4);font-size:11px;margin-top:12px}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div id="estado">Cargando credencial…</div>
+
+  <div class="cred-card" id="cred-card">
+    <div class="cred-top">
+      <svg class="cred-ribbon" viewBox="0 0 300 230" preserveAspectRatio="none">
+        <polygon points="0,0 75,0 168,230 128,230" fill="rgba(255,255,255,0.09)"/>
+        <polygon points="300,0 225,0 132,230 172,230" fill="rgba(255,255,255,0.09)"/>
+      </svg>
+      <img src="https://wolverines.mx/IMG_0019_transparent.png" class="cred-logo" crossorigin="anonymous" onerror="this.style.display='none'">
+      <div class="cred-wordmark"><span class="cred-wordmark-sm">ACADEMIA</span><span class="cred-wordmark-lg">WOLVERINES</span></div>
+      <div class="cred-hex-outer"><div class="cred-hex-inner" id="foto-wrap"></div></div>
+      <div class="cred-name" id="cred-name"></div>
+      <div class="cred-dob" id="cred-dob"></div>
+    </div>
+    <svg class="cred-scan-wave" viewBox="0 0 300 22" preserveAspectRatio="none"><path d="M0,22 L0,13 Q150,0 300,13 L300,22 Z" fill="#48546a"/></svg>
+    <div class="cred-scan">
+      <div class="cred-qr-box" id="qr-box"></div>
+      <div class="cred-scan-label">ESCANEA</div>
+    </div>
+  </div>
+
+  <button class="download-btn" id="btn-download" onclick="descargar()">📥 Descargar credencial</button>
+  <div class="hint" id="hint" style="display:none">Se descargará como imagen PNG</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://xaawoqyjavqcybafirri.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhYXdvcXlqYXZxY3liYWZpcnJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1Mzg4MjcsImV4cCI6MjEwMTExNDgyN30.TdLuimBVQIILaaW0UtZDHDSoDpDomwmL6RbG-K-GDZ0';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const id = new URLSearchParams(window.location.search).get('id');
+let jugadorNombre = 'jugador';
+
+async function cargar() {
+  if (!id) { document.getElementById('estado').textContent = '❌ Falta el identificador del jugador.'; return; }
+
+  const { data, error } = await sb.rpc('public_get_jugador_credencial', { p_id: id });
+  const rec = data && data[0];
+  if (error || !rec || !rec.nombre) {
+    document.getElementById('estado').textContent = '❌ No encontramos esta credencial.';
+    return;
+  }
+
+  jugadorNombre = (rec.nombre + ' ' + (rec.apellidos || '')).trim();
+  document.getElementById('cred-name').textContent = jugadorNombre;
+
+  let dobFmt = '—';
+  if (rec.fecha_nacimiento) {
+    const parts = rec.fecha_nacimiento.split('-');
+    if (parts.length === 3) dobFmt = parts[2] + '/' + parts[1] + '/' + parts[0];
+  }
+  document.getElementById('cred-dob').textContent = 'Fecha de nacimiento: ' + dobFmt;
+
+  document.getElementById('foto-wrap').innerHTML = rec.foto_url
+    ? '<img src="' + rec.foto_url + '" class="cred-photo" crossorigin="anonymous">'
+    : '<div class="cred-photo-ph">👤</div>';
+
+  new QRCode(document.getElementById('qr-box'), {
+    text: id, width: 100, height: 100,
+    colorDark: '#101f3d', colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.L
+  });
+
+  document.getElementById('estado').style.display = 'none';
+  document.getElementById('cred-card').style.display = 'block';
+  document.getElementById('btn-download').style.display = 'block';
+  document.getElementById('hint').style.display = 'block';
+}
+
+function descargar() {
+  const btn = document.getElementById('btn-download');
+  btn.disabled = true; btn.textContent = '⏳ Generando...';
+  html2canvas(document.getElementById('cred-card'), { backgroundColor: null, scale: 2, useCORS: true }).then(function(canvas) {
+    const link = document.createElement('a');
+    link.download = 'credencial-' + jugadorNombre.toLowerCase().replace(/\s+/g, '-') + '.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    btn.disabled = false; btn.textContent = '📥 Descargar credencial';
+  }).catch(function() {
+    alert('No se pudo generar la imagen automáticamente. Toma una captura de pantalla de la credencial como alternativa.');
+    btn.disabled = false; btn.textContent = '📥 Descargar credencial';
+  });
+}
+
+cargar();
+</script>
+
+</body>
+</html>

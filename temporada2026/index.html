@@ -840,7 +840,7 @@ async function submitForm() {
 
     if (email) {
       sb.functions.invoke('send-email', { body: { tipo: 'registro', to: email, data: {
-        tutor, nombre: `${nombre} ${apellidos}`, categoria: state.categoria
+        tutor, nombre: `${nombre} ${apellidos}`, categoria: state.categoria, id: registrationId
       } } }).catch(() => {});
     }
 
