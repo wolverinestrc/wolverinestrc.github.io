@@ -205,7 +205,7 @@ nav{background:#0d1f3c;border-bottom:2px solid var(--blue);padding:0 24px;height
 <script>
 const SUPABASE_URL = 'https://xaawoqyjavqcybafirri.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhYXdvcXlqYXZxY3liYWZpcnJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1Mzg4MjcsImV4cCI6MjEwMTExNDgyN30.TdLuimBVQIILaaW0UtZDHDSoDpDomwmL6RbG-K-GDZ0';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const PWD      = 'Wolverines2026';
 
 const CONDICIONES = [
@@ -281,7 +281,7 @@ function mapPlayerBasico(j) {
 }
 
 async function loadData() {
-  const { data, error } = await supabase.rpc('admin_list_jugadores_basicos', { p_pwd: PWD });
+  const { data, error } = await sb.rpc('admin_list_jugadores_basicos', { p_pwd: PWD });
   if (error) { showToast('❌ Error al cargar: ' + error.message); return; }
   allRecords = (data || []).map(mapPlayerBasico);
   renderPlayerList();
@@ -457,7 +457,7 @@ async function guardar() {
   });
 
   try {
-    const { error } = await supabase.rpc('admin_upsert_datos_medicos', {
+    const { error } = await sb.rpc('admin_upsert_datos_medicos', {
       p_pwd: PWD,
       p_jugador_id: selectedId,
       p_tipo_sangre: document.getElementById('sangre').value,

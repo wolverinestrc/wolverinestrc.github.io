@@ -158,7 +158,7 @@
 const WORKER_URL     = 'https://wolverines-agente.wolverinestrc.workers.dev/';
 const SUPABASE_URL = 'https://xaawoqyjavqcybafirri.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhYXdvcXlqYXZxY3liYWZpcnJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1Mzg4MjcsImV4cCI6MjEwMTExNDgyN30.TdLuimBVQIILaaW0UtZDHDSoDpDomwmL6RbG-K-GDZ0';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // ═══════════════════════════════════════════════
 
 const SYSTEM_PROMPT = `Eres el asistente virtual oficial de Wolverines TRC, una academia de Flag Football en Torreón, Coahuila.
@@ -373,7 +373,7 @@ async function wlvRegister(data) {
     // Validate date is parseable; if not, omit it
     const validDate = !isNaN(dob.getTime());
 
-    const { error } = await supabase.from('jugadores_summer_camp').insert({
+    const { error } = await sb.from('jugadores_summer_camp').insert({
       nombre: data.nombre,
       apellidos: data.apellidos,
       genero: data.genero,

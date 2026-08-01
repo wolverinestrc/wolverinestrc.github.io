@@ -154,7 +154,7 @@
 const PASSWORD = 'Wolverines2026';
 const SUPABASE_URL = 'https://xaawoqyjavqcybafirri.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhYXdvcXlqYXZxY3liYWZpcnJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1Mzg4MjcsImV4cCI6MjEwMTExNDgyN30.TdLuimBVQIILaaW0UtZDHDSoDpDomwmL6RbG-K-GDZ0';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const DIA_DB_TO_LABEL = { lunes: 'Lunes', martes: 'Martes', miercoles: 'Miércoles', jueves: 'Jueves' };
 const DIA_LABEL_TO_DB = { 'Lunes': 'lunes', 'Martes': 'martes', 'Miércoles': 'miercoles', 'Jueves': 'jueves' };
@@ -191,7 +191,7 @@ document.getElementById('password-input').addEventListener('keydown', e => { if 
 // Cargar registros
 async function loadRecords() {
   try {
-    const { data, error } = await supabase.rpc('admin_list_jugadores_summer_camp', { p_pwd: PASSWORD });
+    const { data, error } = await sb.rpc('admin_list_jugadores_summer_camp', { p_pwd: PASSWORD });
     if (error) throw error;
     allRecords = (data || []).map(mapJugadorSCFromSupabase);
   } catch(e) { console.error(e); }
@@ -286,7 +286,7 @@ async function registrarAsistencia(recordId) {
   }
 
   try {
-    const { error } = await supabase.rpc('admin_upsert_asistencia', {
+    const { error } = await sb.rpc('admin_upsert_asistencia', {
       p_pwd: PASSWORD, p_jugador_id: recordId, p_dia: DIA_LABEL_TO_DB[diaSeleccionado], p_presente: true
     });
     if (error) throw error;

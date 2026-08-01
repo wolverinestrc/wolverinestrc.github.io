@@ -224,7 +224,7 @@
 <script>
 const SUPABASE_URL = 'https://xaawoqyjavqcybafirri.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhYXdvcXlqYXZxY3liYWZpcnJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1Mzg4MjcsImV4cCI6MjEwMTExNDgyN30.TdLuimBVQIILaaW0UtZDHDSoDpDomwmL6RbG-K-GDZ0';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 function showError(msg) {
   const el = document.getElementById('alert-error');
@@ -257,7 +257,7 @@ document.getElementById('reg-form').addEventListener('submit', async function(e)
   btn.innerHTML = '<span class="spinner"></span> Enviando...';
 
   try {
-    const { error } = await supabase.from('interesados_tackle').insert({
+    const { error } = await sb.from('interesados_tackle').insert({
       nombre_nino: nino_nombre,
       fecha_nacimiento: fecha_nac,
       nombre_tutor: tutor_nombre,

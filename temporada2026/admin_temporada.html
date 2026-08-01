@@ -283,7 +283,7 @@ td.name{color:white;font-weight:700}
 <script>
 const SUPABASE_URL = 'https://xaawoqyjavqcybafirri.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhYXdvcXlqYXZxY3liYWZpcnJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1Mzg4MjcsImV4cCI6MjEwMTExNDgyN30.TdLuimBVQIILaaW0UtZDHDSoDpDomwmL6RbG-K-GDZ0';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const PWD        = 'Wolverines2026';
 
 const ITEM_KEY_TO_DB = { 'Jersey': 'jersey', 'Short': 'short', 'Banderas': 'banderas', 'Playera Blanca': 'playera_blanca' };
@@ -358,11 +358,11 @@ function logout() {
 // ── LOAD ──
 async function loadData() {
   try {
-    const { data: jugData, error: jugErr } = await supabase.rpc('admin_list_jugadores', { p_pwd: PWD });
+    const { data: jugData, error: jugErr } = await sb.rpc('admin_list_jugadores', { p_pwd: PWD });
     if (jugErr) throw jugErr;
     allRecords = (jugData || []).map(mapJugadorFromSupabase);
 
-    const { data: tiendaData, error: tiendaErr } = await supabase.rpc('admin_list_tienda', { p_pwd: PWD });
+    const { data: tiendaData, error: tiendaErr } = await sb.rpc('admin_list_tienda', { p_pwd: PWD });
     if (tiendaErr) throw tiendaErr;
     tiendaRecords = (tiendaData || []).map(mapTiendaFromSupabase);
 
@@ -520,7 +520,7 @@ async function togglePago(mes, id) {
   var actual = rec.fields[campo] || 'Pendiente';
   var siguiente = actual === 'Pendiente' ? 'Pagado' : actual === 'Pagado' ? 'Exento' : 'Pendiente';
   try {
-    var { error } = await supabase.rpc('admin_update_pago', {
+    var { error } = await sb.rpc('admin_update_pago', {
       p_pwd: PWD, p_jugador_id: id, p_periodo: mes.toLowerCase(), p_estado: siguiente.toLowerCase()
     });
     if (error) throw error;
@@ -746,14 +746,14 @@ async function saveDetail() {
   });
 
   try {
-    var { error: numErr } = await supabase.rpc('admin_update_jugador', { p_pwd: PWD, p_id: currentId, p_numero_jugador: num });
+    var { error: numErr } = await sb.rpc('admin_update_jugador', { p_pwd: PWD, p_id: currentId, p_numero_jugador: num });
     if (numErr) throw numErr;
 
     for (const item of UNIFORME_ITEMS) {
       var key = item.key.replace(/\s/g,'');
       var talla = document.getElementById('uni-talla-' + key).value;
       var estadoUI = document.getElementById('uni-estado-' + key).value;
-      var { error: uniErr } = await supabase.rpc('admin_update_uniforme', {
+      var { error: uniErr } = await sb.rpc('admin_update_uniforme', {
         p_pwd: PWD, p_jugador_id: currentId, p_item: ITEM_KEY_TO_DB[item.key], p_talla: talla, p_estado: ESTADO_UNI_TO_DB[estadoUI]
       });
       if (uniErr) throw uniErr;
@@ -815,7 +815,7 @@ function openCred(id) {
 async function deleteRecord(id, nombre) {
   if (!confirm('¿Seguro que quieres eliminar a "' + nombre + '"?\n\nEsta acción no se puede deshacer.')) return;
   try {
-    var { error } = await supabase.rpc('admin_delete_jugador', { p_pwd: PWD, p_id: id });
+    var { error } = await sb.rpc('admin_delete_jugador', { p_pwd: PWD, p_id: id });
     if (error) throw error;
     allRecords = allRecords.filter(function(r) { return r.id !== id; });
     updateStats();
@@ -930,11 +930,11 @@ async function addTienda() {
   if (!producto || !cliente || !monto) { alert('Completa producto, cliente y monto'); return; }
 
   try {
-    var { error: insErr } = await supabase.rpc('admin_insert_tienda', {
+    var { error: insErr } = await sb.rpc('admin_insert_tienda', {
       p_pwd: PWD, p_producto: producto, p_cliente: cliente, p_monto: monto, p_fecha: new Date().toISOString().slice(0,10)
     });
     if (insErr) throw insErr;
-    var { data: tiendaData, error: listErr } = await supabase.rpc('admin_list_tienda', { p_pwd: PWD });
+    var { data: tiendaData, error: listErr } = await sb.rpc('admin_list_tienda', { p_pwd: PWD });
     if (listErr) throw listErr;
     tiendaRecords = (tiendaData || []).map(mapTiendaFromSupabase);
     document.getElementById('tienda-producto').value = '';
@@ -947,7 +947,7 @@ async function addTienda() {
 async function deleteTienda(id) {
   if (!confirm('¿Eliminar esta venta?')) return;
   try {
-    var { error } = await supabase.rpc('admin_delete_tienda', { p_pwd: PWD, p_id: id });
+    var { error } = await sb.rpc('admin_delete_tienda', { p_pwd: PWD, p_id: id });
     if (error) throw error;
     tiendaRecords = tiendaRecords.filter(function(r) { return r.id !== id; });
     renderTienda();

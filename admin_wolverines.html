@@ -309,7 +309,7 @@
 const PASSWORD       = 'Wolverines2026';
 const SUPABASE_URL = 'https://xaawoqyjavqcybafirri.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhYXdvcXlqYXZxY3liYWZpcnJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1Mzg4MjcsImV4cCI6MjEwMTExNDgyN30.TdLuimBVQIILaaW0UtZDHDSoDpDomwmL6RbG-K-GDZ0';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const DIA_DB_TO_LABEL = { lunes: 'Lunes', martes: 'Martes', miercoles: 'Miércoles', jueves: 'Jueves' };
 const DIA_LABEL_TO_DB = { 'Lunes': 'lunes', 'Martes': 'martes', 'Miércoles': 'miercoles', 'Jueves': 'jueves' };
@@ -366,7 +366,7 @@ function switchTab(tab, btn) {
 // ── LOAD ──
 async function loadRecords() {
   try {
-    const { data, error } = await supabase.rpc('admin_list_jugadores_summer_camp', { p_pwd: PASSWORD });
+    const { data, error } = await sb.rpc('admin_list_jugadores_summer_camp', { p_pwd: PASSWORD });
     if (error) throw error;
     allRecords = (data || []).map(mapJugadorSCFromSupabase);
     document.getElementById('loading').style.display = 'none';
@@ -474,7 +474,7 @@ function renderTable() {
 async function deleteRecord(id, nombre) {
   if (!confirm(`¿Seguro que quieres borrar el registro de "${nombre}"?\n\nEsta acción no se puede deshacer.`)) return;
   try {
-    const { error } = await supabase.rpc('admin_delete_jugador_summer_camp', { p_pwd: PASSWORD, p_id: id });
+    const { error } = await sb.rpc('admin_delete_jugador_summer_camp', { p_pwd: PASSWORD, p_id: id });
     if (error) throw error;
     allRecords = allRecords.filter(r => r.id !== id);
     updateStats();
@@ -565,7 +565,7 @@ async function toggleAsistencia(recordId, dia, el) {
   const totalCell = el.closest('tr').querySelector('td:last-child');
   if (totalCell) { totalCell.textContent = `${total}/4`; totalCell.style.color = total===4?'var(--green)':total>0?'var(--yellow)':'var(--red)'; }
   try {
-    const { error } = await supabase.rpc('admin_upsert_asistencia', {
+    const { error } = await sb.rpc('admin_upsert_asistencia', {
       p_pwd: PASSWORD, p_jugador_id: recordId, p_dia: DIA_LABEL_TO_DB[dia], p_presente: nuevoValor
     });
     if (error) throw error;
@@ -616,7 +616,7 @@ async function guardarPago() {
   const recActual = allRecords.find(r => r.id === currentRecordId);
   const jugador = parseInt(document.getElementById('jugador-input').value) || (recActual?.fields['Número Jugador'] ?? null);
   try {
-    const { error } = await supabase.rpc('admin_update_jugador_summer_camp', {
+    const { error } = await sb.rpc('admin_update_jugador_summer_camp', {
       p_pwd: PASSWORD, p_id: currentRecordId, p_pago: pago,
       p_monto_abono: pago === 'Abono' ? abono : null, p_numero_jugador: jugador
     });

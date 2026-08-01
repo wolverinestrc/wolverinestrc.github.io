@@ -497,7 +497,7 @@ body{background:var(--blue-xs);font-family:'Montserrat',sans-serif;color:var(--t
 <script>
 const SUPABASE_URL = 'https://xaawoqyjavqcybafirri.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhYXdvcXlqYXZxY3liYWZpcnJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1Mzg4MjcsImV4cCI6MjEwMTExNDgyN30.TdLuimBVQIILaaW0UtZDHDSoDpDomwmL6RbG-K-GDZ0';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const DOCS_BUCKET = 'jugador-documentos';
 const registrationId = crypto.randomUUID();
 
@@ -754,11 +754,11 @@ async function handleFile(input, key) {
     const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
     const path = `${registrationId}/${key}.${ext}`;
 
-    const { error: upErr } = await supabase.storage.from(DOCS_BUCKET).upload(path, file, { upsert: true });
+    const { error: upErr } = await sb.storage.from(DOCS_BUCKET).upload(path, file, { upsert: true });
     if (upErr) throw upErr;
     bar.style.width = '80%';
 
-    const { data: pub } = supabase.storage.from(DOCS_BUCKET).getPublicUrl(path);
+    const { data: pub } = sb.storage.from(DOCS_BUCKET).getPublicUrl(path);
     const url = pub.publicUrl;
 
     state.uploads[key] = url;
@@ -801,7 +801,7 @@ async function submitForm() {
   });
 
   try {
-    const { error: jugErr } = await supabase.from('jugadores').insert({
+    const { error: jugErr } = await sb.from('jugadores').insert({
       id: registrationId,
       nombre, apellidos,
       fecha_nacimiento: dob,
@@ -817,7 +817,7 @@ async function submitForm() {
     });
     if (jugErr) throw jugErr;
 
-    const { error: medErr } = await supabase.from('datos_medicos').insert({
+    const { error: medErr } = await sb.from('datos_medicos').insert({
       jugador_id: registrationId,
       tipo_sangre: document.getElementById('sangre').value,
       condiciones,
