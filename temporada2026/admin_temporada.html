@@ -818,7 +818,7 @@ function openCred(id) {
         text: JSON.stringify({n:(f['Nombre']||'')+(f['Apellidos']||''),curp:f['CURP']||'',cat:f['Categoría']||'',num:f['Número Jugador']||''}),
         width: 100, height: 100,
         colorDark: '#101f3d', colorLight: '#ffffff',
-        correctLevel: QRCode.CorrectLevel.M
+        correctLevel: QRCode.CorrectLevel.L
       });
     }
   }, 200);
