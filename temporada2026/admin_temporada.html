@@ -214,6 +214,7 @@ table.lt td{padding:12px 14px;font-size:13px;color:var(--text);border-top:1px so
       <button class="tab-btn" id="tb-morosos" onclick="switchTab('morosos')">⚠️ Atrasos</button>
       <button class="tab-btn" id="tb-uniformes" onclick="switchTab('uniformes')">🎽 Uniformes</button>
       <button class="tab-btn" id="tb-tienda" onclick="switchTab('tienda')">🛒 Tienda</button>
+      <button class="tab-btn" id="tb-pedidos" onclick="switchTab('pedidos')">🛍️ Pedidos</button>
     </div>
 
     <!-- JUGADORES -->
@@ -319,6 +320,20 @@ table.lt td{padding:12px 14px;font-size:13px;color:var(--text);border-top:1px so
         <div id="tienda-content"></div>
       </div>
     </div>
+
+    <!-- PEDIDOS -->
+    <div class="morosos-section" id="section-pedidos">
+      <div class="content-card">
+        <div class="mor-header">
+          <div>
+            <div class="mor-title">Pedidos Wolve Store</div>
+            <div class="mor-sub">Pedidos enviados por los papás desde pedido_tienda.html</div>
+          </div>
+          <button class="btn-action btn-ghost" onclick="exportPedidos()">📥 Exportar Excel</button>
+        </div>
+        <div id="pedidos-content"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -399,7 +414,10 @@ const UNIFORME_ITEMS = [
 
 let allRecords   = [];
 let tiendaRecords = [];
+let pedidosRecords = [];
 let currentId    = null;
+const ESTADO_PEDIDO_LABEL = { pendiente: 'Pendiente', pagado: 'Pagado', surtido: 'Surtido' };
+const ESTADO_PEDIDO_NEXT  = { pendiente: 'pagado', pagado: 'surtido', surtido: 'pendiente' };
 
 // ── AUTH ──
 function login() {
@@ -427,6 +445,10 @@ async function loadData() {
     const { data: tiendaData, error: tiendaErr } = await sb.rpc('admin_list_tienda', { p_pwd: PWD });
     if (tiendaErr) throw tiendaErr;
     tiendaRecords = (tiendaData || []).map(mapTiendaFromSupabase);
+
+    const { data: pedidosData, error: pedidosErr } = await sb.rpc('admin_list_pedidos_tienda', { p_pwd: PWD });
+    if (pedidosErr) throw pedidosErr;
+    pedidosRecords = pedidosData || [];
 
     updateStats();
     renderTable();
@@ -458,7 +480,7 @@ function tieneAtraso(rec) {
 
 // ── TABS ──
 function switchTab(tab) {
-  ['jugadores','pagos','morosos','uniformes','tienda'].forEach(function(t) {
+  ['jugadores','pagos','morosos','uniformes','tienda','pedidos'].forEach(function(t) {
     var btn = document.getElementById('tb-' + t);
     if (btn) btn.classList.remove('active');
     var sec = document.getElementById('section-' + t);
@@ -473,6 +495,7 @@ function switchTab(tab) {
   if (tab === 'morosos') renderMorosos();
   if (tab === 'uniformes') renderUniformes();
   if (tab === 'tienda') renderTienda();
+  if (tab === 'pedidos') renderPedidos();
 }
 
 // ── LIST (jugadores) ──
@@ -932,6 +955,83 @@ async function deleteTienda(id) {
     tiendaRecords = tiendaRecords.filter(function(r) { return r.id !== id; });
     renderTienda();
   } catch(e) { alert('❌ Error: ' + e.message); }
+}
+
+// ── PEDIDOS ──
+function renderPedidos() {
+  var container = document.getElementById('pedidos-content');
+  if (!pedidosRecords.length) { container.innerHTML = '<div class="empty">Aún no hay pedidos de Wolve Store.</div>'; return; }
+
+  var html = '';
+  pedidosRecords.forEach(function(r) {
+    var itemsHtml = (r.items || []).map(function(it) {
+      return '<div style="font-size:12px;color:var(--gray)">' + it.cantidad + '× ' + it.producto + ' · Talla ' + it.talla + (it.numero ? ' · #' + it.numero : '') + '</div>';
+    }).join('');
+    var estado = r.estado || 'pendiente';
+    var badgeClass = estado === 'surtido' ? 'badge-ok' : estado === 'pagado' ? 'badge-cat' : 'badge-warn';
+    var fecha = r.created_at ? new Date(r.created_at).toLocaleDateString('es-MX') : '—';
+
+    html += '<div class="p-row" style="cursor:default">' +
+      '<div class="p-info">' +
+        '<div class="p-name">' + (r.jugador_nombre || '—') + '</div>' +
+        '<div class="p-sub">' + (r.tutor_nombre || '—') + ' · ' + (r.tutor_telefono || '—') + ' · ' + fecha + '</div>' +
+        '<div style="margin-top:6px">' + itemsHtml + '</div>' +
+      '</div>' +
+      '<div style="text-align:right;min-width:90px">' +
+        '<div style="font-size:15px;font-weight:800;color:var(--text)">$' + (r.total || 0).toLocaleString() + '</div>' +
+      '</div>' +
+      '<span class="badge ' + badgeClass + '" style="cursor:pointer" onclick="toggleEstadoPedido(\'' + r.id + '\')" title="Clic para cambiar estado">' + ESTADO_PEDIDO_LABEL[estado] + '</span>' +
+      '<div class="p-actions">' +
+        '<button class="icon-btn icon-del" title="Eliminar" onclick="deletePedido(\'' + r.id + '\')">🗑</button>' +
+      '</div>' +
+    '</div>';
+  });
+  container.innerHTML = '<div class="list-wrap">' + html + '</div>';
+}
+
+async function toggleEstadoPedido(id) {
+  var rec = pedidosRecords.find(function(r) { return r.id === id; });
+  if (!rec) return;
+  var siguiente = ESTADO_PEDIDO_NEXT[rec.estado || 'pendiente'];
+  try {
+    var { error } = await sb.rpc('admin_update_pedido_estado', { p_pwd: PWD, p_id: id, p_estado: siguiente });
+    if (error) throw error;
+    rec.estado = siguiente;
+    renderPedidos();
+  } catch(e) { alert('❌ Error: ' + e.message); }
+}
+
+async function deletePedido(id) {
+  if (!confirm('¿Eliminar este pedido?')) return;
+  try {
+    var { error } = await sb.rpc('admin_delete_pedido_tienda', { p_pwd: PWD, p_id: id });
+    if (error) throw error;
+    pedidosRecords = pedidosRecords.filter(function(r) { return r.id !== id; });
+    renderPedidos();
+  } catch(e) { alert('❌ Error: ' + e.message); }
+}
+
+function exportPedidos() {
+  if (!pedidosRecords.length) { alert('No hay pedidos registrados.'); return; }
+  var rows = [];
+  pedidosRecords.forEach(function(r) {
+    (r.items || []).forEach(function(it) {
+      rows.push({
+        Jugador: r.jugador_nombre || '',
+        Tutor: r.tutor_nombre || '',
+        Teléfono: r.tutor_telefono || '',
+        Email: r.tutor_email || '',
+        Producto: it.producto,
+        Talla: it.talla,
+        Cantidad: it.cantidad,
+        Número: it.numero || '',
+        Subtotal: it.subtotal,
+        Estado: ESTADO_PEDIDO_LABEL[r.estado || 'pendiente'],
+        Fecha: r.created_at ? r.created_at.slice(0,10) : ''
+      });
+    });
+  });
+  downloadXlsx(rows, 'pedidos_wolve_store.xlsx', 'Pedidos');
 }
 
 // ── EXPORTAR EXCEL ──

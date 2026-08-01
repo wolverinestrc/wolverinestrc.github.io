@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pedido Wolve Store – Wolverines TRC</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f1f4f9; --card:#fff; --border:#e5e9f2;
+  --navy:#101f3d; --blue:#2563eb; --blue-dk:#1d4ed8; --blue-lt:#eaf1ff;
+  --text:#182338; --gray:#67728c; --gray-lt:#a4adc2;
+  --green:#16a34a; --red:#e11d48;
+  --shadow:0 1px 2px rgba(16,31,61,0.04), 0 1px 6px rgba(16,31,61,0.05);
+}
+body{background:var(--bg);font-family:'Montserrat',sans-serif;color:var(--text)}
+header{background:var(--navy);padding:20px 24px;display:flex;align-items:center;gap:14px}
+header img{width:44px;height:44px;border-radius:50%;background:white;object-fit:contain;padding:4px}
+header h1{font-size:17px;font-weight:800;color:white}
+header p{font-size:12px;color:#8ea0c4;margin-top:1px}
+
+.wrap{max-width:1100px;margin:0 auto;padding:24px 20px 80px;display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start}
+@media(max-width:860px){.wrap{grid-template-columns:1fr}}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:22px}
+.card + .card{margin-top:16px}
+.card h2{font-size:15px;font-weight:800;margin-bottom:2px}
+.card .sub{font-size:12.5px;color:var(--gray);margin-bottom:16px}
+
+.field{margin-bottom:14px}
+.field label{display:block;font-size:11px;font-weight:700;letter-spacing:0.3px;color:var(--gray);text-transform:uppercase;margin-bottom:6px}
+.field label span{color:var(--red)}
+.field input,.field select{width:100%;border:1.5px solid var(--border);border-radius:9px;padding:11px 13px;font-family:'Montserrat',sans-serif;font-size:13.5px;color:var(--text);outline:none;background:var(--bg)}
+.field input:focus,.field select:focus{border-color:var(--blue)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:480px){.row2{grid-template-columns:1fr}}
+
+.prod-row{display:flex;gap:14px;align-items:center;padding:14px 0;border-top:1px solid var(--border)}
+.prod-row:first-of-type{border-top:none}
+.prod-thumb{width:52px;height:52px;border-radius:10px;object-fit:cover;background:var(--blue-lt);flex-shrink:0;cursor:pointer}
+.prod-info{flex:1;min-width:120px}
+.prod-name{font-size:13.5px;font-weight:700}
+.prod-price{font-size:12.5px;color:var(--blue-dk);font-weight:700;margin-top:1px}
+.prod-controls{display:flex;gap:8px;align-items:center;flex-shrink:0}
+.prod-controls select{width:118px;border:1.5px solid var(--border);border-radius:8px;padding:8px 10px;font-family:'Montserrat',sans-serif;font-size:12.5px;background:var(--bg);outline:none}
+.prod-controls select:focus{border-color:var(--blue)}
+.prod-controls input[type=number]{width:56px;border:1.5px solid var(--border);border-radius:8px;padding:8px 6px;text-align:center;font-family:'Montserrat',sans-serif;font-size:13px;outline:none}
+.prod-controls input[type=number]:focus{border-color:var(--blue)}
+.prod-num{width:52px;border:1.5px solid var(--border);border-radius:8px;padding:8px 6px;text-align:center;font-family:'Montserrat',sans-serif;font-size:12.5px;outline:none}
+
+.preview{position:sticky;top:20px;background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
+.preview-img-wrap{aspect-ratio:1;background:var(--blue-lt);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.preview-img-wrap img{width:100%;height:100%;object-fit:contain;padding:24px}
+.preview-body{padding:18px}
+.preview-name{font-size:15px;font-weight:800}
+.preview-price{font-size:18px;font-weight:900;color:var(--blue-dk);margin-top:4px}
+.preview-hint{font-size:11.5px;color:var(--gray-lt);margin-top:10px;line-height:1.5}
+
+.total-bar{display:flex;justify-content:space-between;align-items:center;background:var(--blue-lt);border-radius:12px;padding:16px 18px;margin-top:4px}
+.total-bar .lbl{font-size:12px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:0.5px}
+.total-bar .val{font-size:24px;font-weight:900;color:var(--blue-dk)}
+
+.submit-btn{width:100%;background:var(--blue);border:none;color:white;font-family:'Montserrat',sans-serif;font-size:14px;font-weight:800;padding:16px;border-radius:11px;cursor:pointer;margin-top:16px}
+.submit-btn:hover{background:var(--blue-dk)}
+.submit-btn:disabled{background:var(--gray-lt);cursor:not-allowed}
+.alert{border-radius:9px;padding:13px 16px;font-size:12.5px;font-weight:600;margin-top:12px;display:none}
+.alert.show{display:block}
+.alert.error{background:#fde8ee;color:var(--red)}
+
+#success-screen{display:none;max-width:480px;margin:60px auto;text-align:center;padding:20px}
+#success-screen .icon{font-size:56px;margin-bottom:16px}
+#success-screen h2{font-size:22px;font-weight:900;color:var(--blue-dk);margin-bottom:10px}
+#success-screen p{color:var(--gray);font-size:14px;line-height:1.7}
+</style>
+</head>
+<body>
+
+<header>
+  <img src="https://wolverines.mx/IMG_0019_transparent.png" alt="Wolverines" onerror="this.style.display='none'">
+  <div>
+    <h1>WOLVE STORE 🏈</h1>
+    <p>Pedido de mercancía oficial · Wolverines TRC</p>
+  </div>
+</header>
+
+<div id="form-screen">
+  <div class="wrap">
+    <div>
+      <div class="card">
+        <h2>👤 ¿Quién eres?</h2>
+        <div class="sub">Selecciona a tu jugador/a y tus datos de contacto</div>
+        <div class="field">
+          <label>Jugador/a <span>*</span></label>
+          <select id="f-jugador"><option value="">Cargando roster...</option></select>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label>Tu nombre <span>*</span></label>
+            <input type="text" id="f-tutor-nombre" placeholder="Nombre completo">
+          </div>
+          <div class="field">
+            <label>Celular <span>*</span></label>
+            <input type="tel" id="f-tutor-tel" placeholder="871 000 0000">
+          </div>
+        </div>
+        <div class="field">
+          <label>Correo electrónico <span>*</span></label>
+          <input type="email" id="f-tutor-email" placeholder="correo@ejemplo.com">
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>🛍️ Wolve Store</h2>
+        <div class="sub">Indica talla y cantidad de lo que quieras pedir — deja en 0 lo que no necesites</div>
+        <div id="products-list"></div>
+      </div>
+
+      <div class="total-bar">
+        <span class="lbl">Total del pedido</span>
+        <span class="val" id="total-val">$0</span>
+      </div>
+      <div class="alert error" id="alert-error"></div>
+      <button class="submit-btn" id="submit-btn" onclick="submitPedido()">💾 Enviar pedido</button>
+    </div>
+
+    <div class="preview" id="preview">
+      <div class="preview-img-wrap"><img id="preview-img" src="" alt=""></div>
+      <div class="preview-body">
+        <div class="preview-name" id="preview-name">—</div>
+        <div class="preview-price" id="preview-price">—</div>
+        <div class="preview-hint">Selecciona un producto de la lista para verlo aquí en grande.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="success-screen">
+  <div class="icon">🏈</div>
+  <h2>¡Pedido enviado!</h2>
+  <p>Recibimos tu pedido de Wolve Store. Nos pondremos en contacto contigo para confirmar el pago y la entrega.</p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://xaawoqyjavqcybafirri.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhYXdvcXlqYXZxY3liYWZpcnJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1Mzg4MjcsImV4cCI6MjEwMTExNDgyN30.TdLuimBVQIILaaW0UtZDHDSoDpDomwmL6RbG-K-GDZ0';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const INFANTIL = ['4','6','8','10','12','14'];
+const JUVENIL  = ['XS','S','M','L','XL','XXL','XXXL'];
+
+const PRODUCTS = [
+  { id: 1,  name: 'Jersey Oficial',            price: 680,  img: 'jersey.jpeg',          sizeType: 'tallas' },
+  { id: 2,  name: 'Playera Wolverines',         price: 315,  img: 'playera.jpeg',         sizeType: 'tallas' },
+  { id: 3,  name: 'Gorra Oficial',              price: 370,  img: 'gorra.jpeg',           sizeType: 'fixed', sizes: ['S','M','L'] },
+  { id: 4,  name: 'Playera Blanca',             price: 315,  img: 'playera_blanca.jpeg',  sizeType: 'tallas' },
+  { id: 5,  name: 'Gorra Blanca',               price: 370,  img: 'gorra_blanca.jpeg',    sizeType: 'fixed', sizes: ['S','M','L'] },
+  { id: 6,  name: 'Rompevientos Wolverines',    price: 575,  img: 'rompevientos.jpeg',    sizeType: 'tallas' },
+  { id: 7,  name: 'Chaleco Pro Evolution',      price: 940,  img: 'chaleco.jpeg',         sizeType: 'tallas' },
+  { id: 8,  name: 'Mochila Creatlets',          price: 940,  img: 'mochila.jpeg',         sizeType: 'fixed', sizes: ['Única'] },
+  { id: 9,  name: 'Hoodie Wolverines',          price: 835,  img: 'hoodie.jpeg',          sizeType: 'tallas' },
+  { id: 10, name: 'Pulsera Azul Wolverines',    price: 50,   img: 'pulsera.jpeg',         sizeType: 'fixed', sizes: ['Única'] },
+  { id: 11, name: 'Headband GameBreaker',       price: 1250, img: 'headband.jpeg',        sizeType: 'fixed', sizes: ['XS-S (43–51 cm)','M-L (51–58 cm)','XL-2XL (58–66 cm)'], customizable: true },
+  { id: 12, name: 'Llavero Wolverines',         price: 150,  img: 'llavero.jpeg',         sizeType: 'fixed', sizes: ['Única'] },
+];
+
+let jugadores = [];
+
+function sizeOptionsHtml(p) {
+  if (p.sizeType === 'fixed') {
+    return '<option value="">Talla</option>' + p.sizes.map(s => `<option value="${s}">${s}</option>`).join('');
+  }
+  return '<option value="">Talla</option>' +
+    '<optgroup label="Infantil">' + INFANTIL.map(s => `<option value="${s}">${s}</option>`).join('') + '</optgroup>' +
+    '<optgroup label="Juvenil">' + JUVENIL.map(s => `<option value="${s}">${s}</option>`).join('') + '</optgroup>';
+}
+
+function renderProducts() {
+  const cont = document.getElementById('products-list');
+  cont.innerHTML = PRODUCTS.map(p => `
+    <div class="prod-row">
+      <img class="prod-thumb" src="${p.img}" alt="${p.name}" onclick="showPreview(${p.id})" onerror="this.style.display='none'">
+      <div class="prod-info" onclick="showPreview(${p.id})" style="cursor:pointer">
+        <div class="prod-name">${p.name}</div>
+        <div class="prod-price">$${p.price.toLocaleString()}</div>
+      </div>
+      <div class="prod-controls">
+        ${p.customizable ? `<input type="text" class="prod-num" id="num-${p.id}" maxlength="2" placeholder="Núm." oninput="this.value=this.value.replace(/[^0-9]/g,'')">` : ''}
+        <select id="size-${p.id}" onfocus="showPreview(${p.id})">${sizeOptionsHtml(p)}</select>
+        <input type="number" id="qty-${p.id}" min="0" value="0" onfocus="showPreview(${p.id})" oninput="updateTotal()">
+      </div>
+    </div>
+  `).join('');
+  showPreview(PRODUCTS[0].id);
+}
+
+function showPreview(pid) {
+  const p = PRODUCTS.find(x => x.id === pid);
+  if (!p) return;
+  document.getElementById('preview-img').src = p.img;
+  document.getElementById('preview-name').textContent = p.name;
+  document.getElementById('preview-price').textContent = '$' + p.price.toLocaleString();
+}
+
+function updateTotal() {
+  let total = 0;
+  PRODUCTS.forEach(p => {
+    const qty = parseInt(document.getElementById('qty-' + p.id).value) || 0;
+    total += qty * p.price;
+  });
+  document.getElementById('total-val').textContent = '$' + total.toLocaleString();
+}
+
+async function loadJugadores() {
+  const sel = document.getElementById('f-jugador');
+  try {
+    const { data, error } = await sb.rpc('list_jugadores_publico');
+    if (error) throw error;
+    jugadores = data || [];
+    sel.innerHTML = '<option value="">Selecciona...</option>' +
+      jugadores.map(j => `<option value="${j.id}">${j.nombre} ${j.apellidos} · ${j.categoria}</option>`).join('');
+  } catch(e) {
+    sel.innerHTML = '<option value="">Error al cargar roster</option>';
+  }
+}
+
+function showError(msg) {
+  const el = document.getElementById('alert-error');
+  el.textContent = msg;
+  el.classList.add('show');
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+function hideError() {
+  document.getElementById('alert-error').classList.remove('show');
+}
+
+async function submitPedido() {
+  hideError();
+
+  const jugadorId = document.getElementById('f-jugador').value;
+  const tutorNombre = document.getElementById('f-tutor-nombre').value.trim();
+  const tutorTel = document.getElementById('f-tutor-tel').value.trim();
+  const tutorEmail = document.getElementById('f-tutor-email').value.trim();
+
+  if (!jugadorId) return showError('⚠️ Selecciona a tu jugador/a.');
+  if (!tutorNombre) return showError('⚠️ Ingresa tu nombre.');
+  if (!tutorTel) return showError('⚠️ Ingresa tu celular.');
+  if (!tutorEmail || !tutorEmail.includes('@')) return showError('⚠️ Ingresa un correo válido.');
+
+  const items = [];
+  for (const p of PRODUCTS) {
+    const qty = parseInt(document.getElementById('qty-' + p.id).value) || 0;
+    if (qty <= 0) continue;
+    const size = document.getElementById('size-' + p.id).value;
+    if (!size) return showError('⚠️ Falta la talla de: ' + p.name);
+    let numero = '';
+    if (p.customizable) {
+      numero = (document.getElementById('num-' + p.id).value || '').trim();
+      if (!numero) return showError('⚠️ Indica el número a personalizar en: ' + p.name);
+    }
+    items.push({ producto: p.name, talla: size, cantidad: qty, precio_unitario: p.price, subtotal: qty * p.price, numero: numero || undefined });
+  }
+  if (!items.length) return showError('⚠️ Agrega al menos un producto (cantidad mayor a 0).');
+
+  const total = items.reduce((s, i) => s + i.subtotal, 0);
+  const jugador = jugadores.find(j => j.id === jugadorId);
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Enviando...';
+
+  try {
+    const { error } = await sb.from('pedidos_tienda').insert({
+      jugador_id: jugadorId,
+      jugador_nombre: jugador ? (jugador.nombre + ' ' + jugador.apellidos) : '',
+      tutor_nombre: tutorNombre,
+      tutor_telefono: tutorTel,
+      tutor_email: tutorEmail,
+      items: items,
+      total: total,
+    });
+    if (error) throw error;
+
+    document.getElementById('form-screen').style.display = 'none';
+    document.getElementById('success-screen').style.display = 'block';
+    window.scrollTo(0, 0);
+  } catch(e) {
+    showError('❌ Error al enviar: ' + e.message);
+    btn.disabled = false;
+    btn.textContent = '💾 Enviar pedido';
+  }
+}
+
+renderProducts();
+loadJugadores();
+</script>
+</body>
+</html>
