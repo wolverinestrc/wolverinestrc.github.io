@@ -134,18 +134,21 @@ header{background:var(--navy);padding:18px 28px;display:flex;align-items:center;
 .doc-btn:hover{background:#d9e7ff}
 
 /* CREDENCIAL */
-.cred-card{background:linear-gradient(135deg,var(--navy),var(--blue-dk));padding:26px;text-align:center;position:relative;overflow:hidden;border-radius:16px 16px 0 0}
-.cred-logo{width:46px;height:46px;object-fit:contain;margin-bottom:8px;background:white;border-radius:50%;padding:4px}
-.cred-photo{width:88px;height:88px;border-radius:50%;object-fit:cover;border:3px solid white;margin:12px auto;display:block}
-.cred-photo-ph{width:88px;height:88px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:34px;margin:12px auto;color:white}
-.cred-name{font-size:19px;font-weight:800;color:white}
-.cred-cat{font-size:11px;color:rgba(255,255,255,0.75);letter-spacing:1px;text-transform:uppercase;margin-top:4px}
-.cred-num{font-size:40px;font-weight:900;color:#ffd35c;line-height:1;margin-top:6px}
-.cred-info{padding:16px 24px}
-.cred-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:12.5px}
-.cred-qr{padding:16px 24px;text-align:center;border-top:1px solid var(--border)}
-.cred-qr canvas{margin:0 auto;display:block}
-.cred-qr-label{font-size:10.5px;color:var(--gray);letter-spacing:1px;text-transform:uppercase;margin-top:6px}
+.cred-card{background:linear-gradient(160deg,#0d1b30,#16294f);position:relative;overflow:hidden;border-radius:16px 16px 0 0}
+.cred-card::before{content:'';position:absolute;top:0;left:0;right:0;height:100px;background:repeating-linear-gradient(115deg,rgba(255,203,5,0.12) 0 2px,transparent 2px 14px);pointer-events:none}
+.cred-top{position:relative;padding:26px 24px 18px;text-align:center}
+.cred-logo{width:40px;height:40px;object-fit:contain;margin-bottom:6px;background:white;border-radius:50%;padding:4px}
+.cred-brand{font-size:12.5px;font-weight:800;letter-spacing:2px;color:white}
+.cred-photo-wrap{width:148px;height:148px;margin:18px auto 0;border-radius:14px;overflow:hidden;border:3px solid #FFCB05;background:rgba(255,255,255,0.08)}
+.cred-photo{width:100%;height:100%;object-fit:cover;display:block}
+.cred-photo-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:48px;color:rgba(255,255,255,0.4)}
+.cred-name{font-size:20px;font-weight:900;color:#FFCB05;letter-spacing:0.5px;margin-top:16px;line-height:1.25}
+.cred-dob{font-size:11px;color:rgba(255,255,255,0.65);letter-spacing:1.5px;text-transform:uppercase;margin-top:5px}
+.cred-scan-wave{display:block;width:100%;height:22px;margin-bottom:-1px;position:relative}
+.cred-scan{background:#FFCB05;padding:8px 24px 24px;text-align:center}
+.cred-scan-label{font-size:11px;font-weight:800;letter-spacing:2px;color:#101f3d;margin-bottom:8px}
+.cred-qr-box{background:white;display:inline-block;padding:8px;border-radius:8px}
+.cred-qr-box canvas{margin:0 auto;display:block}
 .print-btn{width:100%;background:var(--blue);border:none;color:white;font-family:'Montserrat',sans-serif;font-size:12.5px;font-weight:800;padding:14px;cursor:pointer;border-radius:0 0 16px 16px}
 .print-btn:hover{background:var(--blue-dk)}
 
@@ -816,23 +819,29 @@ function openCred(id) {
     ? '<img src="' + f['Foto'] + '" class="cred-photo">'
     : '<div class="cred-photo-ph">👤</div>';
 
+  var dob = f['Fecha de Nacimiento'];
+  var dobFmt = '—';
+  if (dob) {
+    var parts = dob.split('-');
+    if (parts.length === 3) dobFmt = parts[2] + '/' + parts[1] + '/' + parts[0];
+    else dobFmt = dob;
+  }
+
   document.getElementById('cred-content').innerHTML =
     '<div class="cred-card">' +
-      '<img src="https://wolverines.mx/IMG_0019_transparent.png" class="cred-logo" onerror="this.style.display=\'none\'">' +
-      '<div style="font-size:15px;font-weight:800;letter-spacing:1px;color:white">WOLVERINES TRC</div>' +
-      '<div style="font-size:10px;color:rgba(255,255,255,0.65);letter-spacing:1px;text-transform:uppercase">Temporada Ago–Dic 2026</div>' +
-      fotoHtml +
-      '<div class="cred-name">' + (f['Nombre']||'') + ' ' + (f['Apellidos']||'') + '</div>' +
-      '<div class="cred-cat">' + (f['Categoría']||'') + '</div>' +
-      '<div class="cred-num">#' + (f['Número Jugador']||'00') + '</div>' +
+      '<div class="cred-top">' +
+        '<img src="https://wolverines.mx/IMG_0019_transparent.png" class="cred-logo" onerror="this.style.display=\'none\'">' +
+        '<div class="cred-brand">WOLVERINES TRC</div>' +
+        '<div class="cred-photo-wrap">' + fotoHtml + '</div>' +
+        '<div class="cred-name">' + (f['Nombre']||'') + ' ' + (f['Apellidos']||'') + '</div>' +
+        '<div class="cred-dob">Fecha de nacimiento: ' + dobFmt + '</div>' +
+      '</div>' +
+      '<svg class="cred-scan-wave" viewBox="0 0 300 22" preserveAspectRatio="none"><path d="M0,22 L0,13 Q150,0 300,13 L300,22 Z" fill="#FFCB05"/></svg>' +
+      '<div class="cred-scan">' +
+        '<div class="cred-scan-label">ESCANEA</div>' +
+        '<div class="cred-qr-box" id="qr-box"></div>' +
+      '</div>' +
     '</div>' +
-    '<div class="cred-info">' +
-      '<div class="cred-row"><span style="color:var(--gray)">Género</span><span style="font-weight:700">' + (f['Género']||'—') + '</span></div>' +
-      '<div class="cred-row"><span style="color:var(--gray)">Fecha Nac.</span><span style="font-weight:700">' + (f['Fecha de Nacimiento']||'—') + '</span></div>' +
-      '<div class="cred-row"><span style="color:var(--gray)">CURP</span><span style="font-size:10px;letter-spacing:1px">' + (f['CURP']||'—') + '</span></div>' +
-      '<div class="cred-row"><span style="color:var(--gray)">Tutor</span><span style="font-weight:700">' + (f['Tutor']||'—') + '</span></div>' +
-    '</div>' +
-    '<div class="cred-qr"><div id="qr-box"></div><div class="cred-qr-label">Escanea para verificar</div></div>' +
     '<button class="print-btn" onclick="window.print()">🖨️ Imprimir</button>' +
     '<div style="text-align:center;padding:12px"><button class="modal-close" onclick="closeModal(\'cred-modal\')">Cerrar</button></div>';
 
