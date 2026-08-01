@@ -271,6 +271,17 @@ table.lt td{padding:12px 14px;font-size:13px;color:var(--text);border-top:1px so
         <div style="font-size:12px;color:var(--gray);padding:0 24px 20px">💡 Haz clic en los cuadros de mes en la lista de jugadores para cambiar el estado de cada pago</div>
       </div>
 
+      <div class="content-card" style="margin-top:20px">
+        <div class="cc-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+          <div>
+            <div class="cc-title">🧾 Historial de pagos</div>
+            <div class="cc-subtitle">Cada pago marcado como "Pagado" genera un recibo que se envía por correo al tutor</div>
+          </div>
+          <button class="btn-action btn-ghost" onclick="exportHistorialPagos()">📥 Exportar Excel</button>
+        </div>
+        <div id="historial-pagos-content"></div>
+      </div>
+
       <div class="stats-bar" style="grid-template-columns:repeat(3,1fr);margin-top:20px">
         <div class="stat st-green"><div class="sn" id="bal-ingresos">$0</div><div class="sl">Ingresos (mensualidades cobradas)</div></div>
         <div class="stat st-red"><div class="sn" id="bal-gastos">$0</div><div class="sl">Gastos</div></div>
@@ -444,6 +455,7 @@ let allRecords   = [];
 let tiendaRecords = [];
 let pedidosRecords = [];
 let gastosRecords = [];
+let pagosHistorial = [];
 let currentId    = null;
 const ESTADO_PEDIDO_LABEL = { pendiente: 'Pendiente', pagado: 'Pagado', surtido: 'Surtido' };
 const ESTADO_PEDIDO_NEXT  = { pendiente: 'pagado', pagado: 'surtido', surtido: 'pendiente' };
@@ -482,6 +494,10 @@ async function loadData() {
     const { data: gastosData, error: gastosErr } = await sb.rpc('admin_list_gastos', { p_pwd: PWD });
     if (gastosErr) throw gastosErr;
     gastosRecords = gastosData || [];
+
+    const { data: historialData, error: historialErr } = await sb.rpc('admin_list_pagos_historial', { p_pwd: PWD });
+    if (historialErr) throw historialErr;
+    pagosHistorial = historialData || [];
 
     updateStats();
     renderTable();
@@ -613,10 +629,17 @@ async function togglePago(mes, id) {
     });
     if (error) throw error;
     rec.fields[campo] = siguiente;
-    if (siguiente === 'Pagado' && rec.fields['Email']) {
-      sb.functions.invoke('send-email', { body: { tipo: 'pago', to: rec.fields['Email'], data: {
-        nombre: rec.fields['Nombre'] + ' ' + rec.fields['Apellidos'], periodo: mes, estado: siguiente
-      } } }).catch(function() {});
+    if (siguiente === 'Pagado') {
+      var jugadorNombre = rec.fields['Nombre'] + ' ' + rec.fields['Apellidos'];
+      var monto = (PAGOS_INFO[mes] || {}).monto || 0;
+      var fecha = new Date().toISOString().split('T')[0];
+      pagosHistorial.unshift({ id: 'local-' + Date.now(), jugador_id: id, jugador_nombre: jugadorNombre, periodo: mes.toLowerCase(), monto: monto, fecha_pago: fecha });
+      if (rec.fields['Email']) {
+        var periodoLabel = (PAGOS_INFO[mes] || {}).label || mes;
+        sb.functions.invoke('send-email', { body: { tipo: 'pago', to: rec.fields['Email'], data: {
+          nombre: jugadorNombre, periodo: periodoLabel, estado: siguiente, monto: monto, fecha: fecha
+        } } }).catch(function() {});
+      }
     }
     updateStats();
     renderTable();
@@ -647,6 +670,34 @@ function renderPagos() {
   grid.innerHTML = html;
   renderBalance(ingresos);
   renderGastos();
+  renderHistorialPagos();
+}
+
+function renderHistorialPagos() {
+  var container = document.getElementById('historial-pagos-content');
+  if (!pagosHistorial.length) { container.innerHTML = '<div class="empty">Sin pagos registrados todavía.</div>'; return; }
+
+  var rows = pagosHistorial.map(function(h) {
+    var periodoLabel = (PAGOS_INFO[h.periodo.charAt(0).toUpperCase() + h.periodo.slice(1)] || {}).label || h.periodo;
+    return '<tr>' +
+      '<td>' + h.jugador_nombre + '</td>' +
+      '<td>' + periodoLabel + '</td>' +
+      '<td style="font-weight:700;color:var(--green)">$' + Number(h.monto).toLocaleString() + '</td>' +
+      '<td>' + (h.fecha_pago || '—') + '</td>' +
+      '</tr>';
+  }).join('');
+
+  container.innerHTML = '<div class="lt-wrap"><table class="lt">' +
+    '<thead><tr><th>Jugador</th><th>Concepto</th><th>Monto</th><th>Fecha</th></tr></thead>' +
+    '<tbody>' + rows + '</tbody></table></div>';
+}
+
+function exportHistorialPagos() {
+  var rows = pagosHistorial.map(function(h) {
+    var periodoLabel = (PAGOS_INFO[h.periodo.charAt(0).toUpperCase() + h.periodo.slice(1)] || {}).label || h.periodo;
+    return { Jugador: h.jugador_nombre, Concepto: periodoLabel, Monto: Number(h.monto), Fecha: h.fecha_pago };
+  });
+  downloadXlsx(rows, 'historial_pagos.xlsx', 'Historial de Pagos');
 }
 
 // ── GASTOS / BALANCE ──
