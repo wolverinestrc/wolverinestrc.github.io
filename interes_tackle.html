@@ -222,9 +222,13 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+window.addEventListener('error', function(e) {
+  document.title = 'JSERR: ' + e.message + ' @ ' + e.lineno;
+});
 const SUPABASE_URL = 'https://xaawoqyjavqcybafirri.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhYXdvcXlqYXZxY3liYWZpcnJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1Mzg4MjcsImV4cCI6MjEwMTExNDgyN30.TdLuimBVQIILaaW0UtZDHDSoDpDomwmL6RbG-K-GDZ0';
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+document.title = 'STEP1-CLIENT-OK';
 
 function showError(msg) {
   const el = document.getElementById('alert-error');
@@ -278,6 +282,7 @@ document.getElementById('reg-form').addEventListener('submit', async function(e)
     btn.innerHTML = 'Enviar';
   }
 });
+document.title = 'STEP2-LISTENER-ATTACHED';
 </script>
 </body>
 </html>
