@@ -279,12 +279,43 @@ td.name{color:white;font-weight:700}
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const AT_KEY     = 'pat4VXuDH4eeQlfn1.0a31c96b01892d76412d74fed99ba7112cd636cdf06567c52c94aca200060911';
-const AT_BASE    = 'appDMdCeVFQ1mdsBZ';
-const AT_TABLE   = 'tblCq4kHZEAhLfxzv';
-const TIENDA_TABLE = 'tblYnoEvLgMgjAkbE';
+const SUPABASE_URL = 'https://xaawoqyjavqcybafirri.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhYXdvcXlqYXZxY3liYWZpcnJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1Mzg4MjcsImV4cCI6MjEwMTExNDgyN30.TdLuimBVQIILaaW0UtZDHDSoDpDomwmL6RbG-K-GDZ0';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const PWD        = 'Wolverines2026';
+
+const ITEM_KEY_TO_DB = { 'Jersey': 'jersey', 'Short': 'short', 'Banderas': 'banderas', 'Playera Blanca': 'playera_blanca' };
+const ESTADO_UNI_TO_DB = { 'No comprado': 'no_comprado', 'Pendiente': 'pendiente', 'Pagado': 'pagado' };
+const ESTADO_UNI_FROM_DB = { 'no_comprado': 'No comprado', 'pendiente': 'Pendiente', 'pagado': 'Pagado' };
+const ESTADO_PAGO_FROM_DB = { 'pendiente': 'Pendiente', 'pagado': 'Pagado', 'exento': 'Exento' };
+
+function mapJugadorFromSupabase(j) {
+  var fields = {
+    'Nombre': j.nombre, 'Apellidos': j.apellidos, 'Fecha de Nacimiento': j.fecha_nacimiento,
+    'CURP': j.curp, 'Categoría': j.categoria, 'Género': j.genero,
+    'Tutor': j.tutor, 'Teléfono': j.telefono, 'Email': j.email,
+    'Foto': j.foto_url, 'Acta de Nacimiento': j.acta_nacimiento_url,
+    'CURP Documento': j.curp_documento_url, 'Seguro Médico': j.seguro_medico_url,
+    'Número Jugador': j.numero_jugador,
+  };
+  (j.pagos || []).forEach(function(p) {
+    var mesCap = p.periodo.charAt(0).toUpperCase() + p.periodo.slice(1);
+    fields['Pago ' + mesCap] = ESTADO_PAGO_FROM_DB[p.estado] || 'Pendiente';
+  });
+  var itemDbToKey = { jersey: 'Jersey', short: 'Short', banderas: 'Banderas', playera_blanca: 'Playera Blanca' };
+  (j.uniformes || []).forEach(function(u) {
+    var key = itemDbToKey[u.item];
+    fields[key + ' Talla'] = u.talla || '';
+    fields[key + ' Estado'] = ESTADO_UNI_FROM_DB[u.estado] || 'No comprado';
+  });
+  return { id: j.id, fields: fields };
+}
+
+function mapTiendaFromSupabase(t) {
+  return { id: t.id, fields: { 'Producto': t.producto, 'Cliente': t.cliente, 'Monto': parseFloat(t.monto), 'Fecha': t.fecha } };
+}
 
 // Claves internas = nombres reales de los campos "Pago X" en Airtable (no se renombran para no romper Zapier/Airtable).
 // Las etiquetas/montos/fechas de vencimiento sí siguen el plan nuevo de 5 pagos.
@@ -325,22 +356,16 @@ function logout() {
 }
 
 // ── LOAD ──
-async function fetchAllRecords(tableId) {
-  let records = [], offset = '';
-  do {
-    const url = 'https://api.airtable.com/v0/' + AT_BASE + '/' + tableId + '?pageSize=100' + (offset ? '&offset=' + offset : '');
-    const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + AT_KEY } });
-    const data = await res.json();
-    records = records.concat(data.records || []);
-    offset = data.offset || '';
-  } while (offset);
-  return records;
-}
-
 async function loadData() {
   try {
-    allRecords = await fetchAllRecords(AT_TABLE);
-    tiendaRecords = await fetchAllRecords(TIENDA_TABLE);
+    const { data: jugData, error: jugErr } = await supabase.rpc('admin_list_jugadores', { p_pwd: PWD });
+    if (jugErr) throw jugErr;
+    allRecords = (jugData || []).map(mapJugadorFromSupabase);
+
+    const { data: tiendaData, error: tiendaErr } = await supabase.rpc('admin_list_tienda', { p_pwd: PWD });
+    if (tiendaErr) throw tiendaErr;
+    tiendaRecords = (tiendaData || []).map(mapTiendaFromSupabase);
+
     updateStats();
     renderTable();
     document.getElementById('loading').style.display = 'none';
@@ -495,13 +520,10 @@ async function togglePago(mes, id) {
   var actual = rec.fields[campo] || 'Pendiente';
   var siguiente = actual === 'Pendiente' ? 'Pagado' : actual === 'Pagado' ? 'Exento' : 'Pendiente';
   try {
-    var fields = {};
-    fields[campo] = siguiente;
-    await fetch('https://api.airtable.com/v0/' + AT_BASE + '/' + AT_TABLE + '/' + id, {
-      method: 'PATCH',
-      headers: { 'Authorization': 'Bearer ' + AT_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fields: fields, typecast: true })
+    var { error } = await supabase.rpc('admin_update_pago', {
+      p_pwd: PWD, p_jugador_id: id, p_periodo: mes.toLowerCase(), p_estado: siguiente.toLowerCase()
     });
+    if (error) throw error;
     rec.fields[campo] = siguiente;
     updateStats();
     renderTable();
@@ -724,11 +746,19 @@ async function saveDetail() {
   });
 
   try {
-    await fetch('https://api.airtable.com/v0/' + AT_BASE + '/' + AT_TABLE + '/' + currentId, {
-      method: 'PATCH',
-      headers: { 'Authorization': 'Bearer ' + AT_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fields: fields, typecast: true })
-    });
+    var { error: numErr } = await supabase.rpc('admin_update_jugador', { p_pwd: PWD, p_id: currentId, p_numero_jugador: num });
+    if (numErr) throw numErr;
+
+    for (const item of UNIFORME_ITEMS) {
+      var key = item.key.replace(/\s/g,'');
+      var talla = document.getElementById('uni-talla-' + key).value;
+      var estadoUI = document.getElementById('uni-estado-' + key).value;
+      var { error: uniErr } = await supabase.rpc('admin_update_uniforme', {
+        p_pwd: PWD, p_jugador_id: currentId, p_item: ITEM_KEY_TO_DB[item.key], p_talla: talla, p_estado: ESTADO_UNI_TO_DB[estadoUI]
+      });
+      if (uniErr) throw uniErr;
+    }
+
     var idx = allRecords.findIndex(function(r) { return r.id === currentId; });
     if (idx >= 0) Object.assign(allRecords[idx].fields, fields);
     renderTable();
@@ -785,10 +815,8 @@ function openCred(id) {
 async function deleteRecord(id, nombre) {
   if (!confirm('¿Seguro que quieres eliminar a "' + nombre + '"?\n\nEsta acción no se puede deshacer.')) return;
   try {
-    await fetch('https://api.airtable.com/v0/' + AT_BASE + '/' + AT_TABLE + '/' + id, {
-      method: 'DELETE',
-      headers: { 'Authorization': 'Bearer ' + AT_KEY }
-    });
+    var { error } = await supabase.rpc('admin_delete_jugador', { p_pwd: PWD, p_id: id });
+    if (error) throw error;
     allRecords = allRecords.filter(function(r) { return r.id !== id; });
     updateStats();
     renderTable();
@@ -902,16 +930,13 @@ async function addTienda() {
   if (!producto || !cliente || !monto) { alert('Completa producto, cliente y monto'); return; }
 
   try {
-    var res = await fetch('https://api.airtable.com/v0/' + AT_BASE + '/' + TIENDA_TABLE, {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + AT_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fields: {
-        'Producto': producto, 'Cliente': cliente, 'Monto': monto,
-        'Fecha': new Date().toISOString().slice(0,10)
-      }, typecast: true })
+    var { error: insErr } = await supabase.rpc('admin_insert_tienda', {
+      p_pwd: PWD, p_producto: producto, p_cliente: cliente, p_monto: monto, p_fecha: new Date().toISOString().slice(0,10)
     });
-    var data = await res.json();
-    tiendaRecords.push(data);
+    if (insErr) throw insErr;
+    var { data: tiendaData, error: listErr } = await supabase.rpc('admin_list_tienda', { p_pwd: PWD });
+    if (listErr) throw listErr;
+    tiendaRecords = (tiendaData || []).map(mapTiendaFromSupabase);
     document.getElementById('tienda-producto').value = '';
     document.getElementById('tienda-cliente').value = '';
     document.getElementById('tienda-monto').value = '';
@@ -922,10 +947,8 @@ async function addTienda() {
 async function deleteTienda(id) {
   if (!confirm('¿Eliminar esta venta?')) return;
   try {
-    await fetch('https://api.airtable.com/v0/' + AT_BASE + '/' + TIENDA_TABLE + '/' + id, {
-      method: 'DELETE',
-      headers: { 'Authorization': 'Bearer ' + AT_KEY }
-    });
+    var { error } = await supabase.rpc('admin_delete_tienda', { p_pwd: PWD, p_id: id });
+    if (error) throw error;
     tiendaRecords = tiendaRecords.filter(function(r) { return r.id !== id; });
     renderTienda();
   } catch(e) { alert('❌ Error: ' + e.message); }

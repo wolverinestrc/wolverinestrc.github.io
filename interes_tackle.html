@@ -220,10 +220,11 @@
 
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const AT_KEY   = 'pat4VXuDH4eeQlfn1.0a31c96b01892d76412d74fed99ba7112cd636cdf06567c52c94aca200060911';
-const AT_BASE  = 'appDMdCeVFQ1mdsBZ';
-const AT_TABLE = 'tbl8aUvsaN6UCtOw0';
+const SUPABASE_URL = 'https://xaawoqyjavqcybafirri.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhYXdvcXlqYXZxY3liYWZpcnJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1Mzg4MjcsImV4cCI6MjEwMTExNDgyN30.TdLuimBVQIILaaW0UtZDHDSoDpDomwmL6RbG-K-GDZ0';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 function showError(msg) {
   const el = document.getElementById('alert-error');
@@ -255,32 +256,17 @@ document.getElementById('reg-form').addEventListener('submit', async function(e)
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span> Enviando...';
 
-  const fields = {
-    'Nombre del niño':        nino_nombre,
-    'Fecha de nacimiento':    fecha_nac,
-    'Nombre del papá/mamá':   tutor_nombre,
-    'Teléfono de contacto':   tutor_tel,
-    'Correo electrónico':     tutor_email,
-    'Fecha de registro':      new Date().toISOString().split('T')[0],
-  };
-
   try {
-    const res = await fetch(
-      `https://api.airtable.com/v0/${AT_BASE}/${AT_TABLE}`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${AT_KEY}`,
-          'Content-Type':  'application/json',
-        },
-        body: JSON.stringify({ fields, typecast: true }),
-      }
-    );
+    const { error } = await supabase.from('interesados_tackle').insert({
+      nombre_nino: nino_nombre,
+      fecha_nacimiento: fecha_nac,
+      nombre_tutor: tutor_nombre,
+      telefono_tutor: tutor_tel,
+      email_tutor: tutor_email,
+      fecha_registro: new Date().toISOString().split('T')[0],
+    });
 
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err?.error?.message || `Error ${res.status}`);
-    }
+    if (error) throw error;
 
     document.getElementById('reg-form').style.display = 'none';
     document.getElementById('success-screen').style.display = 'block';

@@ -304,12 +304,31 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const PASSWORD       = 'Wolverines2026';
-const AIRTABLE_KEY   = 'patBt3TNLXcQjjU0P.1e91be82fac7b295b93fc3650834acff330a4fc29a31fc35619be7f182f80483';
-const AIRTABLE_BASE  = 'app9qMFY9r4yhI1sy';
-const AIRTABLE_TABLE = 'tblr6Q3w6EJXz9HWh';
-const AT_HEADERS     = { 'Authorization': `Bearer ${AIRTABLE_KEY}`, 'Content-Type': 'application/json' };
+const SUPABASE_URL = 'https://xaawoqyjavqcybafirri.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhYXdvcXlqYXZxY3liYWZpcnJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1Mzg4MjcsImV4cCI6MjEwMTExNDgyN30.TdLuimBVQIILaaW0UtZDHDSoDpDomwmL6RbG-K-GDZ0';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const DIA_DB_TO_LABEL = { lunes: 'Lunes', martes: 'Martes', miercoles: 'Miércoles', jueves: 'Jueves' };
+const DIA_LABEL_TO_DB = { 'Lunes': 'lunes', 'Martes': 'martes', 'Miércoles': 'miercoles', 'Jueves': 'jueves' };
+
+function mapJugadorSCFromSupabase(j) {
+  var f = {
+    'Nombre': j.nombre, 'Apellidos': j.apellidos, 'Género': j.genero,
+    'Fecha de Nacimiento': j.fecha_nacimiento, 'Categoría': j.categoria,
+    'Posición': j.posicion, 'Talla Playera': j.talla_playera,
+    'Tutor': j.tutor, 'Teléfono': j.telefono, 'Email': j.email,
+    'Paquete': j.paquete, 'Fecha de Registro': j.fecha_registro,
+    'Foto': j.foto_url,
+    'Pago': j.pago, 'Monto Abono': j.monto_abono, 'Número Jugador': j.numero_jugador,
+  };
+  (j.asistencia || []).forEach(function(a) {
+    f['Asistencia ' + DIA_DB_TO_LABEL[a.dia]] = a.presente;
+  });
+  return { id: j.id, fields: f };
+}
 
 let allRecords = [];
 let currentFilter = 'todos';
@@ -346,17 +365,10 @@ function switchTab(tab, btn) {
 
 // ── LOAD ──
 async function loadRecords() {
-  allRecords = [];
-  let offset = '';
   try {
-    do {
-      const url = `https://api.airtable.com/v0/${AIRTABLE_BASE}/${AIRTABLE_TABLE}?pageSize=100${offset ? '&offset=' + offset : ''}`;
-      const res = await fetch(url, { headers: AT_HEADERS });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error?.message || 'Error ' + res.status);
-      allRecords = allRecords.concat(data.records || []);
-      offset = data.offset || '';
-    } while (offset);
+    const { data, error } = await supabase.rpc('admin_list_jugadores_summer_camp', { p_pwd: PASSWORD });
+    if (error) throw error;
+    allRecords = (data || []).map(mapJugadorSCFromSupabase);
     document.getElementById('loading').style.display = 'none';
     document.getElementById('reg-table').style.display = 'table';
     document.getElementById('pago-table').style.display = 'table';
@@ -462,11 +474,8 @@ function renderTable() {
 async function deleteRecord(id, nombre) {
   if (!confirm(`¿Seguro que quieres borrar el registro de "${nombre}"?\n\nEsta acción no se puede deshacer.`)) return;
   try {
-    const res = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${AIRTABLE_TABLE}/${id}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${AIRTABLE_KEY}` }
-    });
-    if (!res.ok) throw new Error('Error al borrar');
+    const { error } = await supabase.rpc('admin_delete_jugador_summer_camp', { p_pwd: PASSWORD, p_id: id });
+    if (error) throw error;
     allRecords = allRecords.filter(r => r.id !== id);
     updateStats();
     renderTable();
@@ -556,10 +565,10 @@ async function toggleAsistencia(recordId, dia, el) {
   const totalCell = el.closest('tr').querySelector('td:last-child');
   if (totalCell) { totalCell.textContent = `${total}/4`; totalCell.style.color = total===4?'var(--green)':total>0?'var(--yellow)':'var(--red)'; }
   try {
-    await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${AIRTABLE_TABLE}/${recordId}`, {
-      method: 'PATCH', headers: AT_HEADERS,
-      body: JSON.stringify({ fields: { [campo]: nuevoValor } })
+    const { error } = await supabase.rpc('admin_upsert_asistencia', {
+      p_pwd: PASSWORD, p_jugador_id: recordId, p_dia: DIA_LABEL_TO_DB[dia], p_presente: nuevoValor
     });
+    if (error) throw error;
   } catch(e) { console.error('Error guardando asistencia:', e); }
 }
 
@@ -604,15 +613,14 @@ function closeModal(e) {
 async function guardarPago() {
   const pago = document.querySelector('input[name="pago"]:checked')?.value || 'Pendiente';
   const abono = parseInt(document.getElementById('abono-input').value) || 0;
-  const jugador = parseInt(document.getElementById('jugador-input').value) || null;
-  const fields = { 'Pago': pago };
-  if (pago === 'Abono') fields['Monto Abono'] = abono;
-  if (jugador) fields['Número Jugador'] = jugador;
+  const recActual = allRecords.find(r => r.id === currentRecordId);
+  const jugador = parseInt(document.getElementById('jugador-input').value) || (recActual?.fields['Número Jugador'] ?? null);
   try {
-    const res = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${AIRTABLE_TABLE}/${currentRecordId}`, {
-      method: 'PATCH', headers: AT_HEADERS, body: JSON.stringify({ fields })
+    const { error } = await supabase.rpc('admin_update_jugador_summer_camp', {
+      p_pwd: PASSWORD, p_id: currentRecordId, p_pago: pago,
+      p_monto_abono: pago === 'Abono' ? abono : null, p_numero_jugador: jugador
     });
-    if (!res.ok) throw new Error('Error guardando');
+    if (error) throw error;
     // Update local
     const rec = allRecords.find(r => r.id === currentRecordId);
     if (rec) { rec.fields['Pago'] = pago; rec.fields['Monto Abono'] = abono; if(jugador) rec.fields['Número Jugador'] = jugador; }
@@ -643,9 +651,8 @@ function showCredencial(recordId) {
   new QRCode(qrDiv, { text: recordId, width: 80, height: 80, colorDark: '#000000', colorLight: '#ffffff' });
   // Foto
   const photoDiv = document.getElementById('cred-photo');
-  const attachments = f['Foto'] || [];
-  if (attachments.length > 0) {
-    photoDiv.innerHTML = `<img src="${attachments[0].url}" alt="foto">`;
+  if (f['Foto']) {
+    photoDiv.innerHTML = `<img src="${f['Foto']}" alt="foto">`;
   } else {
     photoDiv.innerHTML = '🏈';
   }

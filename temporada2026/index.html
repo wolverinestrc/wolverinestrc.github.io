@@ -493,11 +493,13 @@ body{background:var(--blue-xs);font-family:'Montserrat',sans-serif;color:var(--t
 
 <div class="toast" id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const AT_KEY   = 'pat4VXuDH4eeQlfn1.0a31c96b01892d76412d74fed99ba7112cd636cdf06567c52c94aca200060911';
-const AT_BASE  = 'appDMdCeVFQ1mdsBZ';
-const AT_TABLE = 'tblCq4kHZEAhLfxzv';
-const IMGBB_KEY = '94419de23f448dd3bfe316eb03525f53';
+const SUPABASE_URL = 'https://xaawoqyjavqcybafirri.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhYXdvcXlqYXZxY3liYWZpcnJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1Mzg4MjcsImV4cCI6MjEwMTExNDgyN30.TdLuimBVQIILaaW0UtZDHDSoDpDomwmL6RbG-K-GDZ0';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const DOCS_BUCKET = 'jugador-documentos';
+const registrationId = crypto.randomUUID();
 
 let state = {
   step: 1,
@@ -748,44 +750,32 @@ async function handleFile(input, key) {
   bar.style.width = '30%';
 
   try {
-    const b64 = await toBase64(file);
-    bar.style.width = '60%';
+    bar.style.width = '30%';
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const path = `${registrationId}/${key}.${ext}`;
 
-    const fd = new FormData();
-    fd.append('image', b64.split(',')[1]);
-    fd.append('name', file.name);
+    const { error: upErr } = await supabase.storage.from(DOCS_BUCKET).upload(path, file, { upsert: true });
+    if (upErr) throw upErr;
+    bar.style.width = '80%';
 
-    const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, { method: 'POST', body: fd });
-    const data = await res.json();
+    const { data: pub } = supabase.storage.from(DOCS_BUCKET).getPublicUrl(path);
+    const url = pub.publicUrl;
 
-    if (data.success) {
-      state.uploads[key] = data.data.url;
-      bar.style.width = '100%';
+    state.uploads[key] = url;
+    bar.style.width = '100%';
 
-      const prev = document.getElementById(`prev-${key}`);
-      const img = document.getElementById(`img-${key}`);
-      const name = document.getElementById(`name-${key}`);
-      prev.style.display = 'block';
-      if (file.type.startsWith('image/')) img.src = data.data.url;
-      else { img.style.display = 'none'; }
-      name.textContent = file.name;
-      setTimeout(() => { upProg.style.display = 'none'; }, 500);
-    } else {
-      throw new Error('Upload failed');
-    }
+    const prev = document.getElementById(`prev-${key}`);
+    const img = document.getElementById(`img-${key}`);
+    const name = document.getElementById(`name-${key}`);
+    prev.style.display = 'block';
+    if (file.type.startsWith('image/')) img.src = url;
+    else { img.style.display = 'none'; }
+    name.textContent = file.name;
+    setTimeout(() => { upProg.style.display = 'none'; }, 500);
   } catch(e) {
     showToast('❌ Error al subir el archivo. Intenta de nuevo.');
     upProg.style.display = 'none';
   }
-}
-
-function toBase64(file) {
-  return new Promise((res, rej) => {
-    const r = new FileReader();
-    r.onload = () => res(r.result);
-    r.onerror = rej;
-    r.readAsDataURL(file);
-  });
 }
 
 // ── SUBMIT ──
@@ -802,54 +792,51 @@ async function submitForm() {
   const telefono = document.getElementById('telefono').value.trim();
   const email = document.getElementById('email').value.trim();
 
-  const condicionesTexto = CONDICIONES.map(c => {
-    const val = state.condiciones[c.key] || '—';
-    const detalle = document.getElementById(`detalle-txt-${c.key}`).value.trim();
-    return c.label.replace('¿','').replace('?','') + ': ' + val + (val === 'Sí' && detalle ? ' — ' + detalle : '');
-  }).join('\n');
-
-  const fields = {
-    'Nombre': nombre,
-    'Apellidos': apellidos,
-    'Fecha de Nacimiento': dob,
-    'CURP': curp,
-    'Categoría': state.categoria,
-    'Género': state.genero,
-    'Foto': state.uploads.foto,
-    'Acta de Nacimiento': state.uploads.acta,
-    'CURP Documento': state.uploads.curpdoc,
-    'Seguro Médico': state.uploads.seguro,
-    'Tutor': tutor,
-    'Teléfono': telefono,
-    'Email': email,
-    'Pago': 'Pendiente',
-    'Fecha de Registro': new Date().toISOString().split('T')[0],
-    'Tipo de Sangre': document.getElementById('sangre').value,
-    'Condiciones Médicas': condicionesTexto,
-    'Otra Condición Médica': document.getElementById('otra-condicion').value.trim(),
-    'Contacto Emergencia 1 Nombre': document.getElementById('ce1-nombre').value.trim(),
-    'Contacto Emergencia 1 Parentesco': document.getElementById('ce1-parentesco').value.trim(),
-    'Contacto Emergencia 1 Teléfono': document.getElementById('ce1-telefono').value.trim(),
-    'Contacto Emergencia 2 Nombre': document.getElementById('ce2-nombre').value.trim(),
-    'Contacto Emergencia 2 Parentesco': document.getElementById('ce2-parentesco').value.trim(),
-    'Contacto Emergencia 2 Teléfono': document.getElementById('ce2-telefono').value.trim(),
-    'Tipo de Seguro': state.tipoSeguro,
-    'Aseguradora': state.tipoSeguro === 'Seguro propio' ? document.getElementById('aseguradora').value.trim() : '',
-    'Número de Póliza': state.tipoSeguro === 'Seguro propio' ? document.getElementById('poliza').value.trim() : '',
-    'Hospital de Preferencia': document.getElementById('hospital').value.trim(),
-    'Autoriza Primeros Auxilios': state.autoriza,
-    'Tutor Autorización Médica': document.getElementById('tutor-medico').value.trim(),
-    'Fecha Autorización Médica': new Date().toISOString().split('T')[0],
-  };
+  const condiciones = {};
+  CONDICIONES.forEach(c => {
+    condiciones[c.key] = {
+      respuesta: state.condiciones[c.key] || 'No',
+      detalle: document.getElementById(`detalle-txt-${c.key}`).value.trim()
+    };
+  });
 
   try {
-    const res = await fetch(`https://api.airtable.com/v0/${AT_BASE}/${AT_TABLE}`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${AT_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fields, typecast: true })
+    const { error: jugErr } = await supabase.from('jugadores').insert({
+      id: registrationId,
+      nombre, apellidos,
+      fecha_nacimiento: dob,
+      curp,
+      categoria: state.categoria,
+      genero: state.genero,
+      foto_url: state.uploads.foto || null,
+      acta_nacimiento_url: state.uploads.acta || null,
+      curp_documento_url: state.uploads.curpdoc || null,
+      seguro_medico_url: state.uploads.seguro || null,
+      tutor, telefono, email,
+      fecha_registro: new Date().toISOString().split('T')[0],
     });
+    if (jugErr) throw jugErr;
 
-    if (!res.ok) throw new Error('Error guardando');
+    const { error: medErr } = await supabase.from('datos_medicos').insert({
+      jugador_id: registrationId,
+      tipo_sangre: document.getElementById('sangre').value,
+      condiciones,
+      otra_condicion: document.getElementById('otra-condicion').value.trim(),
+      contacto_emergencia_1_nombre: document.getElementById('ce1-nombre').value.trim(),
+      contacto_emergencia_1_parentesco: document.getElementById('ce1-parentesco').value.trim(),
+      contacto_emergencia_1_telefono: document.getElementById('ce1-telefono').value.trim(),
+      contacto_emergencia_2_nombre: document.getElementById('ce2-nombre').value.trim(),
+      contacto_emergencia_2_parentesco: document.getElementById('ce2-parentesco').value.trim(),
+      contacto_emergencia_2_telefono: document.getElementById('ce2-telefono').value.trim(),
+      tipo_seguro: state.tipoSeguro,
+      aseguradora: state.tipoSeguro === 'Seguro propio' ? document.getElementById('aseguradora').value.trim() : null,
+      numero_poliza: state.tipoSeguro === 'Seguro propio' ? document.getElementById('poliza').value.trim() : null,
+      hospital_preferencia: document.getElementById('hospital').value.trim(),
+      autoriza_primeros_auxilios: state.autoriza === 'Sí',
+      tutor_autorizacion: document.getElementById('tutor-medico').value.trim(),
+      fecha_autorizacion: new Date().toISOString().split('T')[0],
+    });
+    if (medErr) throw medErr;
 
     // Show success
     document.getElementById('step-5').style.display = 'none';

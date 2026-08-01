@@ -150,14 +150,15 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 // ═══════════════════════════════════════════════
 // ⚙️ CONFIGURACIÓN
 // ═══════════════════════════════════════════════
 const WORKER_URL     = 'https://wolverines-agente.wolverinestrc.workers.dev/';
-const AIRTABLE_KEY   = 'patBt3TNLXcQjjU0P.1e91be82fac7b295b93fc3650834acff330a4fc29a31fc35619be7f182f80483';
-const AIRTABLE_BASE  = 'app9qMFY9r4yhI1sy';
-const AIRTABLE_TABLE = 'tblr6Q3w6EJXz9HWh';
+const SUPABASE_URL = 'https://xaawoqyjavqcybafirri.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhYXdvcXlqYXZxY3liYWZpcnJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1Mzg4MjcsImV4cCI6MjEwMTExNDgyN30.TdLuimBVQIILaaW0UtZDHDSoDpDomwmL6RbG-K-GDZ0';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // ═══════════════════════════════════════════════
 
 const SYSTEM_PROMPT = `Eres el asistente virtual oficial de Wolverines TRC, una academia de Flag Football en Torreón, Coahuila.
@@ -372,34 +373,21 @@ async function wlvRegister(data) {
     // Validate date is parseable; if not, omit it
     const validDate = !isNaN(dob.getTime());
 
-    const fields = {
-      'Nombre':             data.nombre,
-      'Apellidos':          data.apellidos,
-      'Género':             data.genero,
-      ...(validDate ? {'Fecha de Nacimiento': data.fecha_nac} : {}),
-      'Categoría':          categoria,
-      'Tutor':              data.tutor,
-      'Teléfono':           data.telefono,
-      'Email':              data.email,
-      'Paquete':            data.paquete,
-      'Fecha de Registro':  new Date().toISOString().split('T')[0],
-      'Pago':               'Pendiente',
-    };
+    const { error } = await supabase.from('jugadores_summer_camp').insert({
+      nombre: data.nombre,
+      apellidos: data.apellidos,
+      genero: data.genero,
+      fecha_nacimiento: validDate ? data.fecha_nac : null,
+      categoria: categoria,
+      tutor: data.tutor,
+      telefono: data.telefono,
+      email: data.email,
+      paquete: data.paquete,
+      fecha_registro: new Date().toISOString().split('T')[0],
+      pago: 'Pendiente',
+    });
 
-    const res = await fetch(
-      `https://api.airtable.com/v0/${AIRTABLE_BASE}/${AIRTABLE_TABLE}`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${AIRTABLE_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ fields, typecast: true })
-      }
-    );
-
-    const result = await res.json();
-    if (res.ok) {
+    if (!error) {
       wlvAddMsg('bot',
         `🎉 ¡**${data.nombre}** quedó registrado correctamente en Wolverines TRC Summer Camp 2026!\n\n` +
         `📋 **Categoría:** ${categoria}\n` +
@@ -408,7 +396,7 @@ async function wlvRegister(data) {
       );
       wlvShowQR(['¿Cuáles son los métodos de pago?', 'Registrar otro jugador', 'Hablar con un asesor']);
     } else {
-      throw new Error(result?.error?.message || result?.error?.type || 'Error desconocido');
+      throw error;
     }
   } catch(e) {
     wlvAddMsg('bot', '⚠️ Error al guardar: ' + e.message + ' · Llama al 871 342 0040.');

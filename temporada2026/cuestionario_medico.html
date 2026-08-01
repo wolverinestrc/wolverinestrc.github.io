@@ -201,10 +201,11 @@ nav{background:#0d1f3c;border-bottom:2px solid var(--blue);padding:0 24px;height
 
 <div class="toast" id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const AT_KEY   = 'pat4VXuDH4eeQlfn1.0a31c96b01892d76412d74fed99ba7112cd636cdf06567c52c94aca200060911';
-const AT_BASE  = 'appDMdCeVFQ1mdsBZ';
-const AT_TABLE = 'tblCq4kHZEAhLfxzv';
+const SUPABASE_URL = 'https://xaawoqyjavqcybafirri.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhYXdvcXlqYXZxY3liYWZpcnJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1Mzg4MjcsImV4cCI6MjEwMTExNDgyN30.TdLuimBVQIILaaW0UtZDHDSoDpDomwmL6RbG-K-GDZ0';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const PWD      = 'Wolverines2026';
 
 const CONDICIONES = [
@@ -251,21 +252,43 @@ function logout() {
 }
 
 // ── LOAD ──
+function mapPlayerBasico(j) {
+  var f = {
+    'Nombre': j.nombre, 'Apellidos': j.apellidos, 'Categoría': j.categoria,
+    'Fecha de Nacimiento': j.fecha_nacimiento, 'Tutor': j.tutor,
+    '_condiciones': {}
+  };
+  var dm = j.datos_medicos;
+  if (dm) {
+    f['Tipo de Sangre'] = dm.tipo_sangre || '';
+    f['_condiciones'] = dm.condiciones || {};
+    f['Otra Condición Médica'] = dm.otra_condicion || '';
+    f['Contacto Emergencia 1 Nombre'] = dm.contacto_emergencia_1_nombre || '';
+    f['Contacto Emergencia 1 Parentesco'] = dm.contacto_emergencia_1_parentesco || '';
+    f['Contacto Emergencia 1 Teléfono'] = dm.contacto_emergencia_1_telefono || '';
+    f['Contacto Emergencia 2 Nombre'] = dm.contacto_emergencia_2_nombre || '';
+    f['Contacto Emergencia 2 Parentesco'] = dm.contacto_emergencia_2_parentesco || '';
+    f['Contacto Emergencia 2 Teléfono'] = dm.contacto_emergencia_2_telefono || '';
+    f['Tipo de Seguro'] = dm.tipo_seguro || '';
+    f['Aseguradora'] = dm.aseguradora || '';
+    f['Número de Póliza'] = dm.numero_poliza || '';
+    f['Hospital de Preferencia'] = dm.hospital_preferencia || '';
+    f['Autoriza Primeros Auxilios'] = dm.autoriza_primeros_auxilios === true ? 'Sí' : dm.autoriza_primeros_auxilios === false ? 'No' : '';
+    f['Tutor Autorización Médica'] = dm.tutor_autorizacion || '';
+    f['Fecha Autorización Médica'] = dm.fecha_autorizacion || '';
+  }
+  return { id: j.id, fields: f };
+}
+
 async function loadData() {
-  let records = [], offset = '';
-  do {
-    const url = 'https://api.airtable.com/v0/' + AT_BASE + '/' + AT_TABLE + '?pageSize=100' + (offset ? '&offset=' + offset : '');
-    const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + AT_KEY } });
-    const data = await res.json();
-    records = records.concat(data.records || []);
-    offset = data.offset || '';
-  } while (offset);
-  allRecords = records;
+  const { data, error } = await supabase.rpc('admin_list_jugadores_basicos', { p_pwd: PWD });
+  if (error) { showToast('❌ Error al cargar: ' + error.message); return; }
+  allRecords = (data || []).map(mapPlayerBasico);
   renderPlayerList();
 }
 
 function tieneMedico(f) {
-  return !!(f['Tipo de Sangre'] || f['Condiciones Médicas']);
+  return !!(f['Tipo de Sangre'] || (f['_condiciones'] && Object.keys(f['_condiciones']).length));
 }
 
 function renderPlayerList() {
@@ -316,21 +339,6 @@ function selectAutoriza(val, el) {
   el.classList.add('selected');
 }
 
-function parseCondicionesTexto(text) {
-  const result = {};
-  if (!text) return result;
-  const lines = text.split('\n');
-  CONDICIONES.forEach(c => {
-    const cleanLabel = c.label.replace('¿','').replace('?','');
-    const line = lines.find(l => l.startsWith(cleanLabel + ':'));
-    if (!line) return;
-    const rest = line.slice((cleanLabel + ':').length).trim();
-    const parts = rest.split(' — ');
-    result[c.key] = { val: parts[0].trim(), detalle: (parts[1] || '').trim() };
-  });
-  return result;
-}
-
 // ── SELECT PLAYER ──
 function selectPlayer(id) {
   selectedId = id;
@@ -369,13 +377,13 @@ function selectPlayer(id) {
   document.getElementById('tutor-medico').value = f['Tutor Autorización Médica'] || f['Tutor'] || '';
   document.getElementById('declaracion').checked = !!f['Fecha Autorización Médica'];
 
-  const parsed = parseCondicionesTexto(f['Condiciones Médicas']);
+  const condObj = f['_condiciones'] || {};
   CONDICIONES.forEach(c => {
-    const p = parsed[c.key];
-    if (!p) return;
+    const p = condObj[c.key];
+    if (!p || !p.respuesta) return;
     const btns = document.querySelectorAll(`[onclick*="selectCondicion('${c.key}'"]`);
-    const btn = Array.from(btns).find(b => b.getAttribute('onclick').includes(`'${c.key}','${p.val}'`));
-    if (btn) selectCondicion(c.key, p.val, btn);
+    const btn = Array.from(btns).find(b => b.getAttribute('onclick').includes(`'${c.key}','${p.respuesta}'`));
+    if (btn) selectCondicion(c.key, p.respuesta, btn);
     if (p.detalle) document.getElementById(`detalle-txt-${c.key}`).value = p.detalle;
   });
 
@@ -440,43 +448,43 @@ async function guardar() {
   btn.disabled = true;
   btn.textContent = '⏳ Guardando...';
 
-  const condicionesTexto = CONDICIONES.map(c => {
-    const val = condicionesState[c.key] || '—';
-    const detalle = document.getElementById(`detalle-txt-${c.key}`).value.trim();
-    return c.label.replace('¿','').replace('?','') + ': ' + val + (val === 'Sí' && detalle ? ' — ' + detalle : '');
-  }).join('\n');
-
-  const fields = {
-    'Tipo de Sangre': document.getElementById('sangre').value,
-    'Condiciones Médicas': condicionesTexto,
-    'Otra Condición Médica': document.getElementById('otra-condicion').value.trim(),
-    'Contacto Emergencia 1 Nombre': document.getElementById('ce1-nombre').value.trim(),
-    'Contacto Emergencia 1 Parentesco': document.getElementById('ce1-parentesco').value.trim(),
-    'Contacto Emergencia 1 Teléfono': document.getElementById('ce1-telefono').value.trim(),
-    'Contacto Emergencia 2 Nombre': document.getElementById('ce2-nombre').value.trim(),
-    'Contacto Emergencia 2 Parentesco': document.getElementById('ce2-parentesco').value.trim(),
-    'Contacto Emergencia 2 Teléfono': document.getElementById('ce2-telefono').value.trim(),
-    'Tipo de Seguro': tipoSeguroState,
-    'Aseguradora': tipoSeguroState === 'Seguro propio' ? document.getElementById('aseguradora').value.trim() : '',
-    'Número de Póliza': tipoSeguroState === 'Seguro propio' ? document.getElementById('poliza').value.trim() : '',
-    'Hospital de Preferencia': document.getElementById('hospital').value.trim(),
-    'Autoriza Primeros Auxilios': autorizaState,
-    'Tutor Autorización Médica': document.getElementById('tutor-medico').value.trim(),
-    'Fecha Autorización Médica': new Date().toISOString().split('T')[0],
-  };
+  const condiciones = {};
+  CONDICIONES.forEach(c => {
+    condiciones[c.key] = {
+      respuesta: condicionesState[c.key] || 'No',
+      detalle: document.getElementById(`detalle-txt-${c.key}`).value.trim()
+    };
+  });
 
   try {
-    const res = await fetch('https://api.airtable.com/v0/' + AT_BASE + '/' + AT_TABLE + '/' + selectedId, {
-      method: 'PATCH',
-      headers: { 'Authorization': 'Bearer ' + AT_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fields, typecast: true })
+    const { error } = await supabase.rpc('admin_upsert_datos_medicos', {
+      p_pwd: PWD,
+      p_jugador_id: selectedId,
+      p_tipo_sangre: document.getElementById('sangre').value,
+      p_condiciones: condiciones,
+      p_otra_condicion: document.getElementById('otra-condicion').value.trim(),
+      p_ce1_nombre: document.getElementById('ce1-nombre').value.trim(),
+      p_ce1_parentesco: document.getElementById('ce1-parentesco').value.trim(),
+      p_ce1_telefono: document.getElementById('ce1-telefono').value.trim(),
+      p_ce2_nombre: document.getElementById('ce2-nombre').value.trim(),
+      p_ce2_parentesco: document.getElementById('ce2-parentesco').value.trim(),
+      p_ce2_telefono: document.getElementById('ce2-telefono').value.trim(),
+      p_tipo_seguro: tipoSeguroState,
+      p_aseguradora: tipoSeguroState === 'Seguro propio' ? document.getElementById('aseguradora').value.trim() : null,
+      p_numero_poliza: tipoSeguroState === 'Seguro propio' ? document.getElementById('poliza').value.trim() : null,
+      p_hospital: document.getElementById('hospital').value.trim(),
+      p_autoriza: autorizaState === 'Sí',
+      p_tutor_autorizacion: document.getElementById('tutor-medico').value.trim(),
+      p_fecha_autorizacion: new Date().toISOString().split('T')[0],
     });
-    if (!res.ok) {
-      const errBody = await res.json().catch(() => ({}));
-      throw new Error(errBody.error?.message || ('HTTP ' + res.status));
-    }
+    if (error) throw error;
     const idx = allRecords.findIndex(r => r.id === selectedId);
-    if (idx >= 0) Object.assign(allRecords[idx].fields, fields);
+    if (idx >= 0) {
+      Object.assign(allRecords[idx].fields, {
+        'Tipo de Sangre': document.getElementById('sangre').value,
+        '_condiciones': condiciones,
+      });
+    }
     showToast('✅ Cuestionario médico guardado');
     deselectPlayer();
   } catch(e) {
