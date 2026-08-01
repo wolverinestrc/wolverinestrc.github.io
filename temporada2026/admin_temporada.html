@@ -270,6 +270,29 @@ table.lt td{padding:12px 14px;font-size:13px;color:var(--text);border-top:1px so
         <div class="pagos-grid" id="pagos-grid"></div>
         <div style="font-size:12px;color:var(--gray);padding:0 24px 20px">💡 Haz clic en los cuadros de mes en la lista de jugadores para cambiar el estado de cada pago</div>
       </div>
+
+      <div class="stats-bar" style="grid-template-columns:repeat(3,1fr);margin-top:20px">
+        <div class="stat st-green"><div class="sn" id="bal-ingresos">$0</div><div class="sl">Ingresos (mensualidades cobradas)</div></div>
+        <div class="stat st-red"><div class="sn" id="bal-gastos">$0</div><div class="sl">Gastos</div></div>
+        <div class="stat" id="bal-neto-card"><div class="sn" id="bal-neto">$0</div><div class="sl">Balance neto</div></div>
+      </div>
+
+      <div class="content-card" style="margin-top:20px">
+        <div class="cc-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+          <div>
+            <div class="cc-title">🧾 Gastos</div>
+            <div class="cc-subtitle">Nómina, renta y demás gastos de la temporada</div>
+          </div>
+          <button class="btn-action btn-ghost" onclick="exportGastos()">📥 Exportar Excel</button>
+        </div>
+        <div class="controls">
+          <input type="text" id="gasto-concepto" class="search-box" placeholder="Concepto (ej. Nómina Agosto, Renta cancha)" style="flex:2">
+          <input type="number" id="gasto-monto" class="search-box" placeholder="Monto" style="flex:1;min-width:110px">
+          <input type="date" id="gasto-fecha" class="search-box" style="flex:1;min-width:150px">
+          <button class="btn-action" onclick="addGasto()">➕ Agregar gasto</button>
+        </div>
+        <div id="gastos-content"></div>
+      </div>
     </div>
 
     <!-- MOROSOS -->
@@ -420,6 +443,7 @@ const UNIFORME_ITEMS = [
 let allRecords   = [];
 let tiendaRecords = [];
 let pedidosRecords = [];
+let gastosRecords = [];
 let currentId    = null;
 const ESTADO_PEDIDO_LABEL = { pendiente: 'Pendiente', pagado: 'Pagado', surtido: 'Surtido' };
 const ESTADO_PEDIDO_NEXT  = { pendiente: 'pagado', pagado: 'surtido', surtido: 'pendiente' };
@@ -454,6 +478,10 @@ async function loadData() {
     const { data: pedidosData, error: pedidosErr } = await sb.rpc('admin_list_pedidos_tienda', { p_pwd: PWD });
     if (pedidosErr) throw pedidosErr;
     pedidosRecords = pedidosData || [];
+
+    const { data: gastosData, error: gastosErr } = await sb.rpc('admin_list_gastos', { p_pwd: PWD });
+    if (gastosErr) throw gastosErr;
+    gastosRecords = gastosData || [];
 
     updateStats();
     renderTable();
@@ -601,11 +629,13 @@ async function togglePago(mes, id) {
 function renderPagos() {
   var grid = document.getElementById('pagos-grid');
   var html = '';
+  var ingresos = 0;
   MESES.forEach(function(mes) {
     var info = PAGOS_INFO[mes];
     var pagados  = allRecords.filter(function(r) { return r.fields['Pago ' + mes] === 'Pagado'; }).length;
     var pendientes = allRecords.filter(function(r) { return (r.fields['Pago ' + mes] || 'Pendiente') === 'Pendiente'; }).length;
     var total = pagados * info.monto;
+    ingresos += total;
     html += '<div class="mes-card">' +
       '<div class="mc-mes">' + info.label + '</div>' +
       '<div style="font-size:10.5px;color:var(--gray);margin-top:2px">$' + info.monto.toLocaleString() + ' · vence ' + info.fechaTxt + '</div>' +
@@ -615,6 +645,71 @@ function renderPagos() {
       '</div>';
   });
   grid.innerHTML = html;
+  renderBalance(ingresos);
+  renderGastos();
+}
+
+// ── GASTOS / BALANCE ──
+function renderBalance(ingresos) {
+  var gastos = gastosRecords.reduce(function(sum, g) { return sum + Number(g.monto); }, 0);
+  var neto = ingresos - gastos;
+  document.getElementById('bal-ingresos').textContent = '$' + ingresos.toLocaleString();
+  document.getElementById('bal-gastos').textContent = '$' + gastos.toLocaleString();
+  document.getElementById('bal-neto').textContent = (neto < 0 ? '-$' + Math.abs(neto).toLocaleString() : '$' + neto.toLocaleString());
+  document.getElementById('bal-neto-card').className = 'stat ' + (neto >= 0 ? 'st-green' : 'st-red');
+}
+
+function renderGastos() {
+  var container = document.getElementById('gastos-content');
+  if (!gastosRecords.length) { container.innerHTML = '<div class="empty">Sin gastos registrados todavía.</div>'; return; }
+
+  var rows = gastosRecords.map(function(g) {
+    return '<tr>' +
+      '<td>' + g.concepto + '</td>' +
+      '<td>' + (g.fecha || '—') + '</td>' +
+      '<td style="font-weight:700;color:var(--red)">$' + Number(g.monto).toLocaleString() + '</td>' +
+      '<td><button class="icon-btn icon-del" onclick="deleteGasto(\'' + g.id + '\')">🗑️</button></td>' +
+      '</tr>';
+  }).join('');
+
+  container.innerHTML = '<div class="lt-wrap"><table class="lt">' +
+    '<thead><tr><th>Concepto</th><th>Fecha</th><th>Monto</th><th></th></tr></thead>' +
+    '<tbody>' + rows + '</tbody></table></div>';
+}
+
+async function addGasto() {
+  var concepto = document.getElementById('gasto-concepto').value.trim();
+  var monto = parseFloat(document.getElementById('gasto-monto').value);
+  var fecha = document.getElementById('gasto-fecha').value || new Date().toISOString().split('T')[0];
+  if (!concepto) { alert('Ingresa el concepto del gasto'); return; }
+  if (!monto || monto <= 0) { alert('Ingresa un monto válido'); return; }
+
+  try {
+    var { data, error } = await sb.rpc('admin_add_gasto', { p_pwd: PWD, p_concepto: concepto, p_monto: monto, p_fecha: fecha });
+    if (error) throw error;
+    gastosRecords.unshift(data);
+    document.getElementById('gasto-concepto').value = '';
+    document.getElementById('gasto-monto').value = '';
+    document.getElementById('gasto-fecha').value = '';
+    renderPagos();
+  } catch(e) { alert('❌ Error: ' + e.message); }
+}
+
+async function deleteGasto(id) {
+  if (!confirm('¿Eliminar este gasto?')) return;
+  try {
+    var { error } = await sb.rpc('admin_delete_gasto', { p_pwd: PWD, p_id: id });
+    if (error) throw error;
+    gastosRecords = gastosRecords.filter(function(g) { return g.id !== id; });
+    renderPagos();
+  } catch(e) { alert('❌ Error: ' + e.message); }
+}
+
+function exportGastos() {
+  var rows = gastosRecords.map(function(g) {
+    return { Concepto: g.concepto, Fecha: g.fecha, Monto: Number(g.monto) };
+  });
+  downloadXlsx(rows, 'gastos_wolverines.xlsx');
 }
 
 // ── MOROSOS ──
@@ -764,7 +859,7 @@ function openDetail(id) {
     '<div class="d-section">Tutor</div>' +
     '<div class="d-label">Nombre</div><div class="d-val">' + (f['Tutor']||'—') + '</div>' +
     '<div class="d-label">Teléfono</div><div class="d-val">' + (f['Teléfono']||'—') + '</div>' +
-    '<div class="d-label">Email</div><div class="d-val">' + (f['Email']||'—') + '</div>' +
+    '<div class="d-label">Email</div><input type="email" id="modal-email" class="d-input" value="' + (f['Email']||'') + '" placeholder="correo@ejemplo.com">' +
     '<div class="d-section">Documentos</div>' +
     '<div style="margin-bottom:16px">' + docsHtml + '</div>' +
     '<div class="d-section">Mensualidades</div>' +
@@ -783,14 +878,17 @@ async function saveDetail() {
   if (!num) { alert('Ingresa un número válido'); return; }
 
   var fields = { 'Número Jugador': num };
+  if (email) fields['Email'] = email;
   UNIFORME_ITEMS.forEach(function(item) {
     var key = item.key.replace(/\s/g,'');
     fields[item.key + ' Talla'] = document.getElementById('uni-talla-' + key).value;
     fields[item.key + ' Estado'] = document.getElementById('uni-estado-' + key).value;
   });
 
+  var email = document.getElementById('modal-email').value.trim();
+
   try {
-    var { error: numErr } = await sb.rpc('admin_update_jugador', { p_pwd: PWD, p_id: currentId, p_numero_jugador: num });
+    var { error: numErr } = await sb.rpc('admin_update_jugador', { p_pwd: PWD, p_id: currentId, p_numero_jugador: num, p_email: email || null });
     if (numErr) throw numErr;
 
     for (const item of UNIFORME_ITEMS) {
