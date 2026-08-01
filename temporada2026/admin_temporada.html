@@ -580,6 +580,11 @@ async function togglePago(mes, id) {
     });
     if (error) throw error;
     rec.fields[campo] = siguiente;
+    if (siguiente === 'Pagado' && rec.fields['Email']) {
+      sb.functions.invoke('send-email', { body: { tipo: 'pago', to: rec.fields['Email'], data: {
+        nombre: rec.fields['Nombre'] + ' ' + rec.fields['Apellidos'], periodo: mes, estado: siguiente
+      } } }).catch(function() {});
+    }
     updateStats();
     renderTable();
     if (document.getElementById('section-pagos').style.display !== 'none') renderPagos();

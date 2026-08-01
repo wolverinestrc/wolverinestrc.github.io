@@ -282,6 +282,12 @@ async function submitPedido() {
     });
     if (error) throw error;
 
+    if (tutorEmail) {
+      sb.functions.invoke('send-email', { body: { tipo: 'pedido', to: tutorEmail, data: {
+        tutor_nombre: tutorNombre, jugador_nombre: jugador ? (jugador.nombre + ' ' + jugador.apellidos) : '', items, total
+      } } }).catch(() => {});
+    }
+
     document.getElementById('form-screen').style.display = 'none';
     document.getElementById('success-screen').style.display = 'block';
     window.scrollTo(0, 0);

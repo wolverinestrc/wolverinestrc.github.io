@@ -838,6 +838,12 @@ async function submitForm() {
     });
     if (medErr) throw medErr;
 
+    if (email) {
+      sb.functions.invoke('send-email', { body: { tipo: 'registro', to: email, data: {
+        tutor, nombre: `${nombre} ${apellidos}`, categoria: state.categoria
+      } } }).catch(() => {});
+    }
+
     // Show success
     document.getElementById('step-5').style.display = 'none';
     document.getElementById('step-success').style.display = 'block';
