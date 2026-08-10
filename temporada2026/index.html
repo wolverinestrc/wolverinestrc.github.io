@@ -147,8 +147,16 @@ body{background:var(--blue-xs);font-family:'Montserrat',sans-serif;color:var(--t
   <!-- STEP 1: JUGADOR -->
   <div id="step-1">
     <div class="form-card">
-      <h2>DATOS DEL JUGADOR</h2>
-      <p class="subtitle">Información del atleta a registrar</p>
+      <div class="field">
+        <label>¿Qué te registras como? <span>*</span></label>
+        <div class="gender-row">
+          <div class="gender-btn selected" id="tipo-jugador" onclick="setTipo('jugador')">🏈 Jugador/a</div>
+          <div class="gender-btn" id="tipo-coach" onclick="setTipo('coach')">🧑‍🏫 Coach</div>
+        </div>
+      </div>
+
+      <h2 id="s1-title">DATOS DEL JUGADOR</h2>
+      <p class="subtitle" id="s1-subtitle">Información del atleta a registrar</p>
 
       <div class="field" id="f-nombre">
         <label>Nombre(s) <span>*</span></label>
@@ -306,7 +314,7 @@ body{background:var(--blue-xs);font-family:'Montserrat',sans-serif;color:var(--t
     <div class="form-card">
       <h2>SECCIÓN 4 · AUTORIZACIÓN</h2>
       <div class="field" id="f-tutor-medico">
-        <label>Nombre completo del tutor <span>*</span></label>
+        <label id="s2-tutor-label">Nombre completo del tutor <span>*</span></label>
         <input type="text" id="tutor-medico" placeholder="Nombre del papá o mamá">
         <div class="field-error">Este campo es requerido</div>
       </div>
@@ -413,14 +421,14 @@ body{background:var(--blue-xs);font-family:'Montserrat',sans-serif;color:var(--t
     </div>
   </div>
 
-  <!-- STEP 4: TUTOR -->
+  <!-- STEP 4: TUTOR / CONTACTO -->
   <div id="step-4" style="display:none">
     <div class="form-card">
-      <h2>DATOS DEL TUTOR</h2>
-      <p class="subtitle">Información del padre, madre o tutor responsable</p>
+      <h2 id="s4-title">DATOS DEL TUTOR</h2>
+      <p class="subtitle" id="s4-subtitle">Información del padre, madre o tutor responsable</p>
 
       <div class="field" id="f-tutor">
-        <label>Nombre completo del tutor <span>*</span></label>
+        <label id="s4-tutor-label">Nombre completo del tutor <span>*</span></label>
         <input type="text" id="tutor" placeholder="Nombre del papá o mamá">
         <div class="field-error">Este campo es requerido</div>
       </div>
@@ -437,7 +445,7 @@ body{background:var(--blue-xs);font-family:'Montserrat',sans-serif;color:var(--t
 
       <div class="btn-row">
         <button class="btn-back" onclick="goStep(3)">← Atrás</button>
-        <button class="btn-next" onclick="goStep(5)">Continuar →</button>
+        <button class="btn-next" id="btn-step4-next" onclick="goStep(5)">Continuar →</button>
       </div>
     </div>
   </div>
@@ -474,14 +482,14 @@ body{background:var(--blue-xs);font-family:'Montserrat',sans-serif;color:var(--t
       <h2>¡REGISTRO EXITOSO!</h2>
       <p>Tu registro ha sido recibido correctamente. Recibirás un correo de confirmación en breve.</p>
       <div class="success-info">
-        <div class="si-label">Jugador registrado</div>
+        <div class="si-label" id="success-nombre-label">Jugador registrado</div>
         <div class="si-val" id="success-nombre">—</div>
       </div>
       <div class="success-info">
         <div class="si-label">Categoría</div>
         <div class="si-val" id="success-cat">—</div>
       </div>
-      <div class="success-info">
+      <div class="success-info" id="success-pago-row">
         <div class="si-label">Pago</div>
         <div class="si-val" id="success-pago">—</div>
       </div>
@@ -503,6 +511,7 @@ const registrationId = crypto.randomUUID();
 
 let state = {
   step: 1,
+  tipo: 'jugador',
   genero: '',
   categoria: '',
   pago: 'transfer',
@@ -511,6 +520,37 @@ let state = {
   autoriza: '',
   tipoSeguro: ''
 };
+
+function setTipo(t) {
+  state.tipo = t;
+  document.getElementById('tipo-jugador').classList.toggle('selected', t === 'jugador');
+  document.getElementById('tipo-coach').classList.toggle('selected', t === 'coach');
+
+  const esCoach = t === 'coach';
+
+  document.getElementById('s1-title').textContent = esCoach ? 'DATOS DEL COACH' : 'DATOS DEL JUGADOR';
+  document.getElementById('s1-subtitle').textContent = esCoach ? 'Información del coach a registrar' : 'Información del atleta a registrar';
+  document.getElementById('nombre').placeholder = esCoach ? 'Nombre del coach' : 'Nombre del jugador';
+  document.getElementById('curp').placeholder = esCoach ? 'CURP del coach' : 'CURP del jugador';
+  if (esCoach) document.getElementById('f-categoria').style.display = 'none';
+  else calcCategoria();
+
+  document.getElementById('s2-tutor-label').innerHTML = esCoach
+    ? 'Tu nombre completo <span>*</span>'
+    : 'Nombre completo del tutor <span>*</span>';
+  document.getElementById('tutor-medico').placeholder = esCoach ? 'Tu nombre completo' : 'Nombre del papá o mamá';
+
+  document.getElementById('s4-title').textContent = esCoach ? 'TUS DATOS DE CONTACTO' : 'DATOS DEL TUTOR';
+  document.getElementById('s4-subtitle').textContent = esCoach ? 'Para que podamos contactarte' : 'Información del padre, madre o tutor responsable';
+  document.getElementById('f-tutor').style.display = esCoach ? 'none' : 'block';
+
+  const btnStep4 = document.getElementById('btn-step4-next');
+  btnStep4.textContent = esCoach ? '✅ Completar Registro' : 'Continuar →';
+  btnStep4.onclick = esCoach ? submitCoach : function() { goStep(5); };
+
+  document.getElementById('prog-5').style.display = esCoach ? 'none' : 'flex';
+  document.getElementById('conn-4').style.display = esCoach ? 'none' : 'block';
+}
 
 function selectTipoSeguro(val, el) {
   state.tipoSeguro = val;
@@ -612,7 +652,7 @@ function validateStep(s) {
     if (curp.length !== 18) { document.getElementById('f-curp').classList.add('error'); ok = false; }
     else document.getElementById('f-curp').classList.remove('error');
     if (!state.genero) { showToast('⚠️ Selecciona el género'); ok = false; }
-    if (!state.categoria) { showToast('⚠️ Ingresa la fecha de nacimiento para calcular la categoría'); ok = false; }
+    if (state.tipo === 'jugador' && !state.categoria) { showToast('⚠️ Ingresa la fecha de nacimiento para calcular la categoría'); ok = false; }
     return ok;
   }
   if (s === 2) {
@@ -850,6 +890,87 @@ async function submitForm() {
     document.getElementById('success-nombre').textContent = `${nombre} ${apellidos}`;
     document.getElementById('success-cat').textContent = state.categoria;
     document.getElementById('success-pago').textContent = state.pago === 'transfer' ? 'Transferencia Nu Bank · CLABE: 638180000152424651' : 'Tarjeta (Stripe)';
+    window.scrollTo(0, 0);
+
+  } catch(e) {
+    showToast('❌ Error al guardar. Intenta de nuevo.');
+    btn.disabled = false;
+    btn.textContent = '✅ Completar Registro';
+  }
+}
+
+async function submitCoach() {
+  if (!validateStep(4)) return;
+
+  const btn = document.getElementById('btn-step4-next');
+  btn.disabled = true;
+  btn.textContent = '⏳ Guardando...';
+
+  const nombre = document.getElementById('nombre').value.trim();
+  const apellidos = document.getElementById('apellidos').value.trim();
+  const dob = document.getElementById('dob').value;
+  const curp = document.getElementById('curp').value.trim().toUpperCase();
+  const telefono = document.getElementById('telefono').value.trim();
+  const email = document.getElementById('email').value.trim();
+
+  const condiciones = {};
+  CONDICIONES.forEach(c => {
+    condiciones[c.key] = {
+      respuesta: state.condiciones[c.key] || 'No',
+      detalle: document.getElementById(`detalle-txt-${c.key}`).value.trim()
+    };
+  });
+
+  try {
+    const { error: coachErr } = await sb.from('coaches').insert({
+      id: registrationId,
+      nombre, apellidos,
+      fecha_nacimiento: dob,
+      curp,
+      genero: state.genero,
+      foto_url: state.uploads.foto || null,
+      acta_nacimiento_url: state.uploads.acta || null,
+      curp_documento_url: state.uploads.curpdoc || null,
+      seguro_medico_url: state.uploads.seguro || null,
+      telefono, email,
+      fecha_registro: new Date().toISOString().split('T')[0],
+    });
+    if (coachErr) throw coachErr;
+
+    const { error: medErr } = await sb.from('datos_medicos_coaches').insert({
+      coach_id: registrationId,
+      tipo_sangre: document.getElementById('sangre').value,
+      condiciones,
+      otra_condicion: document.getElementById('otra-condicion').value.trim(),
+      contacto_emergencia_1_nombre: document.getElementById('ce1-nombre').value.trim(),
+      contacto_emergencia_1_parentesco: document.getElementById('ce1-parentesco').value.trim(),
+      contacto_emergencia_1_telefono: document.getElementById('ce1-telefono').value.trim(),
+      contacto_emergencia_2_nombre: document.getElementById('ce2-nombre').value.trim(),
+      contacto_emergencia_2_parentesco: document.getElementById('ce2-parentesco').value.trim(),
+      contacto_emergencia_2_telefono: document.getElementById('ce2-telefono').value.trim(),
+      tipo_seguro: state.tipoSeguro,
+      aseguradora: state.tipoSeguro === 'Seguro propio' ? document.getElementById('aseguradora').value.trim() : null,
+      numero_poliza: state.tipoSeguro === 'Seguro propio' ? document.getElementById('poliza').value.trim() : null,
+      hospital_preferencia: document.getElementById('hospital').value.trim(),
+      autoriza_primeros_auxilios: state.autoriza === 'Sí',
+      autorizado_por: document.getElementById('tutor-medico').value.trim(),
+      fecha_autorizacion: new Date().toISOString().split('T')[0],
+    });
+    if (medErr) throw medErr;
+
+    if (email) {
+      sb.functions.invoke('send-email', { body: { tipo: 'registro_coach', to: email, data: {
+        nombre: `${nombre} ${apellidos}`
+      } } }).catch(() => {});
+    }
+
+    // Show success
+    document.getElementById('step-4').style.display = 'none';
+    document.getElementById('step-success').style.display = 'block';
+    document.getElementById('success-nombre-label').textContent = 'Coach registrado';
+    document.getElementById('success-nombre').textContent = `${nombre} ${apellidos}`;
+    document.getElementById('success-cat').textContent = 'Coach';
+    document.getElementById('success-pago-row').style.display = 'none';
     window.scrollTo(0, 0);
 
   } catch(e) {

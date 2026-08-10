@@ -233,6 +233,7 @@ table.lt td{padding:12px 14px;font-size:13px;color:var(--text);border-top:1px so
       <button class="tab-btn" id="tb-uniformes" onclick="switchTab('uniformes')">🎽 Uniformes</button>
       <button class="tab-btn" id="tb-tienda" onclick="switchTab('tienda')">🛒 Tienda</button>
       <button class="tab-btn" id="tb-pedidos" onclick="switchTab('pedidos')">🛍️ Pedidos</button>
+      <button class="tab-btn" id="tb-coaches" onclick="switchTab('coaches')">🧑‍🏫 Coaches</button>
     </div>
 
     <!-- JUGADORES -->
@@ -387,6 +388,20 @@ table.lt td{padding:12px 14px;font-size:13px;color:var(--text);border-top:1px so
         <div id="pedidos-content"></div>
       </div>
     </div>
+
+    <!-- COACHES -->
+    <div class="morosos-section" id="section-coaches" style="display:none">
+      <div class="content-card">
+        <div class="mor-header">
+          <div>
+            <div class="mor-title">Coaches registrados</div>
+            <div class="mor-sub">Registro de coaches (sin mensualidades ni uniforme)</div>
+          </div>
+          <button class="btn-action btn-ghost" onclick="exportCoaches()">📥 Exportar Excel</button>
+        </div>
+        <div id="coaches-content"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -470,6 +485,7 @@ let tiendaRecords = [];
 let pedidosRecords = [];
 let gastosRecords = [];
 let pagosHistorial = [];
+let coachesRecords = [];
 let currentId    = null;
 const ESTADO_PEDIDO_LABEL = { pendiente: 'Pendiente', pagado: 'Pagado', surtido: 'Surtido' };
 const ESTADO_PEDIDO_NEXT  = { pendiente: 'pagado', pagado: 'surtido', surtido: 'pendiente' };
@@ -513,6 +529,10 @@ async function loadData() {
     if (historialErr) throw historialErr;
     pagosHistorial = historialData || [];
 
+    const { data: coachesData, error: coachesErr } = await sb.rpc('admin_list_coaches', { p_pwd: PWD });
+    if (coachesErr) throw coachesErr;
+    coachesRecords = coachesData || [];
+
     updateStats();
     renderTable();
     document.getElementById('loading').style.display = 'none';
@@ -543,7 +563,7 @@ function tieneAtraso(rec) {
 
 // ── TABS ──
 function switchTab(tab) {
-  ['jugadores','pagos','morosos','uniformes','tienda','pedidos'].forEach(function(t) {
+  ['jugadores','pagos','morosos','uniformes','tienda','pedidos','coaches'].forEach(function(t) {
     var btn = document.getElementById('tb-' + t);
     if (btn) btn.classList.remove('active');
     var sec = document.getElementById('section-' + t);
@@ -559,6 +579,7 @@ function switchTab(tab) {
   if (tab === 'uniformes') renderUniformes();
   if (tab === 'tienda') renderTienda();
   if (tab === 'pedidos') renderPedidos();
+  if (tab === 'coaches') renderCoaches();
 }
 
 // ── LIST (jugadores) ──
@@ -1332,6 +1353,65 @@ function exportPedidos() {
     });
   });
   downloadXlsx(rows, 'pedidos_wolve_store.xlsx', 'Pedidos');
+}
+
+// ── COACHES ──
+function renderCoaches() {
+  var container = document.getElementById('coaches-content');
+  if (!coachesRecords.length) { container.innerHTML = '<div class="empty">Aún no hay coaches registrados.</div>'; return; }
+
+  var html = '';
+  coachesRecords.forEach(function(c) {
+    var avatarHtml = c.foto_url
+      ? '<img src="' + c.foto_url + '" class="p-avatar">'
+      : '<div class="p-avatar-ph">🧑‍🏫</div>';
+
+    var docsHtml = '';
+    if (c.acta_nacimiento_url) docsHtml += '<a href="' + c.acta_nacimiento_url + '" target="_blank" class="doc-link" title="Acta/ID">📄</a>';
+    if (c.curp_documento_url) docsHtml += '<a href="' + c.curp_documento_url + '" target="_blank" class="doc-link" title="CURP">📋</a>';
+    if (c.seguro_medico_url) docsHtml += '<a href="' + c.seguro_medico_url + '" target="_blank" class="doc-link" title="Seguro">🏥</a>';
+
+    var nombreEsc = ((c.nombre||'') + ' ' + (c.apellidos||'')).replace(/'/g,'');
+
+    html += '<div class="p-row" style="cursor:default">' +
+      avatarHtml +
+      '<div class="p-info">' +
+        '<div class="p-name">' + (c.nombre||'') + ' ' + (c.apellidos||'') + '</div>' +
+        '<div class="p-sub">' + (c.telefono||'—') + ' · ' + (c.email||'—') + '</div>' +
+      '</div>' +
+      '<div style="min-width:60px">' + (docsHtml || '<span style="color:var(--gray-lt);font-size:12px">Sin docs</span>') + '</div>' +
+      '<div class="p-actions">' +
+        '<button class="icon-btn icon-del" title="Eliminar" onclick="deleteCoach(\'' + c.id + '\',\'' + nombreEsc + '\')">🗑</button>' +
+      '</div>' +
+    '</div>';
+  });
+  container.innerHTML = '<div class="list-wrap">' + html + '</div>';
+}
+
+async function deleteCoach(id, nombre) {
+  if (!confirm('¿Seguro que quieres eliminar a "' + nombre + '"?\n\nEsta acción no se puede deshacer.')) return;
+  try {
+    var { error } = await sb.rpc('admin_delete_coach', { p_pwd: PWD, p_id: id });
+    if (error) throw error;
+    coachesRecords = coachesRecords.filter(function(c) { return c.id !== id; });
+    renderCoaches();
+  } catch(e) { alert('❌ Error: ' + e.message); }
+}
+
+function exportCoaches() {
+  if (!coachesRecords.length) { alert('No hay coaches registrados.'); return; }
+  var rows = coachesRecords.map(function(c) {
+    return {
+      Nombre: (c.nombre||'') + ' ' + (c.apellidos||''),
+      Teléfono: c.telefono || '',
+      Email: c.email || '',
+      'Fecha de Nacimiento': c.fecha_nacimiento || '',
+      CURP: c.curp || '',
+      Género: c.genero || '',
+      'Fecha de Registro': c.fecha_registro || ''
+    };
+  });
+  downloadXlsx(rows, 'coaches_wolverines.xlsx', 'Coaches');
 }
 
 // ── EXPORTAR EXCEL ──
