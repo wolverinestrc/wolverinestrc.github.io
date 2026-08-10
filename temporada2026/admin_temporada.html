@@ -1044,7 +1044,29 @@ function openCred(id) {
   }, 200);
 }
 
-function downloadCredPNG(nombre) {
+function coverCropDataUrl(src, size) {
+  return new Promise(function(resolve, reject) {
+    var img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = function() {
+      try {
+        var canvas = document.createElement('canvas');
+        canvas.width = size; canvas.height = size;
+        var ctx = canvas.getContext('2d');
+        var iw = img.naturalWidth, ih = img.naturalHeight;
+        var scale = Math.max(size / iw, size / ih);
+        var sw = size / scale, sh = size / scale;
+        var sx = (iw - sw) / 2, sy = (ih - sh) / 2;
+        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, size, size);
+        resolve(canvas.toDataURL('image/png'));
+      } catch (e) { reject(e); }
+    };
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+async function downloadCredPNG(nombre) {
   var card = document.getElementById('cred-card-el');
   if (!card || typeof html2canvas === 'undefined') return;
 
@@ -1057,14 +1079,36 @@ function downloadCredPNG(nombre) {
     qrBox.innerHTML = '<img src="' + qrCanvas.toDataURL('image/png') + '" width="' + qrCanvas.width + '" height="' + qrCanvas.height + '">';
   }
 
-  html2canvas(card, { backgroundColor: null, scale: 2, useCORS: true }).then(function(canvas) {
+  // html2canvas ignores object-fit:cover and stretches the photo instead of
+  // cropping it, so pre-crop it to a square ourselves before the snapshot.
+  var photoImg = card.querySelector('.cred-photo');
+  var originalPhotoSrc = photoImg ? photoImg.src : null;
+  if (photoImg) {
+    try {
+      var rect = photoImg.getBoundingClientRect();
+      var size = Math.max(200, Math.round(Math.max(rect.width, rect.height) * 2));
+      var cropped = await coverCropDataUrl(originalPhotoSrc, size);
+      photoImg.src = cropped;
+    } catch (e) { /* keep original photo if cropping fails (e.g. CORS) */ }
+  }
+
+  // Remove the card's rounded corners just for the export so the PNG doesn't
+  // show transparent/white triangles at the corners on mobile viewers.
+  var originalRadius = card.style.borderRadius;
+  card.style.borderRadius = '0';
+
+  html2canvas(card, { backgroundColor: '#0e1c33', scale: 2, useCORS: true }).then(function(canvas) {
     if (qrBox && originalQrHtml !== null) qrBox.innerHTML = originalQrHtml;
+    if (photoImg && originalPhotoSrc !== null) photoImg.src = originalPhotoSrc;
+    card.style.borderRadius = originalRadius;
     var link = document.createElement('a');
     link.download = 'credencial-' + nombre.toLowerCase().replace(/\s+/g, '-') + '.png';
     link.href = canvas.toDataURL('image/png');
     link.click();
   }).catch(function() {
     if (qrBox && originalQrHtml !== null) qrBox.innerHTML = originalQrHtml;
+    if (photoImg && originalPhotoSrc !== null) photoImg.src = originalPhotoSrc;
+    card.style.borderRadius = originalRadius;
     alert('No se pudo generar la imagen. Intenta con "Ver y descargar credencial" desde el correo del jugador.');
   });
 }
