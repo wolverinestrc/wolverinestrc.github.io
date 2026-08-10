@@ -124,12 +124,21 @@ header{background:var(--navy);padding:18px 28px;display:flex;align-items:center;
 .modal-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
 .modal-header h3{font-size:18px;font-weight:800;color:var(--text)}
 .modal-close{background:var(--icon-bg);border:none;color:var(--gray);width:30px;height:30px;border-radius:8px;font-size:16px;cursor:pointer}
-.modal-body{padding:24px}
-.modal-foto{width:88px;height:88px;border-radius:50%;object-fit:cover;margin:0 auto 16px;display:block}
-.modal-foto-ph{width:88px;height:88px;border-radius:50%;background:var(--blue-lt);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:34px;margin:0 auto 16px}
+.modal-body{padding:28px 32px}
+.modal-foto{width:100px;height:100px;border-radius:50%;object-fit:cover;margin:0 0 16px;display:block}
+.modal-foto-ph{width:100px;height:100px;border-radius:50%;background:var(--blue-lt);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:38px;margin:0 0 16px}
 .d-label{font-size:11px;font-weight:700;letter-spacing:0.3px;color:var(--gray);text-transform:uppercase;margin-bottom:4px}
 .d-val{font-size:13.5px;font-weight:600;color:var(--text);margin-bottom:12px}
 .d-section{font-size:11px;font-weight:800;letter-spacing:0.5px;color:var(--blue);text-transform:uppercase;margin:18px 0 10px;padding-bottom:6px;border-bottom:2px solid var(--blue-lt)}
+.d-grid{display:grid;grid-template-columns:360px 1fr;gap:0 40px;max-width:1280px;margin:0 auto}
+.d-fields{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+.d-pagos-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.d-pago-chip{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 8px;text-align:center}
+.d-pago-chip .dp-mes{font-size:11px;font-weight:700;color:var(--text);margin-bottom:6px}
+.d-pago-chip .dp-icon{font-size:16px}
+.d-pago-chip .dp-estado{font-size:10.5px;color:var(--gray);margin-top:2px}
+.d-uni-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px}
+@media(max-width:900px){.d-grid{grid-template-columns:1fr}.d-pagos-grid{grid-template-columns:repeat(3,1fr)}.d-uni-grid{grid-template-columns:1fr}}
 .d-select{background:var(--bg);border:1.5px solid var(--border);border-radius:9px;color:var(--text);padding:10px 14px;font-family:'Montserrat',sans-serif;font-size:13px;outline:none;width:100%;margin-bottom:10px}
 .d-input{background:var(--bg);border:1.5px solid var(--border);border-radius:9px;color:var(--text);padding:10px 14px;font-family:'Montserrat',sans-serif;font-size:13px;outline:none;width:100%;margin-bottom:10px}
 .save-btn{width:100%;background:var(--blue);border:none;border-radius:10px;color:white;font-family:'Montserrat',sans-serif;font-size:13.5px;font-weight:800;padding:14px;cursor:pointer;margin-top:6px}
@@ -884,9 +893,10 @@ function openDetail(id) {
   MESES.forEach(function(mes) {
     var estado = f['Pago ' + mes] || 'Pendiente';
     var icon = estado === 'Pagado' ? '✅' : estado === 'Exento' ? '🔵' : '❌';
-    pagosHtml += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">' +
-      '<span style="font-size:13px;color:var(--text)">' + mes + '</span>' +
-      '<span style="font-size:15px">' + icon + ' <span style="font-size:12px;color:var(--gray)">' + estado + '</span></span>' +
+    pagosHtml += '<div class="d-pago-chip">' +
+      '<div class="dp-mes">' + mes + '</div>' +
+      '<div class="dp-icon">' + icon + '</div>' +
+      '<div class="dp-estado">' + estado + '</div>' +
       '</div>';
   });
 
@@ -895,7 +905,7 @@ function openDetail(id) {
     var talla = f[item.key + ' Talla'] || '';
     var estado = f[item.key + ' Estado'] || 'No comprado';
     uniformeHtml +=
-      '<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">' +
+      '<div style="display:flex;gap:8px;align-items:center">' +
         '<div style="flex:1;font-size:12px;color:var(--text)">' + item.key + '<div style="font-size:10px;color:var(--gray)">$' + item.monto + '</div></div>' +
         '<input type="text" id="uni-talla-' + item.key.replace(/\s/g,'') + '" class="d-input" style="flex:1;margin-bottom:0" placeholder="Talla" value="' + talla + '">' +
         '<select id="uni-estado-' + item.key.replace(/\s/g,'') + '" class="d-select" style="flex:1;margin-bottom:0">' +
@@ -906,26 +916,35 @@ function openDetail(id) {
       '</div>';
   });
 
-  document.getElementById('modal-body').innerHTML = fotoHtml +
-    '<div class="d-section">Datos del jugador</div>' +
-    '<div class="d-label">Nombre</div><div class="d-val">' + (f['Nombre']||'') + ' ' + (f['Apellidos']||'') + '</div>' +
-    '<div class="d-label">Categoría</div><div class="d-val">' + (f['Categoría']||'—') + '</div>' +
-    '<div class="d-label">Género</div><div class="d-val">' + (f['Género']||'—') + '</div>' +
-    '<div class="d-label">Fecha de Nacimiento</div><div class="d-val">' + (f['Fecha de Nacimiento']||'—') + '</div>' +
-    '<div class="d-label">CURP</div><div class="d-val" style="font-size:11px;letter-spacing:1px">' + (f['CURP']||'—') + '</div>' +
-    '<div class="d-section">Tutor</div>' +
-    '<div class="d-label">Nombre</div><div class="d-val">' + (f['Tutor']||'—') + '</div>' +
-    '<div class="d-label">Teléfono</div><div class="d-val">' + (f['Teléfono']||'—') + '</div>' +
-    '<div class="d-label">Email</div><input type="email" id="modal-email" class="d-input" value="' + (f['Email']||'') + '" placeholder="correo@ejemplo.com">' +
-    '<div class="d-section">Documentos</div>' +
-    '<div style="margin-bottom:16px">' + docsHtml + '</div>' +
-    '<div class="d-section">Mensualidades</div>' +
-    pagosHtml +
-    '<div class="d-section" style="margin-top:16px">Número de jugador</div>' +
-    '<input type="number" id="modal-num" class="d-input" value="' + (f['Número Jugador']||'') + '" placeholder="Ej: 12">' +
-    '<div class="d-section">Uniforme (talla + estado por pieza)</div>' +
-    uniformeHtml +
-    '<button class="save-btn" onclick="saveDetail()">💾 Guardar cambios</button>';
+  document.getElementById('modal-body').innerHTML =
+    '<div class="d-grid">' +
+      '<div class="d-col-left">' +
+        fotoHtml +
+        '<div class="d-section" style="margin-top:0">Datos del jugador</div>' +
+        '<div class="d-fields">' +
+          '<div style="grid-column:1/-1"><div class="d-label">Nombre</div><div class="d-val">' + (f['Nombre']||'') + ' ' + (f['Apellidos']||'') + '</div></div>' +
+          '<div><div class="d-label">Categoría</div><div class="d-val">' + (f['Categoría']||'—') + '</div></div>' +
+          '<div><div class="d-label">Género</div><div class="d-val">' + (f['Género']||'—') + '</div></div>' +
+          '<div><div class="d-label">Fecha de Nacimiento</div><div class="d-val">' + (f['Fecha de Nacimiento']||'—') + '</div></div>' +
+          '<div><div class="d-label">CURP</div><div class="d-val" style="font-size:11px;letter-spacing:1px">' + (f['CURP']||'—') + '</div></div>' +
+        '</div>' +
+        '<div class="d-section">Tutor</div>' +
+        '<div class="d-label">Nombre</div><div class="d-val">' + (f['Tutor']||'—') + '</div>' +
+        '<div class="d-label">Teléfono</div><div class="d-val">' + (f['Teléfono']||'—') + '</div>' +
+        '<div class="d-label">Email</div><input type="email" id="modal-email" class="d-input" value="' + (f['Email']||'') + '" placeholder="correo@ejemplo.com">' +
+      '</div>' +
+      '<div class="d-col-right">' +
+        '<div class="d-section" style="margin-top:0">Documentos</div>' +
+        '<div style="margin-bottom:8px">' + docsHtml + '</div>' +
+        '<div class="d-section">Mensualidades</div>' +
+        '<div class="d-pagos-grid">' + pagosHtml + '</div>' +
+        '<div class="d-section">Número de jugador</div>' +
+        '<input type="number" id="modal-num" class="d-input" value="' + (f['Número Jugador']||'') + '" placeholder="Ej: 12">' +
+        '<div class="d-section">Uniforme (talla + estado por pieza)</div>' +
+        '<div class="d-uni-grid">' + uniformeHtml + '</div>' +
+      '</div>' +
+    '</div>' +
+    '<button class="save-btn" style="max-width:1280px;margin:24px auto 0" onclick="saveDetail()">💾 Guardar cambios</button>';
 
   document.getElementById('detail-modal').classList.add('open');
 }
