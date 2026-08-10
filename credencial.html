@@ -125,13 +125,25 @@ async function cargar() {
 function descargar() {
   const btn = document.getElementById('btn-download');
   btn.disabled = true; btn.textContent = '⏳ Generando...';
+
+  // qrcodejs draws the QR into a nested <canvas>, which html2canvas can miss.
+  // Swap it for a plain <img> of the same pixels right before the snapshot.
+  const qrBox = document.getElementById('qr-box');
+  const qrCanvas = qrBox ? qrBox.querySelector('canvas') : null;
+  const originalQrHtml = qrBox ? qrBox.innerHTML : null;
+  if (qrBox && qrCanvas) {
+    qrBox.innerHTML = '<img src="' + qrCanvas.toDataURL('image/png') + '" width="' + qrCanvas.width + '" height="' + qrCanvas.height + '">';
+  }
+
   html2canvas(document.getElementById('cred-card'), { backgroundColor: null, scale: 2, useCORS: true }).then(function(canvas) {
+    if (qrBox && originalQrHtml !== null) qrBox.innerHTML = originalQrHtml;
     const link = document.createElement('a');
     link.download = 'credencial-' + jugadorNombre.toLowerCase().replace(/\s+/g, '-') + '.png';
     link.href = canvas.toDataURL('image/png');
     link.click();
     btn.disabled = false; btn.textContent = '📥 Descargar credencial';
   }).catch(function() {
+    if (qrBox && originalQrHtml !== null) qrBox.innerHTML = originalQrHtml;
     alert('No se pudo generar la imagen automáticamente. Toma una captura de pantalla de la credencial como alternativa.');
     btn.disabled = false; btn.textContent = '📥 Descargar credencial';
   });
