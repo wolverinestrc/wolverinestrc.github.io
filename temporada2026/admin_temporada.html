@@ -346,7 +346,7 @@ table.lt td{padding:12px 14px;font-size:13px;color:var(--text);border-top:1px so
         <div class="mor-header">
           <div>
             <div class="mor-title">Uniformes</div>
-            <div class="mor-sub">Jersey $680 · Short $300 · Banderas $300 · Playera Blanca $350 — edita talla/estado desde "✏️" en cada jugador</div>
+            <div class="mor-sub">Jersey $680 · Banderas $150-$300 · Playera Blanca $350 — edita talla/estado desde "✏️" en cada jugador</div>
           </div>
           <div style="display:flex;gap:10px;flex-wrap:wrap">
             <button class="btn-action btn-ghost" onclick="exportPedidoUniformes()">📥 Pedido de uniformes (pagados)</button>
@@ -432,7 +432,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const PWD        = 'Wolverines2026';
 
-const ITEM_KEY_TO_DB = { 'Jersey': 'jersey', 'Short': 'short', 'Banderas': 'banderas', 'Playera Blanca': 'playera_blanca' };
+const ITEM_KEY_TO_DB = { 'Jersey': 'jersey', 'Banderas': 'banderas', 'Playera Blanca': 'playera_blanca' };
 const ESTADO_UNI_TO_DB = { 'No comprado': 'no_comprado', 'Pendiente': 'pendiente', 'Pagado': 'pagado' };
 const ESTADO_UNI_FROM_DB = { 'no_comprado': 'No comprado', 'pendiente': 'Pendiente', 'pagado': 'Pagado' };
 const ESTADO_PAGO_FROM_DB = { 'pendiente': 'Pendiente', 'pagado': 'Pagado', 'exento': 'Exento' };
@@ -450,7 +450,7 @@ function mapJugadorFromSupabase(j) {
     var mesCap = p.periodo.charAt(0).toUpperCase() + p.periodo.slice(1);
     fields['Pago ' + mesCap] = ESTADO_PAGO_FROM_DB[p.estado] || 'Pendiente';
   });
-  var itemDbToKey = { jersey: 'Jersey', short: 'Short', banderas: 'Banderas', playera_blanca: 'Playera Blanca' };
+  var itemDbToKey = { jersey: 'Jersey', banderas: 'Banderas', playera_blanca: 'Playera Blanca' };
   (j.uniformes || []).forEach(function(u) {
     var key = itemDbToKey[u.item];
     fields[key + ' Talla'] = u.talla || '';
@@ -477,7 +477,6 @@ const PAGOS_INFO = {
 
 const UNIFORME_ITEMS = [
   { key: 'Jersey',         monto: 680 },
-  { key: 'Short',          monto: 300 },
   { key: 'Banderas',       monto: 300 },
   { key: 'Playera Blanca', monto: 350 },
 ];
