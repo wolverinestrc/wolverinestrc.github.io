@@ -161,8 +161,11 @@ const TALLAS = ['4','6','8','10','12','14','XS','S','M','L','XL','XXL','XXXL'];
 const ITEMS = [
   { db: 'jersey',         nombre: 'Jersey',         precio: 680, talla: true },
   { db: 'playera_blanca', nombre: 'Jersey Blanco',  precio: 350, talla: true },
-  { db: 'short',          nombre: 'Short',          precio: 300, talla: true },
-  { db: 'banderas',       nombre: 'Banderas',       precio: 300, talla: false },
+];
+
+const BANDERAS_OPCIONES = [
+  { valor: 'Solo banderas',      precio: 150 },
+  { valor: 'Banderas completas', precio: 300 },
 ];
 
 let jugadores = [];
@@ -256,6 +259,26 @@ async function seleccionarJugador(id) {
     `;
   }).join('');
 
+  const bActual = (estado.uniformes || []).find(u => u.item === 'banderas');
+  const bTiene = bActual && bActual.estado !== 'no_comprado';
+  const bValor = bTiene ? bActual.talla || '' : '';
+  cont.innerHTML += `
+    <div class="item-card">
+      <div class="item-name" style="margin-bottom:10px">Banderas</div>
+      ${BANDERAS_OPCIONES.map((op, i) => `
+        <label style="display:flex;align-items:center;gap:10px;margin-bottom:8px;cursor:pointer">
+          <input type="radio" name="banderas-op" value="${op.valor}" id="rad-banderas-${i}" ${bValor === op.valor ? 'checked' : ''} onchange="updateTotal()">
+          <span class="item-name" style="flex:1;font-weight:600">${op.valor}</span>
+          <span class="item-price">$${op.precio.toLocaleString()}</span>
+        </label>
+      `).join('')}
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+        <input type="radio" name="banderas-op" value="" id="rad-banderas-no" ${bValor ? '' : 'checked'} onchange="updateTotal()">
+        <span class="item-name" style="flex:1;font-weight:600;color:var(--gray-lt)">No necesito</span>
+      </label>
+    </div>
+  `;
+
   updateTotal();
   document.getElementById('screen-jugador').style.display = 'none';
   document.getElementById('screen-pedido').style.display = 'block';
@@ -273,6 +296,11 @@ function updateTotal() {
   ITEMS.forEach(it => {
     if (document.getElementById('chk-' + it.db).checked) total += it.precio;
   });
+  const bSel = document.querySelector('input[name="banderas-op"]:checked');
+  if (bSel && bSel.value) {
+    const op = BANDERAS_OPCIONES.find(o => o.valor === bSel.value);
+    if (op) total += op.precio;
+  }
   document.getElementById('total-val').textContent = '$' + total.toLocaleString();
 }
 
@@ -300,6 +328,12 @@ async function guardarPedido() {
       return showError('⚠️ Falta la talla de: ' + it.nombre);
     }
   }
+  const bSel = document.querySelector('input[name="banderas-op"]:checked');
+  const banderaValor = bSel ? bSel.value : '';
+  const banderaOp = banderaValor ? BANDERAS_OPCIONES.find(o => o.valor === banderaValor) : null;
+
+  const resumenItems = seleccionados.map(it => ({ nombre: it.nombre, precio: it.precio }));
+  if (banderaOp) resumenItems.push({ nombre: banderaOp.valor, precio: banderaOp.precio });
 
   const btn = document.getElementById('submit-btn');
   btn.disabled = true;
@@ -323,10 +357,23 @@ async function guardarPedido() {
       if (itemErr) throw itemErr;
     }
 
+    if (banderaOp) {
+      const { error: bErr } = await sb.rpc('public_order_uniforme', {
+        p_id: jugadorActual.id, p_item: 'banderas', p_talla: banderaOp.valor
+      });
+      if (bErr) throw bErr;
+    }
+
+    sb.functions.invoke('send-email', { body: { tipo: 'pedido_uniforme', jugador_id: jugadorActual.id, data: {
+      nombre: jugadorActual.nombre + ' ' + jugadorActual.apellidos,
+      numero, apodo, items: resumenItems,
+      total: resumenItems.reduce((s, i) => s + i.precio, 0)
+    } } }).catch(() => {});
+
     document.getElementById('screen-pedido').style.display = 'none';
     document.getElementById('success-detail').textContent =
       jugadorActual.nombre + ' ' + jugadorActual.apellidos + ' · #' + numero +
-      (seleccionados.length ? ' · ' + seleccionados.map(s => s.nombre).join(', ') : '');
+      (resumenItems.length ? ' · ' + resumenItems.map(s => s.nombre).join(', ') : '');
     document.getElementById('screen-success').style.display = 'block';
     window.scrollTo(0, 0);
   } catch(e) {
