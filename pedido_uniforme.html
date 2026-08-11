@@ -39,7 +39,7 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
 .roster-row{display:flex;align-items:center;gap:12px;padding:14px 12px;border-radius:10px;cursor:pointer;transition:background .1s}
 .roster-row:hover{background:var(--blue-lt)}
 .roster-row + .roster-row{border-top:1px solid var(--border)}
-.roster-avatar{width:38px;height:38px;border-radius:50%;background:var(--blue-lt);color:var(--blue-dk);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0}
+.roster-avatar{width:38px;height:38px;border-radius:50%;background:var(--blue-lt);color:var(--blue-dk);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0;object-fit:cover}
 .roster-name{font-size:14px;font-weight:700;flex:1}
 .roster-num{font-size:12px;font-weight:700;color:var(--gray);background:var(--bg);border-radius:20px;padding:4px 10px}
 .roster-num.sin{color:var(--gray-lt)}
@@ -197,8 +197,11 @@ function goJugador() {
   const cont = document.getElementById('roster-list');
   cont.innerHTML = lista.length ? lista.map(j => `
     <div class="roster-row" onclick="seleccionarJugador('${j.id}')">
-      <div class="roster-avatar">${(j.nombre||'?').charAt(0)}</div>
+      ${j.foto_url
+        ? `<img class="roster-avatar" src="${j.foto_url}" alt="">`
+        : `<div class="roster-avatar">${(j.nombre||'?').charAt(0)}</div>`}
       <div class="roster-name">${j.nombre} ${j.apellidos}</div>
+      <span class="roster-num ${j.numero_jugador == null ? 'sin' : ''}">${j.numero_jugador != null ? '#' + j.numero_jugador : 'Sin número'}</span>
     </div>
   `).join('') : '<div class="empty">No hay jugadores en esta categoría.</div>';
 
@@ -307,6 +310,10 @@ async function guardarPedido() {
       p_id: jugadorActual.id, p_numero: numero, p_apodo: apodo || null
     });
     if (numErr) throw numErr;
+
+    jugadorActual.numero_jugador = numero;
+    const idx = jugadores.findIndex(j => j.id === jugadorActual.id);
+    if (idx >= 0) jugadores[idx].numero_jugador = numero;
 
     for (const it of seleccionados) {
       const talla = it.talla ? document.getElementById('talla-' + it.db).value : 'Única';
