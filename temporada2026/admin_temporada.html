@@ -95,6 +95,8 @@ header{background:var(--navy);padding:18px 28px;display:flex;align-items:center;
 .badge-cat{background:var(--blue-lt);color:var(--blue-dk)}
 .badge-ok{background:var(--green-lt);color:var(--green)}
 .badge-warn{background:var(--red-lt);color:var(--red)}
+.badge-num{background:var(--bg);color:var(--text);border:1.5px solid var(--border)}
+.badge-num.sin{color:var(--gray-lt);border-style:dashed}
 .p-months{display:flex;gap:4px}
 .m-dot{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;cursor:pointer;user-select:none;transition:transform .1s}
 .m-dot:hover{transform:scale(1.1)}
@@ -637,7 +639,9 @@ function renderTable() {
         '<div class="p-name">' + (f['Nombre']||'') + ' ' + (f['Apellidos']||'') + '</div>' +
         '<div class="p-sub">' + (f['Tutor']||'—') + ' · ' + (f['Teléfono']||'—') + '</div>' +
       '</div>' +
-      '<div class="p-badges"><span class="badge badge-cat">' + (f['Categoría']||'—') + '</span>' + pagoBadge + '</div>' +
+      '<div class="p-badges"><span class="badge badge-cat">' + (f['Categoría']||'—') + '</span>' + pagoBadge +
+        '<span class="badge badge-num' + (f['Número Jugador'] ? '' : ' sin') + '">' + (f['Número Jugador'] ? '#' + f['Número Jugador'] : 'Sin número') + '</span>' +
+      '</div>' +
       '<div class="p-months">' + monthsHtml + '</div>' +
       '<div style="min-width:60px">' + (docsHtml || '<span style="color:var(--gray-lt);font-size:12px">Sin docs</span>') + '</div>' +
       '<div class="p-actions">' +
