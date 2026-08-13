@@ -33,6 +33,7 @@
   .cred-hex-inner{width:100%;height:100%;border-radius:50%;overflow:hidden;background:#1b2942}
   .cred-photo{width:100%;height:100%;object-fit:cover;display:block}
   .cred-photo-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:44px;color:rgba(255,255,255,0.4)}
+  .cred-role-badge{display:none;margin:14px auto 0;background:#0a1730;color:#FFCB05;font-size:11px;font-weight:800;letter-spacing:3px;padding:5px 14px;border-radius:20px;width:fit-content}
   .cred-name{font-size:19px;font-weight:900;color:white;letter-spacing:0.5px;margin-top:14px;line-height:1.25}
   .cred-dob{font-size:11px;color:rgba(255,255,255,0.6);letter-spacing:1.5px;text-transform:uppercase;margin-top:5px}
   .cred-scan-wave{display:block;width:100%;height:22px;margin-bottom:-1px;position:relative}
@@ -40,6 +41,16 @@
   .cred-qr-box{background:white;display:inline-block;padding:10px;border-radius:10px}
   .cred-qr-box canvas{margin:0 auto;display:block}
   .cred-scan-label{font-size:11px;font-weight:800;letter-spacing:2px;color:white;margin-top:10px}
+
+  /* Coach: mismos colores del equipo (navy + dorado), roles rotados frente al de jugador */
+  .cred-card.coach .cred-top{background:linear-gradient(160deg,#FFD84D,#C79A00)}
+  .cred-card.coach .cred-wordmark-sm,.cred-card.coach .cred-wordmark-lg{color:#0a1730}
+  .cred-card.coach .cred-hex-outer{background:linear-gradient(160deg,#1b2942,#0a1730)}
+  .cred-card.coach .cred-name{color:#0a1730}
+  .cred-card.coach .cred-dob{color:rgba(10,23,48,0.65)}
+  .cred-card.coach .cred-role-badge{background:#0a1730;color:#FFCB05}
+  .cred-card.coach .cred-scan{background:#0a1730;background-image:repeating-linear-gradient(60deg,rgba(255,255,255,0.05) 0 1px,transparent 1px 22px),repeating-linear-gradient(-60deg,rgba(255,255,255,0.05) 0 1px,transparent 1px 22px)}
+  .cred-card.coach .cred-scan-wave path{fill:#0a1730}
 
   .download-btn{
     display:none; width:100%; margin-top:16px; background:#2563eb; border:none; color:white;
@@ -63,6 +74,7 @@
       <img src="https://wolverines.mx/IMG_0019_transparent.png" class="cred-logo" crossorigin="anonymous" onerror="this.style.display='none'">
       <div class="cred-wordmark"><span class="cred-wordmark-sm">ACADEMIA</span><span class="cred-wordmark-lg">WOLVERINES</span></div>
       <div class="cred-hex-outer"><div class="cred-hex-inner" id="foto-wrap"></div></div>
+      <div class="cred-role-badge" id="cred-role-badge">COACH</div>
       <div class="cred-name" id="cred-name"></div>
       <div class="cred-dob" id="cred-dob"></div>
     </div>
@@ -83,17 +95,25 @@ const SUPABASE_URL = 'https://xaawoqyjavqcybafirri.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhYXdvcXlqYXZxY3liYWZpcnJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1Mzg4MjcsImV4cCI6MjEwMTExNDgyN30.TdLuimBVQIILaaW0UtZDHDSoDpDomwmL6RbG-K-GDZ0';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const id = new URLSearchParams(window.location.search).get('id');
+const params = new URLSearchParams(window.location.search);
+const id = params.get('id');
+const esCoach = params.get('tipo') === 'coach';
 let jugadorNombre = 'jugador';
 
 async function cargar() {
-  if (!id) { document.getElementById('estado').textContent = '❌ Falta el identificador del jugador.'; return; }
+  if (!id) { document.getElementById('estado').textContent = '❌ Falta el identificador.'; return; }
 
-  const { data, error } = await sb.rpc('public_get_jugador_credencial', { p_id: id });
+  const { data, error } = await sb.rpc(esCoach ? 'public_get_coach_credencial' : 'public_get_jugador_credencial', { p_id: id });
   const rec = data && data[0];
   if (error || !rec || !rec.nombre) {
     document.getElementById('estado').textContent = '❌ No encontramos esta credencial.';
     return;
+  }
+
+  if (esCoach) {
+    document.getElementById('cred-card').classList.add('coach');
+    document.getElementById('cred-role-badge').style.display = 'block';
+    document.getElementById('cred-dob').style.display = 'none';
   }
 
   jugadorNombre = (rec.nombre + ' ' + (rec.apellidos || '')).trim();

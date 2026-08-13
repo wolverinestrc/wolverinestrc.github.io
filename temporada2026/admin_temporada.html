@@ -166,6 +166,13 @@ header{background:var(--navy);padding:18px 28px;display:flex;align-items:center;
 .cred-qr-box{background:white;display:inline-block;padding:10px;border-radius:10px}
 .cred-qr-box canvas{margin:0 auto;display:block}
 .cred-scan-label{font-size:11px;font-weight:800;letter-spacing:2px;color:white;margin-top:10px}
+.cred-role-badge{margin:14px auto 0;background:#0a1730;color:#FFCB05;font-size:11px;font-weight:800;letter-spacing:3px;padding:5px 14px;border-radius:20px;width:fit-content}
+.cred-card.coach .cred-top{background:linear-gradient(160deg,#FFD84D,#C79A00)}
+.cred-card.coach .cred-wordmark-sm,.cred-card.coach .cred-wordmark-lg{color:#0a1730}
+.cred-card.coach .cred-hex-outer{background:linear-gradient(160deg,#1b2942,#0a1730)}
+.cred-card.coach .cred-name{color:#0a1730}
+.cred-card.coach .cred-scan{background:#0a1730;background-image:repeating-linear-gradient(60deg,rgba(255,255,255,0.05) 0 1px,transparent 1px 22px),repeating-linear-gradient(-60deg,rgba(255,255,255,0.05) 0 1px,transparent 1px 22px)}
+.cred-card.coach .cred-scan-wave path{fill:#0a1730}
 .print-btn{width:100%;background:var(--blue);border:none;color:white;font-family:'Montserrat',sans-serif;font-size:12.5px;font-weight:800;padding:14px;cursor:pointer;border-radius:0 0 16px 16px}
 .print-btn:hover{background:var(--blue-dk)}
 
@@ -958,17 +965,16 @@ function openDetail(id) {
 
 async function saveDetail() {
   var num = parseInt(document.getElementById('modal-num').value) || null;
-  if (!num) { alert('Ingresa un número válido'); return; }
+  var email = document.getElementById('modal-email').value.trim();
 
-  var fields = { 'Número Jugador': num };
+  var fields = {};
+  if (num) fields['Número Jugador'] = num;
   if (email) fields['Email'] = email;
   UNIFORME_ITEMS.forEach(function(item) {
     var key = item.key.replace(/\s/g,'');
     fields[item.key + ' Talla'] = document.getElementById('uni-talla-' + key).value;
     fields[item.key + ' Estado'] = document.getElementById('uni-estado-' + key).value;
   });
-
-  var email = document.getElementById('modal-email').value.trim();
 
   try {
     var { error: numErr } = await sb.rpc('admin_update_jugador', { p_pwd: PWD, p_id: currentId, p_numero_jugador: num, p_email: email || null });
@@ -997,18 +1003,24 @@ function openCred(id) {
   var rec = allRecords.find(function(r) { return r.id === id; });
   if (!rec) return;
   var f = rec.fields;
-
-  var fotoHtml = f['Foto']
-    ? '<img src="' + f['Foto'] + '" class="cred-photo">'
-    : '<div class="cred-photo-ph">👤</div>';
-
-  var dob = f['Fecha de Nacimiento'];
   var dobFmt = '—';
-  if (dob) {
-    var parts = dob.split('-');
-    if (parts.length === 3) dobFmt = parts[2] + '/' + parts[1] + '/' + parts[0];
-    else dobFmt = dob;
+  if (f['Fecha de Nacimiento']) {
+    var parts = f['Fecha de Nacimiento'].split('-');
+    dobFmt = parts.length === 3 ? (parts[2] + '/' + parts[1] + '/' + parts[0]) : f['Fecha de Nacimiento'];
   }
+  buildCredCard(id, (f['Nombre']||'') + ' ' + (f['Apellidos']||''), f['Foto'], dobFmt, false);
+}
+
+function openCredCoach(id) {
+  var c = coachesRecords.find(function(r) { return r.id === id; });
+  if (!c) return;
+  buildCredCard(id, (c.nombre||'') + ' ' + (c.apellidos||''), c.foto_url, null, true);
+}
+
+function buildCredCard(id, nombreCompleto, fotoUrl, dobFmt, esCoach) {
+  var fotoHtml = fotoUrl
+    ? '<img src="' + fotoUrl + '" class="cred-photo">'
+    : '<div class="cred-photo-ph">👤</div>';
 
   var ribbonSvg = '<svg class="cred-ribbon" viewBox="0 0 300 230" preserveAspectRatio="none">' +
     '<polygon points="0,0 75,0 168,230 128,230" fill="rgba(255,255,255,0.09)"/>' +
@@ -1016,22 +1028,23 @@ function openCred(id) {
   '</svg>';
 
   document.getElementById('cred-content').innerHTML =
-    '<div class="cred-card" id="cred-card-el">' +
+    '<div class="cred-card' + (esCoach ? ' coach' : '') + '" id="cred-card-el">' +
       '<div class="cred-top">' +
         ribbonSvg +
         '<img src="https://wolverines.mx/IMG_0019_transparent.png" class="cred-logo" onerror="this.style.display=\'none\'">' +
         '<div class="cred-wordmark"><span class="cred-wordmark-sm">ACADEMIA</span><span class="cred-wordmark-lg">WOLVERINES</span></div>' +
         '<div class="cred-hex-outer"><div class="cred-hex-inner">' + fotoHtml + '</div></div>' +
-        '<div class="cred-name">' + (f['Nombre']||'') + ' ' + (f['Apellidos']||'') + '</div>' +
-        '<div class="cred-dob">Fecha de nacimiento: ' + dobFmt + '</div>' +
+        (esCoach ? '<div class="cred-role-badge">COACH</div>' : '') +
+        '<div class="cred-name">' + nombreCompleto + '</div>' +
+        (esCoach ? '' : '<div class="cred-dob">Fecha de nacimiento: ' + dobFmt + '</div>') +
       '</div>' +
-      '<svg class="cred-scan-wave" viewBox="0 0 300 22" preserveAspectRatio="none"><path d="M0,22 L0,13 Q150,0 300,13 L300,22 Z" fill="#48546a"/></svg>' +
+      '<svg class="cred-scan-wave" viewBox="0 0 300 22" preserveAspectRatio="none"><path d="M0,22 L0,13 Q150,0 300,13 L300,22 Z" fill="' + (esCoach ? '#0a1730' : '#48546a') + '"/></svg>' +
       '<div class="cred-scan">' +
         '<div class="cred-qr-box" id="qr-box"></div>' +
         '<div class="cred-scan-label">ESCANEA</div>' +
       '</div>' +
     '</div>' +
-    '<button class="print-btn" style="border-radius:0" onclick="downloadCredPNG(\'' + ((f['Nombre']||'') + ' ' + (f['Apellidos']||'')).replace(/'/g,'') + '\')">📥 Descargar PNG</button>' +
+    '<button class="print-btn" style="border-radius:0" onclick="downloadCredPNG(\'' + nombreCompleto.replace(/'/g,'') + '\')">📥 Descargar PNG</button>' +
     '<button class="print-btn" onclick="window.print()">🖨️ Imprimir</button>' +
     '<div style="text-align:center;padding:12px"><button class="modal-close" onclick="closeModal(\'cred-modal\')">Cerrar</button></div>';
 
@@ -1104,7 +1117,7 @@ async function downloadCredPNG(nombre) {
   var originalRadius = card.style.borderRadius;
   card.style.borderRadius = '0';
 
-  html2canvas(card, { backgroundColor: '#0e1c33', scale: 2, useCORS: true }).then(function(canvas) {
+  html2canvas(card, { backgroundColor: card.classList.contains('coach') ? '#C79A00' : '#0e1c33', scale: 2, useCORS: true }).then(function(canvas) {
     if (qrBox && originalQrHtml !== null) qrBox.innerHTML = originalQrHtml;
     if (photoImg && originalPhotoSrc !== null) photoImg.src = originalPhotoSrc;
     card.style.borderRadius = originalRadius;
@@ -1318,6 +1331,7 @@ function renderCoaches() {
       '</div>' +
       '<div style="min-width:60px">' + (docsHtml || '<span style="color:var(--gray-lt);font-size:12px">Sin docs</span>') + '</div>' +
       '<div class="p-actions">' +
+        '<button class="icon-btn icon-cred" title="Credencial" onclick="openCredCoach(\'' + c.id + '\')">🎫</button>' +
         '<button class="icon-btn icon-del" title="Eliminar" onclick="deleteCoach(\'' + c.id + '\',\'' + nombreEsc + '\')">🗑</button>' +
       '</div>' +
     '</div>';
