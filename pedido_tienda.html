@@ -132,9 +132,14 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
         <div id="products-list"></div>
       </div>
 
+      <div class="card numero-card" id="numero-ya-asignado">
+        <h2>🎽 Número de jersey</h2>
+        <div class="sub" id="numero-ya-asignado-texto">—</div>
+      </div>
+
       <div class="card numero-card" id="numero-card">
         <h2>🎽 Número de jersey</h2>
-        <div class="sub">Pediste una prenda de uniforme — indica el número que quieres en tu jersey</div>
+        <div class="sub">Pediste una prenda de uniforme — todavía no tienes número asignado, indica el que quieres en tu jersey</div>
         <div class="row2">
           <div class="field">
             <label>Número <span>*</span></label>
@@ -337,6 +342,10 @@ function showPreview(pid) {
   document.getElementById('preview-price').textContent = '$' + p.price.toLocaleString();
 }
 
+function tieneNumeroAsignado() {
+  return !!estadoUniforme && estadoUniforme.numero_jugador !== null && estadoUniforme.numero_jugador !== undefined;
+}
+
 function updateTotal() {
   let total = 0;
   let needsNumero = false;
@@ -347,7 +356,14 @@ function updateTotal() {
     if (qty > 0 && p.categoria === 'uniforme') needsNumero = true;
   });
   document.getElementById('total-val').textContent = '$' + total.toLocaleString();
-  document.getElementById('numero-card').classList.toggle('show', needsNumero);
+
+  const yaAsignado = needsNumero && tieneNumeroAsignado();
+  document.getElementById('numero-card').classList.toggle('show', needsNumero && !yaAsignado);
+  document.getElementById('numero-ya-asignado').classList.toggle('show', yaAsignado);
+  if (yaAsignado) {
+    document.getElementById('numero-ya-asignado-texto').textContent =
+      'Se usará tu número ya registrado: #' + estadoUniforme.numero_jugador + (estadoUniforme.apodo_jersey ? ' — ' + estadoUniforme.apodo_jersey : '');
+  }
 }
 
 async function loadJugadores() {
@@ -418,9 +434,10 @@ async function submitPedido() {
   }
   if (!items.length && !uniformeUpdates.length) return showError('⚠️ Agrega al menos un producto (cantidad mayor a 0).');
 
-  let numeroJersey = '';
-  let apodo = '';
-  if (needsNumero) {
+  const yaAsignado = needsNumero && tieneNumeroAsignado();
+  let numeroJersey = yaAsignado ? String(estadoUniforme.numero_jugador) : '';
+  let apodo = yaAsignado ? (estadoUniforme.apodo_jersey || '') : '';
+  if (needsNumero && !yaAsignado) {
     numeroJersey = (document.getElementById('f-numero').value || '').trim();
     apodo = (document.getElementById('f-apodo').value || '').trim();
     if (!numeroJersey) return showError('⚠️ Indica el número de jersey.');
@@ -436,8 +453,10 @@ async function submitPedido() {
 
   try {
     if (needsNumero) {
-      const { error: eNum } = await sb.rpc('public_set_numero_jugador', { p_id: jugadorId, p_numero: parseInt(numeroJersey), p_apodo: apodo || null });
-      if (eNum) throw eNum;
+      if (!yaAsignado) {
+        const { error: eNum } = await sb.rpc('public_set_numero_jugador', { p_id: jugadorId, p_numero: parseInt(numeroJersey), p_apodo: apodo || null });
+        if (eNum) throw eNum;
+      }
       for (const u of uniformeUpdates) {
         const { error: eOrd } = await sb.rpc('public_order_uniforme', { p_id: jugadorId, p_item: u.item, p_talla: u.talla });
         if (eOrd) throw eOrd;
