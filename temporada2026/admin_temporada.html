@@ -487,8 +487,11 @@ const ESTADO_PEDIDO_LABEL = { pendiente: 'Pendiente', pagado: 'Pagado', surtido:
 const ESTADO_PEDIDO_NEXT  = { pendiente: 'pagado', pagado: 'surtido', surtido: 'pendiente' };
 
 // ── AUTH ──
+const AUTH_KEY = 'wolverines_admin_auth';
+
 function login() {
   if (document.getElementById('pwd').value === PWD) {
+    localStorage.setItem(AUTH_KEY, '1');
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('main').style.display = 'block';
     loadData();
@@ -497,9 +500,16 @@ function login() {
   }
 }
 function logout() {
+  localStorage.removeItem(AUTH_KEY);
   document.getElementById('main').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('pwd').value = '';
+}
+
+if (localStorage.getItem(AUTH_KEY) === '1') {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('main').style.display = 'block';
+  loadData();
 }
 
 // ── LOAD ──
