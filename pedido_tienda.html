@@ -78,6 +78,16 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
 .pay-total{font-size:13px;color:var(--gray);margin-top:10px}
 .wa-btn{display:inline-block;background:#25D366;color:white;text-decoration:none;font-weight:800;font-size:14px;padding:14px 24px;border-radius:11px;margin-top:6px}
 .wa-btn:hover{background:#1ebe5b}
+.pay-divider{font-size:11.5px;color:var(--gray-lt);font-weight:700;margin:14px 0;text-transform:uppercase;letter-spacing:0.5px}
+.stripe-btn{display:block;width:100%;background:var(--navy);color:#fff;text-decoration:none;font-weight:800;font-size:14px;padding:14px 24px;border-radius:11px;border:none;cursor:pointer;font-family:'Montserrat',sans-serif}
+.stripe-btn:hover{background:#0a1730}
+.stripe-btn:disabled{background:var(--gray-lt);cursor:not-allowed}
+.section-label{font-size:12px;font-weight:800;color:var(--blue-dk);text-transform:uppercase;letter-spacing:0.5px;margin:18px 0 4px}
+.section-label:first-child{margin-top:0}
+.locked-row{opacity:.6}
+.badge-paid{background:#dcfce7;color:#15803d;font-size:11px;font-weight:800;padding:6px 10px;border-radius:8px;flex-shrink:0}
+.numero-card{display:none}
+.numero-card.show{display:block}
 </style>
 </head>
 <body>
@@ -122,6 +132,21 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
         <div id="products-list"></div>
       </div>
 
+      <div class="card numero-card" id="numero-card">
+        <h2>🎽 Número de jersey</h2>
+        <div class="sub">Pediste una prenda de uniforme — indica el número que quieres en tu jersey</div>
+        <div class="row2">
+          <div class="field">
+            <label>Número <span>*</span></label>
+            <input type="number" id="f-numero" min="0" max="99" placeholder="Ej. 7">
+          </div>
+          <div class="field">
+            <label>Apodo (opcional, máx. 12 caracteres)</label>
+            <input type="text" id="f-apodo" maxlength="12" placeholder="Ej. TEJADA">
+          </div>
+        </div>
+      </div>
+
       <div class="total-bar">
         <span class="lbl">Total del pedido</span>
         <span class="val" id="total-val">$0</span>
@@ -153,6 +178,16 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
   </div>
 
   <a id="success-whatsapp" class="wa-btn" href="#" target="_blank">📲 Enviar comprobante a Viky por WhatsApp</a>
+
+  <div class="pay-divider">— o —</div>
+  <button id="stripe-btn" class="stripe-btn" onclick="payWithStripe()">💳 Pagar con tarjeta (Stripe)</button>
+</div>
+
+<div id="stripe-return-screen" style="display:none;max-width:480px;margin:60px auto;text-align:center;padding:20px">
+  <div class="icon" style="font-size:56px;margin-bottom:16px">🏈</div>
+  <h2 style="font-size:22px;font-weight:900;color:var(--blue-dk);margin-bottom:10px">Wolve Store</h2>
+  <p id="stripe-return-msg" style="color:var(--gray);font-size:14px;line-height:1.7"></p>
+  <a href="pedido_tienda.html" class="wa-btn" style="background:var(--blue);margin-top:20px">Volver a la tienda</a>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -163,23 +198,34 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const INFANTIL = ['4','6','8','10','12','14'];
 const JUVENIL  = ['XS','S','M','L','XL','XXL','XXXL'];
+const JERSEY_BLANCO_TALLAS = ['4','6','8','10','12','14','16','XS','S','M','L','XL','XXL'];
 
 const PRODUCTS = [
-  { id: 1,  name: 'Jersey Oficial',            price: 680,  img: 'jersey.jpeg',          sizeType: 'tallas' },
-  { id: 2,  name: 'Playera Wolverines',         price: 315,  img: 'playera.jpeg',         sizeType: 'tallas' },
-  { id: 3,  name: 'Gorra Oficial',              price: 370,  img: 'gorra.jpeg',           sizeType: 'fixed', sizes: ['S','M','L'] },
-  { id: 4,  name: 'Playera Blanca',             price: 315,  img: 'playera_blanca.jpeg',  sizeType: 'tallas' },
-  { id: 5,  name: 'Gorra Blanca',               price: 370,  img: 'gorra_blanca.jpeg',    sizeType: 'fixed', sizes: ['S','M','L'] },
-  { id: 6,  name: 'Rompevientos Wolverines',    price: 575,  img: 'rompevientos.jpeg',    sizeType: 'tallas' },
-  { id: 7,  name: 'Chaleco Pro Evolution',      price: 940,  img: 'chaleco.jpeg',         sizeType: 'tallas' },
-  { id: 8,  name: 'Mochila Creatlets',          price: 940,  img: 'mochila.jpeg',         sizeType: 'fixed', sizes: ['Única'] },
-  { id: 9,  name: 'Hoodie Wolverines',          price: 835,  img: 'hoodie.jpeg',          sizeType: 'tallas' },
-  { id: 10, name: 'Pulsera Azul Wolverines',    price: 50,   img: 'pulsera.jpeg',         sizeType: 'fixed', sizes: ['Única'] },
-  { id: 11, name: 'Headband GameBreaker',       price: 1250, img: 'headband.jpeg',        sizeType: 'fixed', sizes: ['XS-S (43–51 cm)','M-L (51–58 cm)','XL-2XL (58–66 cm)'], customizable: true },
-  { id: 12, name: 'Llavero Wolverines',         price: 150,  img: 'llavero.jpeg',         sizeType: 'fixed', sizes: ['Única'] },
+  // ── UNIFORME OFICIAL (requiere número de jersey) ──
+  { id: 1,  name: 'Jersey Oficial',           price: 680,  img: 'jersey.jpeg',          sizeType: 'tallas', categoria: 'uniforme', uniformeItem: 'jersey' },
+  { id: 13, name: 'Jersey Blanco',            price: 375,  img: 'jersey_blanco.jpeg',   sizeType: 'fixed', sizes: JERSEY_BLANCO_TALLAS, categoria: 'uniforme', uniformeItem: 'playera_blanca' },
+  { id: 14, name: 'Banderas Completas',       price: 315,  img: 'banderas.jpeg',        sizeType: 'none', categoria: 'uniforme', uniformeItem: 'banderas', uniformeTalla: 'Banderas completas' },
+  { id: 15, name: 'Solo Banderas',            price: 130,  img: 'banderas.jpeg',        sizeType: 'none', categoria: 'uniforme', uniformeItem: 'banderas', uniformeTalla: 'Solo banderas' },
+
+  // ── PRODUCTOS OFICIALES ──
+  { id: 2,  name: 'Playera de Entrenamiento Azul',    price: 315,  img: 'playera.jpeg',         sizeType: 'tallas', categoria: 'oficial' },
+  { id: 4,  name: 'Playera de Entrenamiento Blanca',  price: 315,  img: 'playera_blanca.jpeg',  sizeType: 'tallas', categoria: 'oficial' },
+  { id: 3,  name: 'Gorra Oficial',              price: 370,  img: 'gorra.jpeg',           sizeType: 'none', categoria: 'oficial' },
+  { id: 5,  name: 'Gorra Blanca',               price: 370,  img: 'gorra_blanca.jpeg',    sizeType: 'none', categoria: 'oficial' },
+  { id: 6,  name: 'Rompevientos Wolverines',    price: 575,  img: 'rompevientos.jpeg',    sizeType: 'tallas', categoria: 'oficial' },
+  { id: 16, name: 'Chamarra Infantil Wolverines', price: 765, img: 'chamarra_infantil.jpeg', sizeType: 'fixed', sizes: ['7-8 años','11-12 años','13 años'], categoria: 'oficial' },
+  { id: 7,  name: 'Chaleco Pro Evolution',      price: 940,  img: 'chaleco.jpeg',         sizeType: 'tallas', categoria: 'oficial' },
+  { id: 8,  name: 'Mochila Creatlets',          price: 940,  img: 'mochila.jpeg',         sizeType: 'none', categoria: 'oficial', customizable: true },
+  { id: 9,  name: 'Hoodie Wolverines',          price: 835,  img: 'hoodie.jpeg',          sizeType: 'tallas', categoria: 'oficial', customizable: true },
+  { id: 10, name: 'Pulsera Azul Wolverines',    price: 50,   img: 'pulsera.jpeg',         sizeType: 'fixed', sizes: ['Única'], categoria: 'oficial' },
+  { id: 11, name: 'Headband GameBreaker',       price: 1250, img: 'headband.jpeg',        sizeType: 'fixed', sizes: ['XS-S (43–51 cm)','M-L (51–58 cm)','XL-2XL (58–66 cm)'], customizable: true, categoria: 'oficial' },
+  { id: 12, name: 'Llavero Wolverines',         price: 150,  img: 'llavero.jpeg',         sizeType: 'fixed', sizes: ['Única'], categoria: 'oficial' },
 ];
 
 let jugadores = [];
+let estadoUniforme = null;
+let lastOrder = null;
+const PAYMENTS_API = 'https://wolverines-payments.wolverinestrc.workers.dev';
 
 function sizeOptionsHtml(p) {
   if (p.sizeType === 'fixed') {
@@ -190,9 +236,30 @@ function sizeOptionsHtml(p) {
     '<optgroup label="Juvenil">' + JUVENIL.map(s => `<option value="${s}">${s}</option>`).join('') + '</optgroup>';
 }
 
-function renderProducts() {
-  const cont = document.getElementById('products-list');
-  cont.innerHTML = PRODUCTS.map(p => `
+function uniformeEstadoFor(item) {
+  if (!estadoUniforme) return null;
+  return (estadoUniforme.uniformes || []).find(u => u.item === item) || null;
+}
+
+function isLocked(p) {
+  if (p.categoria !== 'uniforme') return false;
+  const e = uniformeEstadoFor(p.uniformeItem);
+  return !!e && e.estado === 'pagado';
+}
+
+function productRowHtml(p) {
+  if (isLocked(p)) {
+    return `
+    <div class="prod-row locked-row">
+      <img class="prod-thumb" src="${p.img}" alt="${p.name}" onerror="this.style.display='none'">
+      <div class="prod-info">
+        <div class="prod-name">${p.name}</div>
+        <div class="prod-price">$${p.price.toLocaleString()}</div>
+      </div>
+      <span class="badge-paid">✅ Ya pagado</span>
+    </div>`;
+  }
+  return `
     <div class="prod-row">
       <img class="prod-thumb" src="${p.img}" alt="${p.name}" onclick="showPreview(${p.id})" onerror="this.style.display='none'">
       <div class="prod-info" onclick="showPreview(${p.id})" style="cursor:pointer">
@@ -201,12 +268,37 @@ function renderProducts() {
       </div>
       <div class="prod-controls">
         ${p.customizable ? `<input type="text" class="prod-num" id="num-${p.id}" maxlength="2" placeholder="Núm." oninput="this.value=this.value.replace(/[^0-9]/g,'')">` : ''}
-        <select id="size-${p.id}" onfocus="showPreview(${p.id})">${sizeOptionsHtml(p)}</select>
+        ${p.sizeType === 'none' ? '' : `<select id="size-${p.id}" onfocus="showPreview(${p.id})">${sizeOptionsHtml(p)}</select>`}
         <input type="number" id="qty-${p.id}" min="0" value="0" onfocus="showPreview(${p.id})" oninput="updateTotal()">
       </div>
-    </div>
-  `).join('');
+    </div>`;
+}
+
+function renderProducts() {
+  const cont = document.getElementById('products-list');
+  const uniforme = PRODUCTS.filter(p => p.categoria === 'uniforme');
+  const oficial = PRODUCTS.filter(p => p.categoria === 'oficial');
+  cont.innerHTML =
+    '<div class="section-label">🎽 Uniforme (requiere número de jersey)</div>' +
+    uniforme.map(productRowHtml).join('') +
+    '<div class="section-label">🛍️ Productos oficiales</div>' +
+    oficial.map(productRowHtml).join('');
   showPreview(PRODUCTS[0].id);
+  updateTotal();
+}
+
+async function onJugadorChange() {
+  const id = document.getElementById('f-jugador').value;
+  estadoUniforme = null;
+  if (id) {
+    try {
+      const { data, error } = await sb.rpc('public_get_jugador_uniforme_estado', { p_id: id });
+      if (!error) estadoUniforme = data;
+    } catch (e) {}
+  }
+  document.getElementById('f-numero').value = estadoUniforme ? (estadoUniforme.numero_jugador || '') : '';
+  document.getElementById('f-apodo').value = estadoUniforme ? (estadoUniforme.apodo_jersey || '') : '';
+  renderProducts();
 }
 
 function showPreview(pid) {
@@ -219,11 +311,17 @@ function showPreview(pid) {
 
 function updateTotal() {
   let total = 0;
+  let needsNumero = false;
   PRODUCTS.forEach(p => {
-    const qty = parseInt(document.getElementById('qty-' + p.id).value) || 0;
+    if (isLocked(p)) return;
+    const qtyEl = document.getElementById('qty-' + p.id);
+    if (!qtyEl) return;
+    const qty = parseInt(qtyEl.value) || 0;
     total += qty * p.price;
+    if (qty > 0 && p.categoria === 'uniforme') needsNumero = true;
   });
   document.getElementById('total-val').textContent = '$' + total.toLocaleString();
+  document.getElementById('numero-card').classList.toggle('show', needsNumero);
 }
 
 async function loadJugadores() {
@@ -234,6 +332,7 @@ async function loadJugadores() {
     jugadores = data || [];
     sel.innerHTML = '<option value="">Selecciona...</option>' +
       jugadores.map(j => `<option value="${j.id}">${j.nombre} ${j.apellidos} · ${j.categoria}</option>`).join('');
+    sel.addEventListener('change', onJugadorChange);
   } catch(e) {
     sel.innerHTML = '<option value="">Error al cargar roster</option>';
   }
@@ -263,31 +362,66 @@ async function submitPedido() {
   if (!tutorEmail || !tutorEmail.includes('@')) return showError('⚠️ Ingresa un correo válido.');
 
   const items = [];
+  const stripeItems = [];
+  let needsNumero = false;
   for (const p of PRODUCTS) {
-    const qty = parseInt(document.getElementById('qty-' + p.id).value) || 0;
+    if (isLocked(p)) continue;
+    const qtyEl = document.getElementById('qty-' + p.id);
+    if (!qtyEl) continue;
+    const qty = parseInt(qtyEl.value) || 0;
     if (qty <= 0) continue;
-    const size = document.getElementById('size-' + p.id).value;
-    if (!size) return showError('⚠️ Falta la talla de: ' + p.name);
-    let numero = '';
-    if (p.customizable) {
-      numero = (document.getElementById('num-' + p.id).value || '').trim();
-      if (!numero) return showError('⚠️ Indica el número a personalizar en: ' + p.name);
+
+    let size = p.uniformeTalla || 'Única';
+    if (p.sizeType !== 'none') {
+      size = document.getElementById('size-' + p.id).value;
+      if (!size) return showError('⚠️ Falta la talla de: ' + p.name);
     }
-    items.push({ producto: p.name, talla: size, cantidad: qty, precio_unitario: p.price, subtotal: qty * p.price, numero: numero || undefined });
+    let numeroCustom = '';
+    if (p.customizable) {
+      numeroCustom = (document.getElementById('num-' + p.id).value || '').trim();
+      if (!numeroCustom) return showError('⚠️ Indica el número a personalizar en: ' + p.name);
+    }
+    if (p.categoria === 'uniforme') needsNumero = true;
+
+    items.push({ producto: p.name, talla: size, cantidad: qty, precio_unitario: p.price, subtotal: qty * p.price, numero: numeroCustom || undefined });
+    stripeItems.push({ id: p.id, qty, size: p.sizeType === 'none' ? undefined : size, customNum: numeroCustom || undefined });
   }
   if (!items.length) return showError('⚠️ Agrega al menos un producto (cantidad mayor a 0).');
 
+  let numeroJersey = '';
+  let apodo = '';
+  if (needsNumero) {
+    numeroJersey = (document.getElementById('f-numero').value || '').trim();
+    apodo = (document.getElementById('f-apodo').value || '').trim();
+    if (!numeroJersey) return showError('⚠️ Indica el número de jersey.');
+  }
+
   const total = items.reduce((s, i) => s + i.subtotal, 0);
   const jugador = jugadores.find(j => j.id === jugadorId);
+  const jugadorNombre = jugador ? (jugador.nombre + ' ' + jugador.apellidos) : '';
 
   const btn = document.getElementById('submit-btn');
   btn.disabled = true;
   btn.textContent = '⏳ Enviando...';
 
   try {
+    if (needsNumero) {
+      const { error: eNum } = await sb.rpc('public_set_numero_jugador', { p_id: jugadorId, p_numero: parseInt(numeroJersey), p_apodo: apodo || null });
+      if (eNum) throw eNum;
+      for (const p of PRODUCTS) {
+        if (p.categoria !== 'uniforme' || isLocked(p)) continue;
+        const qtyEl = document.getElementById('qty-' + p.id);
+        const qty = qtyEl ? (parseInt(qtyEl.value) || 0) : 0;
+        if (qty <= 0) continue;
+        const talla = p.sizeType === 'none' ? p.uniformeTalla : document.getElementById('size-' + p.id).value;
+        const { error: eOrd } = await sb.rpc('public_order_uniforme', { p_id: jugadorId, p_item: p.uniformeItem, p_talla: talla });
+        if (eOrd) throw eOrd;
+      }
+    }
+
     const { error } = await sb.from('pedidos_tienda').insert({
       jugador_id: jugadorId,
-      jugador_nombre: jugador ? (jugador.nombre + ' ' + jugador.apellidos) : '',
+      jugador_nombre: jugadorNombre,
       tutor_nombre: tutorNombre,
       tutor_telefono: tutorTel,
       tutor_email: tutorEmail,
@@ -298,15 +432,17 @@ async function submitPedido() {
 
     if (tutorEmail) {
       sb.functions.invoke('send-email', { body: { tipo: 'pedido', to: tutorEmail, data: {
-        tutor_nombre: tutorNombre, jugador_nombre: jugador ? (jugador.nombre + ' ' + jugador.apellidos) : '', items, total
+        tutor_nombre: tutorNombre, jugador_nombre: jugadorNombre, items, total,
+        numero_jersey: numeroJersey || undefined, apodo: apodo || undefined
       } } }).catch(() => {});
     }
 
-    const jugadorNombre = jugador ? (jugador.nombre + ' ' + jugador.apellidos) : '';
     document.getElementById('success-jugador').textContent = jugadorNombre;
     document.getElementById('success-total').textContent = '$' + total.toLocaleString();
     const waMsg = encodeURIComponent('Hola Viky, te envío el comprobante del pedido de Wolve Store de ' + jugadorNombre + ' por $' + total.toLocaleString() + '.');
     document.getElementById('success-whatsapp').href = 'https://wa.me/528713957332?text=' + waMsg;
+
+    lastOrder = { items: stripeItems, customer: { name: tutorNombre, phone: tutorTel, email: tutorEmail } };
 
     document.getElementById('form-screen').style.display = 'none';
     document.getElementById('success-screen').style.display = 'block';
@@ -317,6 +453,39 @@ async function submitPedido() {
     btn.textContent = '💾 Enviar pedido';
   }
 }
+
+async function payWithStripe() {
+  if (!lastOrder) return;
+  const btn = document.getElementById('stripe-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Conectando con Stripe...';
+  try {
+    const res = await fetch(PAYMENTS_API + '/create-checkout-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items: lastOrder.items, customer: lastOrder.customer, delivery: 'pickup', page: 'pedido_tienda.html' }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.url) throw new Error(data.error || 'Error al conectar con Stripe');
+    window.location.href = data.url;
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = '💳 Pagar con tarjeta (Stripe)';
+    alert('No se pudo iniciar el pago con tarjeta: ' + e.message);
+  }
+}
+
+(function checkStripeReturn() {
+  const params = new URLSearchParams(window.location.search);
+  const pago = params.get('pago');
+  if (pago !== 'exito' && pago !== 'cancelado') return;
+  document.getElementById('form-screen').style.display = 'none';
+  document.getElementById('success-screen').style.display = 'none';
+  document.getElementById('stripe-return-screen').style.display = 'block';
+  document.getElementById('stripe-return-msg').textContent = pago === 'exito'
+    ? '✅ ¡Pago recibido! Gracias por tu compra, tu pedido ya está confirmado.'
+    : '⚠️ El pago fue cancelado. Tu pedido sigue registrado — puedes pagar por transferencia (revisa el correo de confirmación) o volver a intentar.';
+})();
 
 renderProducts();
 loadJugadores();
