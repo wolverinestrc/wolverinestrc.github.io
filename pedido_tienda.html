@@ -72,6 +72,12 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
 #success-screen .icon{font-size:56px;margin-bottom:16px}
 #success-screen h2{font-size:22px;font-weight:900;color:var(--blue-dk);margin-bottom:10px}
 #success-screen p{color:var(--gray);font-size:14px;line-height:1.7}
+.pay-box{background:var(--blue-lt);border-radius:12px;padding:18px 20px;margin:20px 0;text-align:left}
+.pay-label{font-size:11px;font-weight:800;letter-spacing:0.5px;color:var(--blue-dk);text-transform:uppercase;margin-bottom:6px}
+.pay-clabe{font-size:15px;font-weight:800;color:var(--navy)}
+.pay-total{font-size:13px;color:var(--gray);margin-top:10px}
+.wa-btn{display:inline-block;background:#25D366;color:white;text-decoration:none;font-weight:800;font-size:14px;padding:14px 24px;border-radius:11px;margin-top:6px}
+.wa-btn:hover{background:#1ebe5b}
 </style>
 </head>
 <body>
@@ -138,7 +144,15 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
 <div id="success-screen">
   <div class="icon">🏈</div>
   <h2>¡Pedido enviado!</h2>
-  <p>Recibimos tu pedido de Wolve Store. Nos pondremos en contacto contigo para confirmar el pago y la entrega.</p>
+  <p>Recibimos el pedido de <b id="success-jugador">—</b>. Ahora solo falta el pago:</p>
+
+  <div class="pay-box">
+    <div class="pay-label">Transferencia bancaria</div>
+    <div class="pay-clabe">Nu Bank · CLABE: 638180000152424651</div>
+    <div class="pay-total">Total a pagar: <b id="success-total">$0</b></div>
+  </div>
+
+  <a id="success-whatsapp" class="wa-btn" href="#" target="_blank">📲 Enviar comprobante a Viky por WhatsApp</a>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -287,6 +301,12 @@ async function submitPedido() {
         tutor_nombre: tutorNombre, jugador_nombre: jugador ? (jugador.nombre + ' ' + jugador.apellidos) : '', items, total
       } } }).catch(() => {});
     }
+
+    const jugadorNombre = jugador ? (jugador.nombre + ' ' + jugador.apellidos) : '';
+    document.getElementById('success-jugador').textContent = jugadorNombre;
+    document.getElementById('success-total').textContent = '$' + total.toLocaleString();
+    const waMsg = encodeURIComponent('Hola Viky, te envío el comprobante del pedido de Wolve Store de ' + jugadorNombre + ' por $' + total.toLocaleString() + '.');
+    document.getElementById('success-whatsapp').href = 'https://wa.me/528713957332?text=' + waMsg;
 
     document.getElementById('form-screen').style.display = 'none';
     document.getElementById('success-screen').style.display = 'block';
