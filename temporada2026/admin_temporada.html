@@ -234,7 +234,6 @@ table.lt td{padding:12px 14px;font-size:13px;color:var(--text);border-top:1px so
       <button class="tab-btn" id="tb-morosos" onclick="switchTab('morosos')">⚠️ Atrasos</button>
       <button class="tab-btn" id="tb-uniformes" onclick="switchTab('uniformes')">🎽 Uniformes</button>
       <button class="tab-btn" id="tb-tienda" onclick="switchTab('tienda')">🛒 Tienda</button>
-      <button class="tab-btn" id="tb-pedidos" onclick="switchTab('pedidos')">🛍️ Pedidos</button>
       <button class="tab-btn" id="tb-coaches" onclick="switchTab('coaches')">🧑‍🏫 Coaches</button>
     </div>
 
@@ -367,31 +366,11 @@ table.lt td{padding:12px 14px;font-size:13px;color:var(--text);border-top:1px so
         <div class="mor-header">
           <div>
             <div class="mor-title">Tienda</div>
-            <div class="mor-sub">Ventas sueltas registradas manualmente (no ligadas a un jugador)</div>
-          </div>
-          <button class="btn-action btn-ghost" onclick="exportTienda()">📥 Exportar Excel</button>
-        </div>
-        <div class="controls">
-          <input class="search-box" type="text" id="tienda-producto" placeholder="Producto" style="flex:2">
-          <input class="search-box" type="text" id="tienda-cliente" placeholder="Cliente" style="flex:2">
-          <input class="search-box" type="number" id="tienda-monto" placeholder="Monto $" style="flex:1;min-width:100px">
-          <button class="btn-action" onclick="addTienda()">+ Agregar</button>
-        </div>
-        <div id="tienda-content"></div>
-      </div>
-    </div>
-
-    <!-- PEDIDOS -->
-    <div class="morosos-section" id="section-pedidos">
-      <div class="content-card">
-        <div class="mor-header">
-          <div>
-            <div class="mor-title">Pedidos Wolve Store</div>
-            <div class="mor-sub">Pedidos enviados por los papás desde pedido_tienda.html</div>
+            <div class="mor-sub">Pedidos de productos enviados por los papás desde pedido_tienda.html</div>
           </div>
           <button class="btn-action btn-ghost" onclick="exportPedidos()">📥 Exportar Excel</button>
         </div>
-        <div id="pedidos-content"></div>
+        <div id="tienda-content"></div>
       </div>
     </div>
 
@@ -463,10 +442,6 @@ function mapJugadorFromSupabase(j) {
   return { id: j.id, fields: fields };
 }
 
-function mapTiendaFromSupabase(t) {
-  return { id: t.id, fields: { 'Producto': t.producto, 'Cliente': t.cliente, 'Monto': parseFloat(t.monto), 'Fecha': t.fecha } };
-}
-
 // Claves internas = nombres reales de los campos "Pago X" en Airtable (no se renombran para no romper Zapier/Airtable).
 // Las etiquetas/montos/fechas de vencimiento sí siguen el plan nuevo de 5 pagos.
 const MESES = ['Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -496,7 +471,6 @@ function montoUniforme(itemKey, talla) {
 }
 
 let allRecords   = [];
-let tiendaRecords = [];
 let pedidosRecords = [];
 let gastosRecords = [];
 let pagosHistorial = [];
@@ -527,10 +501,6 @@ async function loadData() {
     const { data: jugData, error: jugErr } = await sb.rpc('admin_list_jugadores', { p_pwd: PWD });
     if (jugErr) throw jugErr;
     allRecords = (jugData || []).map(mapJugadorFromSupabase);
-
-    const { data: tiendaData, error: tiendaErr } = await sb.rpc('admin_list_tienda', { p_pwd: PWD });
-    if (tiendaErr) throw tiendaErr;
-    tiendaRecords = (tiendaData || []).map(mapTiendaFromSupabase);
 
     const { data: pedidosData, error: pedidosErr } = await sb.rpc('admin_list_pedidos_tienda', { p_pwd: PWD });
     if (pedidosErr) throw pedidosErr;
@@ -578,7 +548,7 @@ function tieneAtraso(rec) {
 
 // ── TABS ──
 function switchTab(tab) {
-  ['jugadores','pagos','morosos','uniformes','tienda','pedidos','coaches'].forEach(function(t) {
+  ['jugadores','pagos','morosos','uniformes','tienda','coaches'].forEach(function(t) {
     var btn = document.getElementById('tb-' + t);
     if (btn) btn.classList.remove('active');
     var sec = document.getElementById('section-' + t);
@@ -592,8 +562,7 @@ function switchTab(tab) {
   if (tab === 'pagos') renderPagos();
   if (tab === 'morosos') renderMorosos();
   if (tab === 'uniformes') renderUniformes();
-  if (tab === 'tienda') renderTienda();
-  if (tab === 'pedidos') renderPedidos();
+  if (tab === 'tienda') renderPedidos();
   if (tab === 'coaches') renderCoaches();
 }
 
@@ -1246,67 +1215,9 @@ function renderUniformes() {
     '<span style="color:var(--red);font-weight:700">Total pendiente: $' + totalPendiente.toLocaleString() + ' MXN</span></div>';
 }
 
-// ── TIENDA ──
-function renderTienda() {
-  var container = document.getElementById('tienda-content');
-  if (!tiendaRecords.length) { container.innerHTML = '<div class="empty">Aún no hay ventas registradas.</div>'; return; }
-
-  var thead = '<thead><tr><th>Fecha</th><th>Cliente</th><th>Producto</th><th style="text-align:right">Monto</th><th></th></tr></thead>';
-
-  var tbody = '<tbody>';
-  var total = 0;
-  tiendaRecords.forEach(function(rec) {
-    var f = rec.fields;
-    var monto = f['Monto'] || 0;
-    total += monto;
-    tbody += '<tr>' +
-      '<td style="color:var(--gray)">' + (f['Fecha']||'—') + '</td>' +
-      '<td style="font-weight:700">' + (f['Cliente']||'—') + '</td>' +
-      '<td style="color:var(--gray)">' + (f['Producto']||'—') + '</td>' +
-      '<td style="text-align:right;color:var(--green);font-weight:700">$' + monto.toLocaleString() + '</td>' +
-      '<td style="text-align:right"><button class="icon-btn icon-del" onclick="deleteTienda(\'' + rec.id + '\')">🗑</button></td>' +
-      '</tr>';
-  });
-  tbody += '</tbody>';
-
-  container.innerHTML = '<div class="lt-wrap"><table class="lt">' + thead + tbody + '</table></div>' +
-    '<div class="lt-summary"><span style="color:var(--green);font-weight:700">Total tienda: $' + total.toLocaleString() + ' MXN</span></div>';
-}
-
-async function addTienda() {
-  var producto = document.getElementById('tienda-producto').value.trim();
-  var cliente = document.getElementById('tienda-cliente').value.trim();
-  var monto = parseFloat(document.getElementById('tienda-monto').value);
-  if (!producto || !cliente || !monto) { alert('Completa producto, cliente y monto'); return; }
-
-  try {
-    var { error: insErr } = await sb.rpc('admin_insert_tienda', {
-      p_pwd: PWD, p_producto: producto, p_cliente: cliente, p_monto: monto, p_fecha: new Date().toISOString().slice(0,10)
-    });
-    if (insErr) throw insErr;
-    var { data: tiendaData, error: listErr } = await sb.rpc('admin_list_tienda', { p_pwd: PWD });
-    if (listErr) throw listErr;
-    tiendaRecords = (tiendaData || []).map(mapTiendaFromSupabase);
-    document.getElementById('tienda-producto').value = '';
-    document.getElementById('tienda-cliente').value = '';
-    document.getElementById('tienda-monto').value = '';
-    renderTienda();
-  } catch(e) { alert('❌ Error: ' + e.message); }
-}
-
-async function deleteTienda(id) {
-  if (!confirm('¿Eliminar esta venta?')) return;
-  try {
-    var { error } = await sb.rpc('admin_delete_tienda', { p_pwd: PWD, p_id: id });
-    if (error) throw error;
-    tiendaRecords = tiendaRecords.filter(function(r) { return r.id !== id; });
-    renderTienda();
-  } catch(e) { alert('❌ Error: ' + e.message); }
-}
-
-// ── PEDIDOS ──
+// ── TIENDA (pedidos de pedido_tienda.html) ──
 function renderPedidos() {
-  var container = document.getElementById('pedidos-content');
+  var container = document.getElementById('tienda-content');
   if (!pedidosRecords.length) { container.innerHTML = '<div class="empty">Aún no hay pedidos de Wolve Store.</div>'; return; }
 
   var html = '';
@@ -1568,15 +1479,6 @@ function exportUniformesPendientes() {
   });
   if (!rows.length) { alert('🎉 No hay uniformes pendientes de pago.'); return; }
   downloadXlsx(rows, 'uniformes_pendientes.xlsx', 'Uniformes Pendientes');
-}
-
-function exportTienda() {
-  if (!tiendaRecords.length) { alert('No hay ventas de tienda registradas.'); return; }
-  var rows = tiendaRecords.map(function(rec) {
-    var f = rec.fields;
-    return { Fecha: f['Fecha']||'', Cliente: f['Cliente']||'', Producto: f['Producto']||'', Monto: f['Monto']||0 };
-  });
-  downloadXlsx(rows, 'tienda.xlsx', 'Tienda');
 }
 
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
