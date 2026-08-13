@@ -356,7 +356,7 @@ table.lt td{padding:12px 14px;font-size:13px;color:var(--text);border-top:1px so
         <div class="mor-header">
           <div>
             <div class="mor-title">Uniformes</div>
-            <div class="mor-sub">Jersey $680 · Jersey Blanco $375 · Banderas completas $315 / solo banderas $130 — edita talla/estado desde "✏️" en cada jugador</div>
+            <div class="mor-sub">Jersey $680 · Jersey Blanco $350 · Banderas completas $300 / solo banderas $150 — edita talla/estado desde "✏️" en cada jugador</div>
           </div>
           <div style="display:flex;gap:10px;flex-wrap:wrap">
             <button class="btn-action btn-ghost" onclick="exportPedidoUniformes()">📥 Pedido de uniformes (pagados)</button>
@@ -463,14 +463,14 @@ const PAGOS_INFO = {
 
 const UNIFORME_ITEMS = [
   { key: 'Jersey',        monto: 680 },
-  { key: 'Banderas',      monto: '130-315' },
-  { key: 'Jersey Blanco', monto: 375 },
+  { key: 'Banderas',      monto: '150-300' },
+  { key: 'Jersey Blanco', monto: 350 },
 ];
 
 function montoUniforme(itemKey, talla) {
   if (itemKey === 'Banderas') {
-    if (talla === 'Solo banderas') return 130;
-    if (talla === 'Banderas completas') return 315;
+    if (talla === 'Solo banderas') return 150;
+    if (talla === 'Banderas completas') return 300;
     return 0;
   }
   var item = UNIFORME_ITEMS.find(function(i) { return i.key === itemKey; });
