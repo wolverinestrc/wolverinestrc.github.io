@@ -46,6 +46,9 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
 
 .item-card{border:1.5px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;transition:border-color .1s,background .1s}
 .item-card.checked{border-color:var(--blue);background:var(--blue-lt)}
+.item-card.paid{border-color:var(--green);background:#eafaf0;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.item-card.paid .item-paid-label{font-size:13.5px;font-weight:700;color:var(--green)}
+.item-card.paid .item-paid-sub{font-size:11.5px;color:var(--gray);margin-top:2px}
 .item-head{display:flex;align-items:center;gap:10px;cursor:pointer}
 .item-head input[type=checkbox]{width:18px;height:18px;flex-shrink:0;accent-color:var(--blue)}
 .item-name{font-size:13.5px;font-weight:700;flex:1}
@@ -239,8 +242,20 @@ async function seleccionarJugador(id) {
   const cont = document.getElementById('items-list');
   cont.innerHTML = ITEMS.map(it => {
     const actual = (estado.uniformes || []).find(u => u.item === it.db);
+    const yaPagado = actual && actual.estado === 'pagado';
     const yaTiene = actual && actual.estado !== 'no_comprado';
     const talla = actual ? actual.talla || '' : '';
+
+    if (yaPagado) {
+      return `
+        <div class="item-card paid">
+          <div>
+            <div class="item-paid-label">✅ ${it.nombre} — ya pagado</div>
+            <div class="item-paid-sub">Talla ${talla || '—'} · $${it.precio.toLocaleString()}</div>
+          </div>
+        </div>
+      `;
+    }
     return `
       <div class="item-card ${yaTiene ? 'checked' : ''}" id="card-${it.db}">
         <label class="item-head">
@@ -260,24 +275,37 @@ async function seleccionarJugador(id) {
   }).join('');
 
   const bActual = (estado.uniformes || []).find(u => u.item === 'banderas');
+  const bPagado = bActual && bActual.estado === 'pagado';
   const bTiene = bActual && bActual.estado !== 'no_comprado';
   const bValor = bTiene ? bActual.talla || '' : '';
-  cont.innerHTML += `
-    <div class="item-card">
-      <div class="item-name" style="margin-bottom:10px">Banderas</div>
-      ${BANDERAS_OPCIONES.map((op, i) => `
-        <label style="display:flex;align-items:center;gap:10px;margin-bottom:8px;cursor:pointer">
-          <input type="radio" name="banderas-op" value="${op.valor}" id="rad-banderas-${i}" ${bValor === op.valor ? 'checked' : ''} onchange="updateTotal()">
-          <span class="item-name" style="flex:1;font-weight:600">${op.valor}</span>
-          <span class="item-price">$${op.precio.toLocaleString()}</span>
+
+  if (bPagado) {
+    cont.innerHTML += `
+      <div class="item-card paid">
+        <div>
+          <div class="item-paid-label">✅ Banderas — ya pagado</div>
+          <div class="item-paid-sub">${bValor || '—'}</div>
+        </div>
+      </div>
+    `;
+  } else {
+    cont.innerHTML += `
+      <div class="item-card">
+        <div class="item-name" style="margin-bottom:10px">Banderas</div>
+        ${BANDERAS_OPCIONES.map((op, i) => `
+          <label style="display:flex;align-items:center;gap:10px;margin-bottom:8px;cursor:pointer">
+            <input type="radio" name="banderas-op" value="${op.valor}" id="rad-banderas-${i}" ${bValor === op.valor ? 'checked' : ''} onchange="updateTotal()">
+            <span class="item-name" style="flex:1;font-weight:600">${op.valor}</span>
+            <span class="item-price">$${op.precio.toLocaleString()}</span>
+          </label>
+        `).join('')}
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+          <input type="radio" name="banderas-op" value="" id="rad-banderas-no" ${bValor ? '' : 'checked'} onchange="updateTotal()">
+          <span class="item-name" style="flex:1;font-weight:600;color:var(--gray-lt)">No necesito</span>
         </label>
-      `).join('')}
-      <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
-        <input type="radio" name="banderas-op" value="" id="rad-banderas-no" ${bValor ? '' : 'checked'} onchange="updateTotal()">
-        <span class="item-name" style="flex:1;font-weight:600;color:var(--gray-lt)">No necesito</span>
-      </label>
-    </div>
-  `;
+      </div>
+    `;
+  }
 
   updateTotal();
   document.getElementById('screen-jugador').style.display = 'none';
@@ -294,7 +322,8 @@ function toggleItem(db) {
 function updateTotal() {
   let total = 0;
   ITEMS.forEach(it => {
-    if (document.getElementById('chk-' + it.db).checked) total += it.precio;
+    const chk = document.getElementById('chk-' + it.db);
+    if (chk && chk.checked) total += it.precio;
   });
   const bSel = document.querySelector('input[name="banderas-op"]:checked');
   if (bSel && bSel.value) {
@@ -322,7 +351,10 @@ async function guardarPedido() {
   if (isNaN(numero) || numero < 0 || numero > 99) return showError('⚠️ Ingresa un número de jersey válido (0-99).');
   const apodo = document.getElementById('f-apodo').value.trim();
 
-  const seleccionados = ITEMS.filter(it => document.getElementById('chk-' + it.db).checked);
+  const seleccionados = ITEMS.filter(it => {
+    var chk = document.getElementById('chk-' + it.db);
+    return chk && chk.checked;
+  });
   for (const it of seleccionados) {
     if (it.talla && !document.getElementById('talla-' + it.db).value) {
       return showError('⚠️ Falta la talla de: ' + it.nombre);
