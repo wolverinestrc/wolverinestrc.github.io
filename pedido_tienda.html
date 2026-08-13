@@ -64,6 +64,15 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
 .submit-btn{width:100%;background:var(--blue);border:none;color:white;font-family:'Montserrat',sans-serif;font-size:14px;font-weight:800;padding:16px;border-radius:11px;cursor:pointer;margin-top:16px}
 .submit-btn:hover{background:var(--blue-dk)}
 .submit-btn:disabled{background:var(--gray-lt);cursor:not-allowed}
+.submit-btn.secondary{background:var(--card);color:var(--text);border:1.5px solid var(--border)}
+.submit-btn.secondary:hover{background:var(--bg)}
+.confirm-row{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid var(--border);font-size:13px}
+.confirm-row:first-child{border-top:none}
+.confirm-label{color:var(--gray)}
+.confirm-val{font-weight:700;text-align:right}
+.confirm-items{margin:14px 0}
+.confirm-item{display:flex;justify-content:space-between;font-size:13px;padding:6px 0}
+.confirm-item .paid-tag{color:var(--green);font-weight:700;font-size:11px}
 .alert{border-radius:9px;padding:13px 16px;font-size:12.5px;font-weight:600;margin-top:12px;display:none}
 .alert.show{display:block}
 .alert.error{background:#fde8ee;color:var(--red)}
@@ -88,6 +97,8 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
 .badge-paid{background:#dcfce7;color:#15803d;font-size:11px;font-weight:800;padding:6px 10px;border-radius:8px;flex-shrink:0}
 .numero-card{display:none}
 .numero-card.show{display:block}
+.ctrl-cap{display:flex;flex-direction:column;align-items:center;gap:3px}
+.ctrl-cap label{font-size:9px;font-weight:700;letter-spacing:0.3px;color:var(--gray-lt);text-transform:uppercase}
 </style>
 </head>
 <body>
@@ -157,7 +168,7 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
         <span class="val" id="total-val">$0</span>
       </div>
       <div class="alert error" id="alert-error"></div>
-      <button class="submit-btn" id="submit-btn" onclick="submitPedido()">💾 Enviar pedido</button>
+      <button class="submit-btn" id="submit-btn" onclick="prepararPedido()">💾 Enviar pedido</button>
     </div>
 
     <div class="preview" id="preview">
@@ -168,6 +179,17 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
         <div class="preview-hint">Selecciona un producto de la lista para verlo aquí en grande.</div>
       </div>
     </div>
+  </div>
+</div>
+
+<div id="confirm-screen" style="display:none;max-width:560px;margin:40px auto;padding:20px">
+  <div class="card">
+    <h2>📋 Revisa tu pedido</h2>
+    <div class="sub">Confirma que todo esté correcto antes de enviarlo</div>
+    <div id="confirm-body"></div>
+    <div class="alert error" id="confirm-alert-error"></div>
+    <button class="submit-btn" id="confirm-btn" onclick="confirmarPedido()">✅ Confirmar y enviar pedido</button>
+    <button class="submit-btn secondary" style="margin-top:8px" onclick="volverAEditar()">← Editar pedido</button>
   </div>
 </div>
 
@@ -282,8 +304,8 @@ function productRowHtml(p) {
   }
   const paid = isLocked(p);
   const qtyControl = p.categoria === 'uniforme'
-    ? `<input type="checkbox" id="qty-${p.id}" onchange="updateTotal()" style="width:20px;height:20px;cursor:pointer">`
-    : `<input type="number" id="qty-${p.id}" min="0" value="0" onfocus="showPreview(${p.id})" oninput="updateTotal()">`;
+    ? `<div class="ctrl-cap"><label>Pedir</label><input type="checkbox" id="qty-${p.id}" onchange="updateTotal()" style="width:20px;height:20px;cursor:pointer"></div>`
+    : `<div class="ctrl-cap"><label>Cantidad</label><input type="number" id="qty-${p.id}" min="0" value="0" onfocus="showPreview(${p.id})" oninput="updateTotal()"></div>`;
   return `
     <div class="prod-row">
       <img class="prod-thumb" src="${p.img}" alt="${p.name}" onclick="showPreview(${p.id})" onerror="this.style.display='none'">
@@ -293,11 +315,19 @@ function productRowHtml(p) {
       </div>
       <div class="prod-controls">
         ${paid ? '<span class="badge-paid">✅ Ya pagado</span>' : ''}
-        ${p.customizable ? `<input type="text" class="prod-num" id="num-${p.id}" maxlength="2" placeholder="Núm." oninput="this.value=this.value.replace(/[^0-9]/g,'')">` : ''}
-        ${p.sizeType === 'none' ? '' : `<select id="size-${p.id}" onfocus="showPreview(${p.id})">${sizeOptionsHtml(p)}</select>`}
+        ${p.customizable ? `<div class="ctrl-cap"><label>Número</label><input type="text" class="prod-num" id="num-${p.id}" maxlength="2" placeholder="Núm." oninput="this.value=this.value.replace(/[^0-9]/g,'');bumpQtyIfZero(${p.id})"></div>` : ''}
+        ${p.sizeType === 'none' ? '' : `<div class="ctrl-cap"><label>Talla</label><select id="size-${p.id}" onfocus="showPreview(${p.id})" onchange="bumpQtyIfZero(${p.id})">${sizeOptionsHtml(p)}</select></div>`}
         ${qtyControl}
       </div>
     </div>`;
+}
+
+function bumpQtyIfZero(pid) {
+  const el = document.getElementById('qty-' + pid);
+  if (el && el.type === 'number' && (parseInt(el.value) || 0) === 0) {
+    el.value = 1;
+    updateTotal();
+  }
 }
 
 function renderProducts() {
@@ -390,7 +420,9 @@ function hideError() {
   document.getElementById('alert-error').classList.remove('show');
 }
 
-async function submitPedido() {
+let pendingOrder = null;
+
+function prepararPedido() {
   hideError();
 
   const jugadorId = document.getElementById('f-jugador').value;
@@ -406,6 +438,7 @@ async function submitPedido() {
   const items = [];
   const stripeItems = [];
   const uniformeUpdates = [];
+  const displayItems = [];
   let needsNumero = false;
   for (const p of PRODUCTS) {
     if (isFullyLocked(p)) continue;
@@ -427,6 +460,8 @@ async function submitPedido() {
       needsNumero = true;
       uniformeUpdates.push({ item: p.uniformeItem, talla: size });
     }
+
+    displayItems.push({ name: p.name, talla: size, qty, subtotal: paid ? 0 : qty * p.price, paid, numero: numeroCustom || '' });
     if (paid) continue; // ya pagado: solo se actualiza la talla, no se vuelve a cobrar
 
     items.push({ producto: p.name, talla: size, cantidad: qty, precio_unitario: p.price, subtotal: qty * p.price, numero: numeroCustom || undefined });
@@ -447,60 +482,100 @@ async function submitPedido() {
   const jugador = jugadores.find(j => j.id === jugadorId);
   const jugadorNombre = jugador ? (jugador.nombre + ' ' + jugador.apellidos) : '';
 
-  const btn = document.getElementById('submit-btn');
+  pendingOrder = {
+    jugadorId, jugadorNombre, tutorNombre, tutorTel, tutorEmail,
+    items, stripeItems, uniformeUpdates, displayItems,
+    needsNumero, yaAsignado, numeroJersey, apodo, total,
+  };
+  mostrarConfirmacion(pendingOrder);
+}
+
+function mostrarConfirmacion(o) {
+  const itemsHtml = o.displayItems.map(it =>
+    `<div class="confirm-item">
+      <span>${it.qty}× ${it.name}${it.talla && it.talla !== 'Única' ? ' · Talla ' + it.talla : ''}${it.numero ? ' · #' + it.numero : ''}</span>
+      <span>${it.paid ? '<span class="paid-tag">✅ ya pagado</span>' : '$' + it.subtotal.toLocaleString()}</span>
+    </div>`
+  ).join('');
+
+  document.getElementById('confirm-body').innerHTML = `
+    <div class="confirm-row"><span class="confirm-label">Jugador/a</span><span class="confirm-val">${o.jugadorNombre}</span></div>
+    <div class="confirm-row"><span class="confirm-label">Contacto</span><span class="confirm-val">${o.tutorNombre}<br>${o.tutorTel} · ${o.tutorEmail}</span></div>
+    ${o.needsNumero ? `<div class="confirm-row"><span class="confirm-label">Número de jersey</span><span class="confirm-val">#${o.numeroJersey}${o.apodo ? ' — ' + o.apodo : ''}</span></div>` : ''}
+    <div class="confirm-items">${itemsHtml}</div>
+    <div class="confirm-row" style="border-top:1.5px solid var(--border);font-size:15px"><span class="confirm-label">Total a pagar</span><span class="confirm-val" style="color:var(--blue-dk)">$${o.total.toLocaleString()}</span></div>
+  `;
+  document.getElementById('confirm-alert-error').classList.remove('show');
+  document.getElementById('form-screen').style.display = 'none';
+  document.getElementById('confirm-screen').style.display = 'block';
+  window.scrollTo(0, 0);
+}
+
+function volverAEditar() {
+  document.getElementById('confirm-screen').style.display = 'none';
+  document.getElementById('form-screen').style.display = 'block';
+  window.scrollTo(0, 0);
+}
+
+async function confirmarPedido() {
+  if (!pendingOrder) return;
+  const o = pendingOrder;
+  const btn = document.getElementById('confirm-btn');
   btn.disabled = true;
   btn.textContent = '⏳ Enviando...';
 
   try {
-    if (needsNumero) {
-      if (!yaAsignado) {
-        const { error: eNum } = await sb.rpc('public_set_numero_jugador', { p_id: jugadorId, p_numero: parseInt(numeroJersey), p_apodo: apodo || null });
+    if (o.needsNumero) {
+      if (!o.yaAsignado) {
+        const { error: eNum } = await sb.rpc('public_set_numero_jugador', { p_id: o.jugadorId, p_numero: parseInt(o.numeroJersey), p_apodo: o.apodo || null });
         if (eNum) throw eNum;
       }
-      for (const u of uniformeUpdates) {
-        const { error: eOrd } = await sb.rpc('public_order_uniforme', { p_id: jugadorId, p_item: u.item, p_talla: u.talla });
+      for (const u of o.uniformeUpdates) {
+        const { error: eOrd } = await sb.rpc('public_order_uniforme', { p_id: o.jugadorId, p_item: u.item, p_talla: u.talla });
         if (eOrd) throw eOrd;
       }
     }
 
-    if (items.length) {
+    if (o.items.length) {
       const { error } = await sb.from('pedidos_tienda').insert({
-        jugador_id: jugadorId,
-        jugador_nombre: jugadorNombre,
-        tutor_nombre: tutorNombre,
-        tutor_telefono: tutorTel,
-        tutor_email: tutorEmail,
-        items: items,
-        total: total,
+        jugador_id: o.jugadorId,
+        jugador_nombre: o.jugadorNombre,
+        tutor_nombre: o.tutorNombre,
+        tutor_telefono: o.tutorTel,
+        tutor_email: o.tutorEmail,
+        items: o.items,
+        total: o.total,
       });
       if (error) throw error;
 
-      if (tutorEmail) {
-        sb.functions.invoke('send-email', { body: { tipo: 'pedido', to: tutorEmail, data: {
-          tutor_nombre: tutorNombre, jugador_nombre: jugadorNombre, items, total,
-          numero_jersey: numeroJersey || undefined, apodo: apodo || undefined
+      if (o.tutorEmail) {
+        sb.functions.invoke('send-email', { body: { tipo: 'pedido', to: o.tutorEmail, data: {
+          tutor_nombre: o.tutorNombre, jugador_nombre: o.jugadorNombre, items: o.items, total: o.total,
+          numero_jersey: o.numeroJersey || undefined, apodo: o.apodo || undefined
         } } }).catch(() => {});
       }
 
-      document.getElementById('success-msg').innerHTML = 'Recibimos el pedido de <b id="success-jugador">' + jugadorNombre + '</b>. Ahora solo falta el pago:';
-      document.getElementById('success-total').textContent = '$' + total.toLocaleString();
-      const waMsg = encodeURIComponent('Hola Viky, te envío el comprobante del pedido de Wolve Store de ' + jugadorNombre + ' por $' + total.toLocaleString() + '.');
+      document.getElementById('success-msg').innerHTML = 'Recibimos el pedido de <b id="success-jugador">' + o.jugadorNombre + '</b>. Ahora solo falta el pago:';
+      document.getElementById('success-total').textContent = '$' + o.total.toLocaleString();
+      const waMsg = encodeURIComponent('Hola Viky, te envío el comprobante del pedido de Wolve Store de ' + o.jugadorNombre + ' por $' + o.total.toLocaleString() + '.');
       document.getElementById('success-whatsapp').href = 'https://wa.me/528713957332?text=' + waMsg;
       document.getElementById('success-pago-wrap').style.display = 'block';
-      lastOrder = { items: stripeItems, customer: { name: tutorNombre, phone: tutorTel, email: tutorEmail } };
+      lastOrder = { items: o.stripeItems, customer: { name: o.tutorNombre, phone: o.tutorTel, email: o.tutorEmail } };
     } else {
-      document.getElementById('success-msg').innerHTML = 'Actualizamos los datos de uniforme de <b>' + jugadorNombre + '</b>. No hay nada pendiente de pago en este pedido.';
+      document.getElementById('success-msg').innerHTML = 'Actualizamos los datos de uniforme de <b>' + o.jugadorNombre + '</b>. No hay nada pendiente de pago en este pedido.';
       document.getElementById('success-pago-wrap').style.display = 'none';
       lastOrder = null;
     }
 
-    document.getElementById('form-screen').style.display = 'none';
+    document.getElementById('confirm-screen').style.display = 'none';
     document.getElementById('success-screen').style.display = 'block';
     window.scrollTo(0, 0);
   } catch(e) {
-    showError('❌ Error al enviar: ' + e.message);
+    const el = document.getElementById('confirm-alert-error');
+    el.textContent = '❌ Error al enviar: ' + e.message;
+    el.classList.add('show');
     btn.disabled = false;
-    btn.textContent = '💾 Enviar pedido';
+    btn.textContent = '✅ Confirmar y enviar pedido';
   }
 }
 

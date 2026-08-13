@@ -485,6 +485,16 @@ const UNIFORME_ITEMS = [
   { key: 'Jersey Blanco', monto: 375 },
 ];
 
+function montoUniforme(itemKey, talla) {
+  if (itemKey === 'Banderas') {
+    if (talla === 'Solo banderas') return 130;
+    if (talla === 'Banderas completas') return 315;
+    return 0;
+  }
+  var item = UNIFORME_ITEMS.find(function(i) { return i.key === itemKey; });
+  return (item && typeof item.monto === 'number') ? item.monto : 0;
+}
+
 let allRecords   = [];
 let tiendaRecords = [];
 let pedidosRecords = [];
@@ -1205,8 +1215,9 @@ function renderUniformes() {
     UNIFORME_ITEMS.forEach(function(item) {
       var estado = f[item.key + ' Estado'] || 'No comprado';
       var talla = f[item.key + ' Talla'] || '';
-      if (estado === 'Pagado') pagado += item.monto;
-      if (estado === 'Pendiente') pendiente += item.monto;
+      var monto = montoUniforme(item.key, talla);
+      if (estado === 'Pagado') pagado += monto;
+      if (estado === 'Pendiente') pendiente += monto;
       var icon = estado === 'Pagado' ? '✅' : estado === 'Pendiente' ? '❌' : '—';
       itemsHtml += '<td style="text-align:center" title="' + estado + (talla ? ' · Talla ' + talla : '') + '">' + icon + (talla ? '<div style="font-size:9px;color:var(--gray)">' + talla + '</div>' : '') + '</td>';
     });
@@ -1520,7 +1531,7 @@ function exportPedidoUniformes() {
           Categoría: f['Categoría']||'',
           Pieza: item.key,
           Talla: f[item.key + ' Talla']||'',
-          Monto: item.monto
+          Monto: montoUniforme(item.key, f[item.key + ' Talla']||'')
         });
       }
     });
@@ -1542,7 +1553,7 @@ function exportUniformesPendientes() {
           Teléfono: f['Teléfono']||'',
           Pieza: item.key,
           Talla: f[item.key + ' Talla']||'',
-          Monto: item.monto
+          Monto: montoUniforme(item.key, f[item.key + ' Talla']||'')
         });
       }
     });
