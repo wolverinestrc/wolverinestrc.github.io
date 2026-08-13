@@ -154,6 +154,7 @@
 
 <div class="toast" id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const INFANTIL = ['4','6','8','10','12','14'];
 const JUVENIL  = ['XS','S','M','L','XL','XXL','XXXL'];
@@ -278,6 +279,9 @@ const PRODUCTS = [
 
 const TRANSFER_CLABE = '638180000152424651';
 const PAYMENTS_API = 'https://wolverines-payments.wolverinestrc.workers.dev';
+const SUPABASE_URL = 'https://xaawoqyjavqcybafirri.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhYXdvcXlqYXZxY3liYWZpcnJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1Mzg4MjcsImV4cCI6MjEwMTExNDgyN30.TdLuimBVQIILaaW0UtZDHDSoDpDomwmL6RbG-K-GDZ0';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let cart = [];
 let selectedSizes = {};
 let selectedCat = {};
@@ -400,6 +404,29 @@ function selectPay(radio){document.querySelectorAll('.pay-opt').forEach(o=>o.cla
 function openCheckout(){document.getElementById('checkout-overlay').classList.add('open')}
 function closeCheckout(){document.getElementById('checkout-overlay').classList.remove('open')}
 
+async function guardarPedidoTienda(name, phone, email, total) {
+  const items = cart.map(i => ({
+    producto: i.name, talla: i.size, cantidad: i.qty,
+    precio_unitario: i.price, subtotal: i.price * i.qty,
+    numero: i.customNum || undefined,
+  }));
+  const { error } = await sb.from('pedidos_tienda').insert({
+    jugador_id: null,
+    jugador_nombre: name,
+    tutor_nombre: name,
+    tutor_telefono: phone,
+    tutor_email: email,
+    items,
+    total,
+  });
+  if (error) throw error;
+  if (email) {
+    sb.functions.invoke('send-email', { body: { tipo: 'pedido', to: email, data: {
+      tutor_nombre: name, jugador_nombre: name, items, total
+    } } }).catch(() => {});
+  }
+}
+
 async function submitOrder() {
   const name = document.getElementById('co-name').value.trim();
   const phone = document.getElementById('co-phone').value.trim();
@@ -415,6 +442,7 @@ async function submitOrder() {
     submitBtn.disabled = true;
     submitBtn.textContent = 'Redirigiendo a Stripe...';
     try {
+      await guardarPedidoTienda(name, phone, email, total);
       const res = await fetch(`${PAYMENTS_API}/create-checkout-session`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -428,10 +456,17 @@ async function submitOrder() {
       if (!res.ok || !data.url) throw new Error(data.error || 'No se pudo iniciar el pago');
       window.location.href = data.url;
     } catch (err) {
-      showToast('⚠️ ' + (err.message || 'Error al conectar con Stripe'));
+      showToast('⚠️ ' + (err.message || 'Error al procesar el pedido'));
       submitBtn.disabled = false;
       submitBtn.textContent = 'Confirmar pedido';
     }
+    return;
+  }
+
+  try {
+    await guardarPedidoTienda(name, phone, email, total);
+  } catch (err) {
+    showToast('⚠️ No se pudo registrar el pedido: ' + err.message);
     return;
   }
 
