@@ -99,6 +99,8 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
 .numero-card.show{display:block}
 .ctrl-cap{display:flex;flex-direction:column;align-items:center;gap:3px}
 .ctrl-cap label{font-size:9px;font-weight:700;letter-spacing:0.3px;color:var(--gray-lt);text-transform:uppercase}
+.numero-badge{background:var(--blue-lt);color:var(--blue-dk);font-weight:800;font-size:13px;padding:8px 12px;border-radius:8px;min-width:40px;text-align:center}
+.numero-inline{width:56px !important;border:1.5px solid var(--blue) !important}
 </style>
 </head>
 <body>
@@ -143,24 +145,10 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
         <div id="products-list"></div>
       </div>
 
-      <div class="card numero-card" id="numero-ya-asignado">
-        <h2>🎽 Número de jersey</h2>
-        <div class="sub" id="numero-ya-asignado-texto">—</div>
-      </div>
-
       <div class="card numero-card" id="numero-card">
-        <h2>🎽 Número de jersey</h2>
-        <div class="sub">Pediste una prenda de uniforme — todavía no tienes número asignado, indica el que quieres en tu jersey</div>
-        <div class="row2">
-          <div class="field">
-            <label>Número <span>*</span></label>
-            <input type="number" id="f-numero" min="0" max="99" placeholder="Ej. 7">
-          </div>
-          <div class="field">
-            <label>Apodo (opcional, máx. 12 caracteres)</label>
-            <input type="text" id="f-apodo" maxlength="12" placeholder="Ej. TEJADA">
-          </div>
-        </div>
+        <h2>🎽 Apodo en el jersey</h2>
+        <div class="sub" id="numero-card-sub">Opcional, máx. 12 caracteres — se imprime debajo del número</div>
+        <input type="text" id="f-apodo" maxlength="12" placeholder="Ej. TEJADA">
       </div>
 
       <div class="total-bar">
@@ -317,6 +305,7 @@ function productRowHtml(p) {
         ${paid ? '<span class="badge-paid">✅ Ya pagado</span>' : ''}
         ${p.customizable ? `<div class="ctrl-cap"><label>Número</label><input type="text" class="prod-num" id="num-${p.id}" maxlength="2" placeholder="Núm." oninput="this.value=this.value.replace(/[^0-9]/g,'');bumpQtyIfZero(${p.id})"></div>` : ''}
         ${p.sizeType === 'none' ? '' : `<div class="ctrl-cap"><label>Talla</label><select id="size-${p.id}" onfocus="showPreview(${p.id})" onchange="bumpQtyIfZero(${p.id})">${sizeOptionsHtml(p)}</select></div>`}
+        ${numeroInlineHtml(p)}
         ${qtyControl}
       </div>
     </div>`;
@@ -359,9 +348,20 @@ async function onJugadorChange() {
       if (!error) estadoUniforme = data;
     } catch (e) {}
   }
-  document.getElementById('f-numero').value = estadoUniforme ? (estadoUniforme.numero_jugador || '') : '';
   document.getElementById('f-apodo').value = estadoUniforme ? (estadoUniforme.apodo_jersey || '') : '';
   renderProducts();
+}
+
+function syncNumeroInline(val) {
+  document.querySelectorAll('.numero-inline').forEach(el => { if (el.value !== val) el.value = val; });
+}
+
+function numeroInlineHtml(p) {
+  if (p.categoria !== 'uniforme') return '';
+  if (tieneNumeroAsignado()) {
+    return `<div class="ctrl-cap"><label>Número</label><div class="numero-badge">#${estadoUniforme.numero_jugador}</div></div>`;
+  }
+  return `<div class="ctrl-cap"><label>Número</label><input type="number" class="numero-inline" min="0" max="99" placeholder="Ej. 7" oninput="syncNumeroInline(this.value)"></div>`;
 }
 
 function showPreview(pid) {
@@ -388,12 +388,10 @@ function updateTotal() {
   document.getElementById('total-val').textContent = '$' + total.toLocaleString();
 
   const yaAsignado = needsNumero && tieneNumeroAsignado();
-  document.getElementById('numero-card').classList.toggle('show', needsNumero && !yaAsignado);
-  document.getElementById('numero-ya-asignado').classList.toggle('show', yaAsignado);
-  if (yaAsignado) {
-    document.getElementById('numero-ya-asignado-texto').textContent =
-      'Se usará tu número ya registrado: #' + estadoUniforme.numero_jugador + (estadoUniforme.apodo_jersey ? ' — ' + estadoUniforme.apodo_jersey : '');
-  }
+  document.getElementById('numero-card').classList.toggle('show', needsNumero);
+  document.getElementById('numero-card-sub').textContent = yaAsignado
+    ? 'Opcional, máx. 12 caracteres — se imprime debajo del número #' + estadoUniforme.numero_jugador
+    : 'Opcional, máx. 12 caracteres — se imprime debajo de tu número';
 }
 
 async function loadJugadores() {
@@ -471,11 +469,10 @@ function prepararPedido() {
 
   const yaAsignado = needsNumero && tieneNumeroAsignado();
   let numeroJersey = yaAsignado ? String(estadoUniforme.numero_jugador) : '';
-  let apodo = yaAsignado ? (estadoUniforme.apodo_jersey || '') : '';
+  let apodo = needsNumero ? (document.getElementById('f-apodo').value || '').trim() : '';
   if (needsNumero && !yaAsignado) {
-    numeroJersey = (document.getElementById('f-numero').value || '').trim();
-    apodo = (document.getElementById('f-apodo').value || '').trim();
-    if (!numeroJersey) return showError('⚠️ Indica el número de jersey.');
+    numeroJersey = (document.querySelector('.numero-inline')?.value || '').trim();
+    if (!numeroJersey) return showError('⚠️ Indica el número de jersey (junto a la talla).');
   }
 
   const total = items.reduce((s, i) => s + i.subtotal, 0);
