@@ -1198,9 +1198,17 @@ async function deleteRecord(id, nombre) {
 }
 
 // ── UNIFORMES ──
+function tieneUniformePedido(rec) {
+  var f = rec.fields;
+  return UNIFORME_ITEMS.some(function(item) {
+    return (f[item.key + ' Estado'] || 'No comprado') !== 'No comprado';
+  });
+}
+
 function renderUniformes() {
   var container = document.getElementById('uniformes-content');
-  if (!allRecords.length) { container.innerHTML = '<div class="empty">No hay jugadores registrados.</div>'; return; }
+  var records = allRecords.filter(tieneUniformePedido);
+  if (!records.length) { container.innerHTML = '<div class="empty">Aún no hay pedidos de uniforme.</div>'; return; }
 
   var thead = '<thead><tr><th>Jugador</th><th>Categoría</th>';
   UNIFORME_ITEMS.forEach(function(item) { thead += '<th style="text-align:center">' + item.key + '</th>'; });
@@ -1208,7 +1216,7 @@ function renderUniformes() {
 
   var tbody = '<tbody>';
   var totalPagado = 0, totalPendiente = 0;
-  allRecords.forEach(function(rec) {
+  records.forEach(function(rec) {
     var f = rec.fields;
     var pagado = 0, pendiente = 0;
     var itemsHtml = '';
