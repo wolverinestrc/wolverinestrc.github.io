@@ -95,6 +95,7 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
 .section-label:first-child{margin-top:0}
 .locked-row{opacity:.6}
 .badge-paid{background:#dcfce7;color:#15803d;font-size:11px;font-weight:800;padding:6px 10px;border-radius:8px;flex-shrink:0}
+.stock-warning{font-size:11px;font-weight:800;color:var(--red);margin-top:2px}
 .numero-card{display:none}
 .numero-card.show{display:block}
 .ctrl-cap{display:flex;flex-direction:column;align-items:center;gap:3px}
@@ -244,6 +245,20 @@ let estadoUniforme = null;
 let lastOrder = null;
 const PAYMENTS_API = 'https://wolverines-payments.wolverinestrc.workers.dev';
 
+const STOCK_INICIAL = { 'Pulsera Azul Wolverines': 50 };
+const STOCK_AVISO = 10;
+let stockRestante = {};
+
+async function cargarStock() {
+  for (const nombre of Object.keys(STOCK_INICIAL)) {
+    try {
+      const { data, error } = await sb.rpc('public_count_producto_pedido', { p_producto: nombre });
+      if (!error) stockRestante[nombre] = Math.max(0, STOCK_INICIAL[nombre] - (data || 0));
+    } catch (e) {}
+  }
+  renderProducts();
+}
+
 function sizeOptionsHtml(p) {
   if (p.sizeType === 'fixed') {
     return '<option value="">Talla</option>' + p.sizes.map(s => `<option value="${s}">${s}</option>`).join('');
@@ -300,6 +315,7 @@ function productRowHtml(p) {
       <div class="prod-info" onclick="showPreview(${p.id})" style="cursor:pointer">
         <div class="prod-name">${p.name}</div>
         <div class="prod-price">$${p.price.toLocaleString()}</div>
+        ${stockRestante[p.name] !== undefined && stockRestante[p.name] <= STOCK_AVISO ? `<div class="stock-warning">${stockRestante[p.name] > 0 ? '⚠️ ¡Solo quedan ' + stockRestante[p.name] + '!' : '❌ Agotado'}</div>` : ''}
       </div>
       <div class="prod-controls">
         ${paid ? '<span class="badge-paid">✅ Ya pagado</span>' : ''}
@@ -611,6 +627,7 @@ async function payWithStripe() {
 
 renderProducts();
 loadJugadores();
+cargarStock();
 </script>
 </body>
 </html>
