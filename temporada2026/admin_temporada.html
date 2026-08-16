@@ -240,7 +240,7 @@ table.lt td{padding:12px 14px;font-size:13px;color:var(--text);border-top:1px so
       <button class="tab-btn" id="tb-pagos" onclick="switchTab('pagos')">💰 Pagos</button>
       <button class="tab-btn" id="tb-morosos" onclick="switchTab('morosos')">⚠️ Atrasos</button>
       <button class="tab-btn" id="tb-uniformes" onclick="switchTab('uniformes')">🎽 Uniformes</button>
-      <button class="tab-btn" id="tb-tienda" onclick="switchTab('tienda')">🛒 Tienda</button>
+      <button class="tab-btn" id="tb-tienda" onclick="switchTab('tienda')">📋 Historial de Pedidos</button>
       <button class="tab-btn" id="tb-coaches" onclick="switchTab('coaches')">🧑‍🏫 Coaches</button>
     </div>
 
@@ -367,15 +367,18 @@ table.lt td{padding:12px 14px;font-size:13px;color:var(--text);border-top:1px so
       </div>
     </div>
 
-    <!-- TIENDA -->
+    <!-- HISTORIAL DE PEDIDOS -->
     <div class="morosos-section" id="section-tienda">
       <div class="content-card">
         <div class="mor-header">
           <div>
-            <div class="mor-title">Tienda</div>
-            <div class="mor-sub">Pedidos de productos enviados por los papás desde pedido_tienda.html</div>
+            <div class="mor-title">Historial de Pedidos</div>
+            <div class="mor-sub">Pedidos de productos enviados por los papás desde pedido_tienda.html y tienda.html</div>
           </div>
-          <button class="btn-action btn-ghost" onclick="exportPedidos()">📥 Exportar Excel</button>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn-action btn-ghost" onclick="exportPedidosUniforme()">📥 Pedido de uniformes</button>
+            <button class="btn-action btn-ghost" onclick="exportPedidosTienda()">📥 Artículos de tienda</button>
+          </div>
         </div>
         <div id="tienda-content"></div>
       </div>
@@ -483,8 +486,11 @@ let gastosRecords = [];
 let pagosHistorial = [];
 let coachesRecords = [];
 let currentId    = null;
-const ESTADO_PEDIDO_LABEL = { pendiente: 'Pendiente', pagado: 'Pagado', surtido: 'Surtido' };
-const ESTADO_PEDIDO_NEXT  = { pendiente: 'pagado', pagado: 'surtido', surtido: 'pendiente' };
+const ESTADO_PAGO_LABEL = { pendiente: 'Pendiente', abono: 'Abono', pagado: 'Pagado' };
+const ESTADO_PAGO_NEXT  = { pendiente: 'abono', abono: 'pagado', pagado: 'pendiente' };
+const ESTADO_SURTIDO_LABEL = { sin_ordenar: 'Sin ordenar', ordenado: 'Ordenado', entregado: 'Entregado' };
+const ESTADO_SURTIDO_NEXT  = { sin_ordenar: 'ordenado', ordenado: 'entregado', entregado: 'sin_ordenar' };
+const PRODUCTOS_UNIFORME = new Set(['Jersey Oficial', 'Jersey Blanco', 'Banderas Completas', 'Solo Banderas']);
 
 // ── AUTH ──
 const AUTH_KEY = 'wolverines_admin_auth';
@@ -1238,7 +1244,7 @@ function renderUniformes() {
     '<span style="color:var(--red);font-weight:700">Total pendiente: $' + totalPendiente.toLocaleString() + ' MXN</span></div>';
 }
 
-// ── TIENDA (pedidos de pedido_tienda.html) ──
+// ── HISTORIAL DE PEDIDOS (pedido_tienda.html + tienda.html) ──
 function renderPedidos() {
   var container = document.getElementById('tienda-content');
   if (!pedidosRecords.length) { container.innerHTML = '<div class="empty">Aún no hay pedidos de Wolve Store.</div>'; return; }
@@ -1248,8 +1254,10 @@ function renderPedidos() {
     var itemsHtml = (r.items || []).map(function(it) {
       return '<div style="font-size:12px;color:var(--gray)">' + it.cantidad + '× ' + it.producto + ' · Talla ' + it.talla + (it.numero ? ' · #' + it.numero : '') + '</div>';
     }).join('');
-    var estado = r.estado || 'pendiente';
-    var badgeClass = estado === 'surtido' ? 'badge-ok' : estado === 'pagado' ? 'badge-cat' : 'badge-warn';
+    var estadoPago = r.estado || 'pendiente';
+    var badgePagoClass = estadoPago === 'pagado' ? 'badge-ok' : estadoPago === 'abono' ? 'badge-cat' : 'badge-warn';
+    var estadoSurtido = r.estado_surtido || 'sin_ordenar';
+    var badgeSurtidoClass = estadoSurtido === 'entregado' ? 'badge-ok' : estadoSurtido === 'ordenado' ? 'badge-cat' : 'badge-warn';
     var fecha = r.created_at ? new Date(r.created_at).toLocaleDateString('es-MX') : '—';
 
     html += '<div class="p-row" style="cursor:default">' +
@@ -1261,7 +1269,10 @@ function renderPedidos() {
       '<div style="text-align:right;min-width:90px">' +
         '<div style="font-size:15px;font-weight:800;color:var(--text)">$' + (r.total || 0).toLocaleString() + '</div>' +
       '</div>' +
-      '<span class="badge ' + badgeClass + '" style="cursor:pointer" onclick="toggleEstadoPedido(\'' + r.id + '\')" title="Clic para cambiar estado">' + ESTADO_PEDIDO_LABEL[estado] + '</span>' +
+      '<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">' +
+        '<span class="badge ' + badgePagoClass + '" style="cursor:pointer" onclick="toggleEstadoPedido(\'' + r.id + '\')" title="Clic para cambiar estado de pago">💰 ' + ESTADO_PAGO_LABEL[estadoPago] + '</span>' +
+        '<span class="badge ' + badgeSurtidoClass + '" style="cursor:pointer" onclick="toggleSurtidoPedido(\'' + r.id + '\')" title="Clic para cambiar estado de surtido">📦 ' + ESTADO_SURTIDO_LABEL[estadoSurtido] + '</span>' +
+      '</div>' +
       '<div class="p-actions">' +
         '<button class="icon-btn icon-del" title="Eliminar" onclick="deletePedido(\'' + r.id + '\')">🗑</button>' +
       '</div>' +
@@ -1273,11 +1284,23 @@ function renderPedidos() {
 async function toggleEstadoPedido(id) {
   var rec = pedidosRecords.find(function(r) { return r.id === id; });
   if (!rec) return;
-  var siguiente = ESTADO_PEDIDO_NEXT[rec.estado || 'pendiente'];
+  var siguiente = ESTADO_PAGO_NEXT[rec.estado || 'pendiente'];
   try {
     var { error } = await sb.rpc('admin_update_pedido_estado', { p_pwd: PWD, p_id: id, p_estado: siguiente });
     if (error) throw error;
     rec.estado = siguiente;
+    renderPedidos();
+  } catch(e) { alert('❌ Error: ' + e.message); }
+}
+
+async function toggleSurtidoPedido(id) {
+  var rec = pedidosRecords.find(function(r) { return r.id === id; });
+  if (!rec) return;
+  var siguiente = ESTADO_SURTIDO_NEXT[rec.estado_surtido || 'sin_ordenar'];
+  try {
+    var { error } = await sb.rpc('admin_update_pedido_surtido', { p_pwd: PWD, p_id: id, p_estado: siguiente });
+    if (error) throw error;
+    rec.estado_surtido = siguiente;
     renderPedidos();
   } catch(e) { alert('❌ Error: ' + e.message); }
 }
@@ -1292,11 +1315,12 @@ async function deletePedido(id) {
   } catch(e) { alert('❌ Error: ' + e.message); }
 }
 
-function exportPedidos() {
-  if (!pedidosRecords.length) { alert('No hay pedidos registrados.'); return; }
+function filasPedidos(filtroUniforme) {
   var rows = [];
   pedidosRecords.forEach(function(r) {
     (r.items || []).forEach(function(it) {
+      var esUniforme = PRODUCTOS_UNIFORME.has(it.producto);
+      if (esUniforme !== filtroUniforme) return;
       rows.push({
         Jugador: r.jugador_nombre || '',
         Tutor: r.tutor_nombre || '',
@@ -1307,12 +1331,25 @@ function exportPedidos() {
         Cantidad: it.cantidad,
         Número: it.numero || '',
         Subtotal: it.subtotal,
-        Estado: ESTADO_PEDIDO_LABEL[r.estado || 'pendiente'],
+        Pago: ESTADO_PAGO_LABEL[r.estado || 'pendiente'],
+        Surtido: ESTADO_SURTIDO_LABEL[r.estado_surtido || 'sin_ordenar'],
         Fecha: r.created_at ? r.created_at.slice(0,10) : ''
       });
     });
   });
-  downloadXlsx(rows, 'pedidos_wolve_store.xlsx', 'Pedidos');
+  return rows;
+}
+
+function exportPedidosUniforme() {
+  var rows = filasPedidos(true);
+  if (!rows.length) { alert('No hay pedidos de uniforme registrados.'); return; }
+  downloadXlsx(rows, 'pedido_uniformes_proveedor.xlsx', 'Uniformes');
+}
+
+function exportPedidosTienda() {
+  var rows = filasPedidos(false);
+  if (!rows.length) { alert('No hay pedidos de artículos de tienda registrados.'); return; }
+  downloadXlsx(rows, 'pedido_tienda_proveedor.xlsx', 'Tienda');
 }
 
 // ── COACHES ──
