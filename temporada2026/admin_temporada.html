@@ -491,6 +491,7 @@ const ESTADO_PAGO_NEXT  = { pendiente: 'abono', abono: 'pagado', pagado: 'pendie
 const ESTADO_SURTIDO_LABEL = { sin_ordenar: 'Sin ordenar', ordenado: 'Ordenado', entregado: 'Entregado' };
 const ESTADO_SURTIDO_NEXT  = { sin_ordenar: 'ordenado', ordenado: 'entregado', entregado: 'sin_ordenar' };
 const PRODUCTOS_UNIFORME = new Set(['Jersey Oficial', 'Jersey Blanco', 'Banderas Completas', 'Solo Banderas']);
+const PRODUCTOS_BANDERAS = new Set(['Banderas Completas', 'Solo Banderas']);
 
 // ── AUTH ──
 const AUTH_KEY = 'wolverines_admin_auth';
@@ -1347,7 +1348,12 @@ function filasPedidos(filtroUniforme) {
 function exportPedidosUniforme() {
   var rows = filasPedidos(true);
   if (!rows.length) { alert('No hay pedidos de uniforme registrados.'); return; }
-  downloadXlsx(rows, 'pedido_uniformes_proveedor.xlsx', 'Uniformes');
+  var jerseyRows = rows.filter(function(r) { return !PRODUCTOS_BANDERAS.has(r.Producto); });
+  var banderasRows = rows.filter(function(r) { return PRODUCTOS_BANDERAS.has(r.Producto); });
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(jerseyRows), 'Uniformes');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(banderasRows), 'Banderas');
+  XLSX.writeFile(wb, 'pedido_uniformes_proveedor.xlsx');
 }
 
 function exportPedidosTienda() {
