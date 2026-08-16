@@ -1315,25 +1315,29 @@ async function deletePedido(id) {
   } catch(e) { alert('❌ Error: ' + e.message); }
 }
 
+function datosJugadorPedido(jugadorId) {
+  if (!jugadorId) return { categoria: '', numero: '' };
+  var rec = allRecords.find(function(r) { return r.id === jugadorId; });
+  if (!rec) return { categoria: '', numero: '' };
+  return { categoria: rec.fields['Categoría'] || '', numero: rec.fields['Número Jugador'] || '' };
+}
+
 function filasPedidos(filtroUniforme) {
   var rows = [];
   pedidosRecords.forEach(function(r) {
+    var datos = datosJugadorPedido(r.jugador_id);
     (r.items || []).forEach(function(it) {
       var esUniforme = PRODUCTOS_UNIFORME.has(it.producto);
       if (esUniforme !== filtroUniforme) return;
       rows.push({
         Jugador: r.jugador_nombre || '',
-        Tutor: r.tutor_nombre || '',
-        Teléfono: r.tutor_telefono || '',
-        Email: r.tutor_email || '',
-        Producto: it.producto,
+        Categoría: datos.categoria,
         Talla: it.talla,
+        'Número de jersey': datos.numero,
+        Producto: it.producto,
         Cantidad: it.cantidad,
-        Número: it.numero || '',
         Subtotal: it.subtotal,
-        Pago: ESTADO_PAGO_LABEL[r.estado || 'pendiente'],
-        Surtido: ESTADO_SURTIDO_LABEL[r.estado_surtido || 'sin_ordenar'],
-        Fecha: r.created_at ? r.created_at.slice(0,10) : ''
+        Pagado: ESTADO_PAGO_LABEL[r.estado || 'pendiente']
       });
     });
   });
