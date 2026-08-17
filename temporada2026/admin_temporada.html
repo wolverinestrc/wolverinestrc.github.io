@@ -492,6 +492,7 @@ const ESTADO_SURTIDO_LABEL = { sin_ordenar: 'Sin ordenar', ordenado: 'Ordenado',
 const ESTADO_SURTIDO_NEXT  = { sin_ordenar: 'ordenado', ordenado: 'entregado', entregado: 'sin_ordenar' };
 const PRODUCTOS_UNIFORME = new Set(['Jersey Oficial', 'Jersey Blanco', 'Banderas Completas', 'Solo Banderas']);
 const PRODUCTOS_BANDERAS = new Set(['Banderas Completas', 'Solo Banderas']);
+const CATEGORIAS = ['U6 (2020-2021)','U8 (2018-2019)','U10 (2016-2017)','U12 (2014-2015)','U14 (2012-2013)','U16 (2010-2011)','U18 / Libre','Moms +30','30+'];
 
 // ── AUTH ──
 const AUTH_KEY = 'wolverines_admin_auth';
@@ -691,6 +692,7 @@ async function togglePago(mes, id) {
     renderTable();
     if (document.getElementById('section-pagos').style.display !== 'none') renderPagos();
     if (document.getElementById('section-morosos').style.display !== 'none') renderMorosos();
+    if (document.getElementById('detail-modal').classList.contains('open') && currentId === id) openDetail(id);
   } catch(e) { alert('Error: ' + e.message); }
 }
 
@@ -924,7 +926,7 @@ function openDetail(id) {
   MESES.forEach(function(mes) {
     var estado = f['Pago ' + mes] || 'Pendiente';
     var icon = estado === 'Pagado' ? '✅' : estado === 'Exento' ? '🔵' : '❌';
-    pagosHtml += '<div class="d-pago-chip">' +
+    pagosHtml += '<div class="d-pago-chip" style="cursor:pointer" title="Clic para cambiar" onclick="togglePago(\'' + mes + '\',\'' + id + '\')">' +
       '<div class="dp-mes">' + mes + '</div>' +
       '<div class="dp-icon">' + icon + '</div>' +
       '<div class="dp-estado">' + estado + '</div>' +
@@ -947,32 +949,60 @@ function openDetail(id) {
       '</div>';
   });
 
+  var pedidosTiendaJugador = pedidosRecords.filter(function(r) { return r.jugador_id === id; });
+  var pedidosTiendaHtml = pedidosTiendaJugador.length
+    ? pedidosTiendaJugador.map(function(r) {
+        var itemsTxt = (r.items || []).map(function(it) { return it.cantidad + '× ' + it.producto; }).join(', ');
+        var estadoPago = r.estado || 'pendiente';
+        var estadoSurtido = r.estado_surtido || 'sin_ordenar';
+        var badgePagoClass = estadoPago === 'pagado' ? 'badge-ok' : estadoPago === 'abono' ? 'badge-cat' : 'badge-warn';
+        var badgeSurtidoClass = estadoSurtido === 'entregado' ? 'badge-ok' : estadoSurtido === 'ordenado' ? 'badge-cat' : 'badge-warn';
+        return '<div style="border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px">' +
+          '<div style="font-size:12px;color:var(--text);margin-bottom:6px">' + itemsTxt + '</div>' +
+          '<div style="display:flex;justify-content:space-between;align-items:center">' +
+            '<div style="font-size:13px;font-weight:800">$' + (r.total || 0).toLocaleString() + '</div>' +
+            '<div style="display:flex;gap:6px">' +
+              '<span class="badge ' + badgePagoClass + '" style="cursor:pointer" onclick="toggleEstadoPedido(\'' + r.id + '\')" title="Clic para cambiar estado de pago">💰 ' + ESTADO_PAGO_LABEL[estadoPago] + '</span>' +
+              '<span class="badge ' + badgeSurtidoClass + '" style="cursor:pointer" onclick="toggleSurtidoPedido(\'' + r.id + '\')" title="Clic para cambiar estado de surtido">📦 ' + ESTADO_SURTIDO_LABEL[estadoSurtido] + '</span>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      }).join('')
+    : '<span style="color:var(--gray);font-size:12px">Sin pedidos de tienda</span>';
+
   document.getElementById('modal-body').innerHTML =
     '<div class="d-grid">' +
       '<div class="d-col-left">' +
         fotoHtml +
         '<div class="d-section" style="margin-top:0">Datos del jugador</div>' +
         '<div class="d-fields">' +
-          '<div style="grid-column:1/-1"><div class="d-label">Nombre</div><div class="d-val">' + (f['Nombre']||'') + ' ' + (f['Apellidos']||'') + '</div></div>' +
-          '<div><div class="d-label">Categoría</div><div class="d-val">' + (f['Categoría']||'—') + '</div></div>' +
-          '<div><div class="d-label">Género</div><div class="d-val">' + (f['Género']||'—') + '</div></div>' +
-          '<div><div class="d-label">Fecha de Nacimiento</div><div class="d-val">' + (f['Fecha de Nacimiento']||'—') + '</div></div>' +
-          '<div><div class="d-label">CURP</div><div class="d-val" style="font-size:11px;letter-spacing:1px">' + (f['CURP']||'—') + '</div></div>' +
+          '<div><div class="d-label">Nombre</div><input type="text" id="modal-nombre" class="d-input" value="' + (f['Nombre']||'') + '"></div>' +
+          '<div><div class="d-label">Apellidos</div><input type="text" id="modal-apellidos" class="d-input" value="' + (f['Apellidos']||'') + '"></div>' +
+          '<div><div class="d-label">Categoría</div><select id="modal-categoria" class="d-select">' +
+            CATEGORIAS.map(function(c) { return '<option value="' + c + '"' + (c === f['Categoría'] ? ' selected' : '') + '>' + c + '</option>'; }).join('') +
+          '</select></div>' +
+          '<div><div class="d-label">Género</div><select id="modal-genero" class="d-select">' +
+            ['Masculino','Femenino'].map(function(g) { return '<option value="' + g + '"' + (g === f['Género'] ? ' selected' : '') + '>' + g + '</option>'; }).join('') +
+          '</select></div>' +
+          '<div><div class="d-label">Fecha de Nacimiento</div><input type="date" id="modal-fecha-nac" class="d-input" value="' + (f['Fecha de Nacimiento']||'') + '"></div>' +
+          '<div><div class="d-label">CURP</div><input type="text" id="modal-curp" class="d-input" style="text-transform:uppercase" value="' + (f['CURP']||'') + '"></div>' +
         '</div>' +
         '<div class="d-section">Tutor</div>' +
-        '<div class="d-label">Nombre</div><div class="d-val">' + (f['Tutor']||'—') + '</div>' +
-        '<div class="d-label">Teléfono</div><div class="d-val">' + (f['Teléfono']||'—') + '</div>' +
+        '<div class="d-label">Nombre</div><input type="text" id="modal-tutor" class="d-input" value="' + (f['Tutor']||'') + '">' +
+        '<div class="d-label">Teléfono</div><input type="tel" id="modal-telefono" class="d-input" value="' + (f['Teléfono']||'') + '">' +
         '<div class="d-label">Email</div><input type="email" id="modal-email" class="d-input" value="' + (f['Email']||'') + '" placeholder="correo@ejemplo.com">' +
       '</div>' +
       '<div class="d-col-right">' +
         '<div class="d-section" style="margin-top:0">Documentos</div>' +
         '<div style="margin-bottom:8px">' + docsHtml + '</div>' +
-        '<div class="d-section">Mensualidades</div>' +
+        '<div class="d-section">Mensualidades (inscripción y pagos) — clic para cambiar</div>' +
         '<div class="d-pagos-grid">' + pagosHtml + '</div>' +
         '<div class="d-section">Número de jugador</div>' +
         '<input type="number" id="modal-num" class="d-input" value="' + (f['Número Jugador']||'') + '" placeholder="Ej: 12">' +
         '<div class="d-section">Uniforme (talla + estado por pieza)</div>' +
         '<div class="d-uni-grid">' + uniformeHtml + '</div>' +
+        '<div class="d-section">Pedidos de tienda</div>' +
+        pedidosTiendaHtml +
       '</div>' +
     '</div>' +
     '<button class="save-btn" style="max-width:1280px;margin:24px auto 0" onclick="saveDetail()">💾 Guardar cambios</button>';
@@ -983,8 +1013,16 @@ function openDetail(id) {
 async function saveDetail() {
   var num = parseInt(document.getElementById('modal-num').value) || null;
   var email = document.getElementById('modal-email').value.trim();
+  var nombre = document.getElementById('modal-nombre').value.trim();
+  var apellidos = document.getElementById('modal-apellidos').value.trim();
+  var categoria = document.getElementById('modal-categoria').value;
+  var genero = document.getElementById('modal-genero').value;
+  var fechaNac = document.getElementById('modal-fecha-nac').value;
+  var curp = document.getElementById('modal-curp').value.trim();
+  var tutor = document.getElementById('modal-tutor').value.trim();
+  var telefono = document.getElementById('modal-telefono').value.trim();
 
-  var fields = {};
+  var fields = { 'Nombre': nombre, 'Apellidos': apellidos, 'Categoría': categoria, 'Género': genero, 'Fecha de Nacimiento': fechaNac, 'CURP': curp, 'Tutor': tutor, 'Teléfono': telefono };
   if (num) fields['Número Jugador'] = num;
   if (email) fields['Email'] = email;
   UNIFORME_ITEMS.forEach(function(item) {
@@ -994,7 +1032,12 @@ async function saveDetail() {
   });
 
   try {
-    var { error: numErr } = await sb.rpc('admin_update_jugador', { p_pwd: PWD, p_id: currentId, p_numero_jugador: num, p_email: email || null });
+    var { error: numErr } = await sb.rpc('admin_update_jugador', {
+      p_pwd: PWD, p_id: currentId, p_numero_jugador: num, p_email: email || null,
+      p_nombre: nombre || null, p_apellidos: apellidos || null, p_categoria: categoria || null,
+      p_genero: genero || null, p_fecha_nacimiento: fechaNac || null, p_curp: curp || null,
+      p_tutor: tutor || null, p_telefono: telefono || null
+    });
     if (numErr) throw numErr;
 
     for (const item of UNIFORME_ITEMS) {
@@ -1290,7 +1333,8 @@ async function toggleEstadoPedido(id) {
     var { error } = await sb.rpc('admin_update_pedido_estado', { p_pwd: PWD, p_id: id, p_estado: siguiente });
     if (error) throw error;
     rec.estado = siguiente;
-    renderPedidos();
+    if (document.getElementById('section-tienda').style.display !== 'none') renderPedidos();
+    if (document.getElementById('detail-modal').classList.contains('open') && currentId === rec.jugador_id) openDetail(currentId);
   } catch(e) { alert('❌ Error: ' + e.message); }
 }
 
@@ -1302,7 +1346,8 @@ async function toggleSurtidoPedido(id) {
     var { error } = await sb.rpc('admin_update_pedido_surtido', { p_pwd: PWD, p_id: id, p_estado: siguiente });
     if (error) throw error;
     rec.estado_surtido = siguiente;
-    renderPedidos();
+    if (document.getElementById('section-tienda').style.display !== 'none') renderPedidos();
+    if (document.getElementById('detail-modal').classList.contains('open') && currentId === rec.jugador_id) openDetail(currentId);
   } catch(e) { alert('❌ Error: ' + e.message); }
 }
 
