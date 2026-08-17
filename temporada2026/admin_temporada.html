@@ -103,6 +103,7 @@ header{background:var(--navy);padding:18px 28px;display:flex;align-items:center;
 .m-dot.pagado{background:var(--green-lt);color:var(--green)}
 .m-dot.pendiente{background:var(--red-lt);color:var(--red)}
 .m-dot.exento{background:var(--blue-lt);color:var(--blue-dk)}
+.m-dot.abono{background:#fef3c7;color:#b45309}
 .p-actions{display:flex;gap:6px;flex-shrink:0}
 .icon-btn{width:34px;height:34px;border-radius:9px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:filter .1s}
 .icon-btn:hover{filter:brightness(0.95)}
@@ -139,6 +140,8 @@ header{background:var(--navy);padding:18px 28px;display:flex;align-items:center;
 .d-pago-chip .dp-mes{font-size:11px;font-weight:700;color:var(--text);margin-bottom:6px}
 .d-pago-chip .dp-icon{font-size:16px}
 .d-pago-chip .dp-estado{font-size:10.5px;color:var(--gray);margin-top:2px}
+.dp-abono-input{width:100%;margin-top:8px;border:1px solid var(--border);border-radius:6px;padding:4px 2px;font-size:10.5px;text-align:center;font-family:'Montserrat',sans-serif;outline:none}
+.dp-abono-input:focus{border-color:var(--blue)}
 .d-uni-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px}
 @media(max-width:900px){.d-grid{grid-template-columns:1fr}.d-pagos-grid{grid-template-columns:repeat(3,1fr)}.d-uni-grid{grid-template-columns:1fr}}
 .d-select{background:var(--bg);border:1.5px solid var(--border);border-radius:9px;color:var(--text);padding:10px 14px;font-family:'Montserrat',sans-serif;font-size:13px;outline:none;width:100%;margin-bottom:10px}
@@ -428,7 +431,18 @@ const PWD        = 'Wolverines2026';
 const ITEM_KEY_TO_DB = { 'Jersey': 'jersey', 'Banderas': 'banderas', 'Jersey Blanco': 'playera_blanca' };
 const ESTADO_UNI_TO_DB = { 'No comprado': 'no_comprado', 'Pendiente': 'pendiente', 'Pagado': 'pagado' };
 const ESTADO_UNI_FROM_DB = { 'no_comprado': 'No comprado', 'pendiente': 'Pendiente', 'pagado': 'Pagado' };
-const ESTADO_PAGO_FROM_DB = { 'pendiente': 'Pendiente', 'pagado': 'Pagado', 'exento': 'Exento' };
+const ESTADO_PAGO_FROM_DB = { 'pendiente': 'Pendiente', 'abono': 'Abono', 'pagado': 'Pagado', 'exento': 'Exento' };
+
+function esDeuda(estado) {
+  return estado === 'Pendiente' || estado === 'Abono' || !estado;
+}
+function deudaRestante(f, mes) {
+  var estado = f['Pago ' + mes] || 'Pendiente';
+  if (estado === 'Pagado' || estado === 'Exento') return 0;
+  var monto = PAGOS_INFO[mes].monto;
+  if (estado === 'Abono') return Math.max(0, monto - (parseFloat(f['Abono ' + mes]) || 0));
+  return monto;
+}
 
 function mapJugadorFromSupabase(j) {
   var fields = {
@@ -442,6 +456,7 @@ function mapJugadorFromSupabase(j) {
   (j.pagos || []).forEach(function(p) {
     var mesCap = p.periodo.charAt(0).toUpperCase() + p.periodo.slice(1);
     fields['Pago ' + mesCap] = ESTADO_PAGO_FROM_DB[p.estado] || 'Pendiente';
+    fields['Abono ' + mesCap] = p.monto_abono || null;
   });
   var itemDbToKey = { jersey: 'Jersey', banderas: 'Banderas', playera_blanca: 'Jersey Blanco' };
   (j.uniformes || []).forEach(function(u) {
@@ -567,7 +582,7 @@ function updateStats() {
 function tieneAtraso(rec) {
   const mesesVencidos = getMesesVencidos();
   return mesesVencidos.some(function(m) {
-    return (rec.fields['Pago ' + m] || 'Pendiente') === 'Pendiente';
+    return esDeuda(rec.fields['Pago ' + m]);
   });
 }
 
@@ -628,8 +643,9 @@ function renderTable() {
     var monthsHtml = MESES.map(function(mes) {
       var info = PAGOS_INFO[mes];
       var estado = f['Pago ' + mes] || 'Pendiente';
-      var cls = estado === 'Pagado' ? 'pagado' : estado === 'Exento' ? 'exento' : 'pendiente';
-      var title = info.label + ' ($' + info.monto.toLocaleString() + ', vence ' + info.fechaTxt + '): ' + estado + ' (clic para cambiar)';
+      var cls = estado === 'Pagado' ? 'pagado' : estado === 'Exento' ? 'exento' : estado === 'Abono' ? 'abono' : 'pendiente';
+      var estadoTxt = estado === 'Abono' && f['Abono ' + mes] ? 'Abono $' + Number(f['Abono ' + mes]).toLocaleString() : estado;
+      var title = info.label + ' ($' + info.monto.toLocaleString() + ', vence ' + info.fechaTxt + '): ' + estadoTxt + ' (clic para cambiar)';
       return '<div class="m-dot ' + cls + '" title="' + title + '" onclick="event.stopPropagation();togglePago(\'' + mes + '\',\'' + rec.id + '\')">' + MES_CORTO[mes] + '</div>';
     }).join('');
 
@@ -669,13 +685,14 @@ async function togglePago(mes, id) {
   if (!rec) return;
   var campo = 'Pago ' + mes;
   var actual = rec.fields[campo] || 'Pendiente';
-  var siguiente = actual === 'Pendiente' ? 'Pagado' : actual === 'Pagado' ? 'Exento' : 'Pendiente';
+  var siguiente = actual === 'Pendiente' ? 'Pagado' : actual === 'Pagado' ? 'Exento' : actual === 'Abono' ? 'Pagado' : 'Pendiente';
   try {
     var { error } = await sb.rpc('admin_update_pago', {
       p_pwd: PWD, p_jugador_id: id, p_periodo: mes.toLowerCase(), p_estado: siguiente.toLowerCase()
     });
     if (error) throw error;
     rec.fields[campo] = siguiente;
+    rec.fields['Abono ' + mes] = null;
     if (siguiente === 'Pagado') {
       var jugadorNombre = rec.fields['Nombre'] + ' ' + rec.fields['Apellidos'];
       var monto = (PAGOS_INFO[mes] || {}).monto || 0;
@@ -696,6 +713,27 @@ async function togglePago(mes, id) {
   } catch(e) { alert('Error: ' + e.message); }
 }
 
+async function setAbono(mes, id, valor) {
+  var monto = parseFloat(valor);
+  if (!monto || monto <= 0) return;
+  var maxMonto = (PAGOS_INFO[mes] || {}).monto || 0;
+  if (monto >= maxMonto) { alert('El abono debe ser menor al monto total ($' + maxMonto.toLocaleString() + '). Si ya se pagó completo, marca "Pagado" en su lugar.'); if (document.getElementById('detail-modal').classList.contains('open') && currentId === id) openDetail(id); return; }
+  try {
+    var { error } = await sb.rpc('admin_update_pago', {
+      p_pwd: PWD, p_jugador_id: id, p_periodo: mes.toLowerCase(), p_estado: 'abono', p_monto_abono: monto
+    });
+    if (error) throw error;
+    var rec = allRecords.find(function(r) { return r.id === id; });
+    rec.fields['Pago ' + mes] = 'Abono';
+    rec.fields['Abono ' + mes] = monto;
+    updateStats();
+    renderTable();
+    if (document.getElementById('section-pagos').style.display !== 'none') renderPagos();
+    if (document.getElementById('section-morosos').style.display !== 'none') renderMorosos();
+    if (document.getElementById('detail-modal').classList.contains('open') && currentId === id) openDetail(id);
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
 // ── PAGOS ──
 function renderPagos() {
   var grid = document.getElementById('pagos-grid');
@@ -704,7 +742,7 @@ function renderPagos() {
   MESES.forEach(function(mes) {
     var info = PAGOS_INFO[mes];
     var pagados  = allRecords.filter(function(r) { return r.fields['Pago ' + mes] === 'Pagado'; }).length;
-    var pendientes = allRecords.filter(function(r) { return (r.fields['Pago ' + mes] || 'Pendiente') === 'Pendiente'; }).length;
+    var pendientes = allRecords.filter(function(r) { return esDeuda(r.fields['Pago ' + mes]); }).length;
     var total = pagados * info.monto;
     ingresos += total;
     html += '<div class="mes-card">' +
@@ -837,7 +875,7 @@ function renderMorosos() {
 
   var morosos = allRecords.filter(function(r) {
     return mesesVencidos.some(function(m) {
-      return (r.fields['Pago ' + m] || 'Pendiente') === 'Pendiente';
+      return esDeuda(r.fields['Pago ' + m]);
     });
   });
 
@@ -855,8 +893,8 @@ function renderMorosos() {
   var totalDeuda = 0;
   morosos.forEach(function(rec) {
     var f = rec.fields;
-    var mesesPend = mesesVencidos.filter(function(m) { return (f['Pago ' + m] || 'Pendiente') === 'Pendiente'; });
-    var deuda = mesesPend.reduce(function(sum, m) { return sum + PAGOS_INFO[m].monto; }, 0);
+    var mesesPend = mesesVencidos.filter(function(m) { return esDeuda(f['Pago ' + m]); });
+    var deuda = mesesPend.reduce(function(sum, m) { return sum + deudaRestante(f, m); }, 0);
     totalDeuda += deuda;
 
     tbody += '<tr>';
@@ -866,7 +904,8 @@ function renderMorosos() {
     tbody += '<td style="color:var(--gray)">' + (f['Teléfono']||'—') + '</td>';
     mesesVencidos.forEach(function(m) {
       var est = f['Pago ' + m] || 'Pendiente';
-      tbody += '<td style="text-align:center">' + (est === 'Pendiente' ? '❌' : '✅') + '</td>';
+      var icon = est === 'Pagado' ? '✅' : est === 'Exento' ? '🔵' : est === 'Abono' ? '🟡' : '❌';
+      tbody += '<td style="text-align:center">' + icon + '</td>';
     });
     tbody += '<td style="text-align:right;color:var(--red);font-weight:800">$' + deuda.toLocaleString() + '</td>';
     tbody += '</tr>';
@@ -883,7 +922,7 @@ function notificarAtrasos() {
   var mesesVencidos = getMesesVencidos();
   var morosos = allRecords.filter(function(r) {
     return mesesVencidos.some(function(m) {
-      return (r.fields['Pago ' + m] || 'Pendiente') === 'Pendiente';
+      return esDeuda(r.fields['Pago ' + m]);
     });
   });
 
@@ -891,8 +930,8 @@ function notificarAtrasos() {
 
   var lista = morosos.map(function(r) {
     var f = r.fields;
-    var pend = mesesVencidos.filter(function(m) { return (f['Pago ' + m]||'Pendiente') === 'Pendiente'; });
-    var deuda = pend.reduce(function(s, m) { return s + PAGOS_INFO[m].monto; }, 0);
+    var pend = mesesVencidos.filter(function(m) { return esDeuda(f['Pago ' + m]); });
+    var deuda = pend.reduce(function(s, m) { return s + deudaRestante(f, m); }, 0);
     var pendLabels = pend.map(function(m) { return PAGOS_INFO[m].label; });
     return '%E2%80%A2 ' + (f['Nombre']||'') + ' ' + (f['Apellidos']||'') + ' (' + pendLabels.join(', ') + ') - $' + deuda.toLocaleString();
   }).join('%0A');
@@ -925,11 +964,16 @@ function openDetail(id) {
   var pagosHtml = '';
   MESES.forEach(function(mes) {
     var estado = f['Pago ' + mes] || 'Pendiente';
-    var icon = estado === 'Pagado' ? '✅' : estado === 'Exento' ? '🔵' : '❌';
-    pagosHtml += '<div class="d-pago-chip" style="cursor:pointer" title="Clic para cambiar" onclick="togglePago(\'' + mes + '\',\'' + id + '\')">' +
-      '<div class="dp-mes">' + mes + '</div>' +
-      '<div class="dp-icon">' + icon + '</div>' +
-      '<div class="dp-estado">' + estado + '</div>' +
+    var abono = f['Abono ' + mes];
+    var icon = estado === 'Pagado' ? '✅' : estado === 'Exento' ? '🔵' : estado === 'Abono' ? '🟡' : '❌';
+    var estadoTxt = estado === 'Abono' && abono ? 'Abono $' + Number(abono).toLocaleString() : estado;
+    pagosHtml += '<div class="d-pago-chip">' +
+      '<div style="cursor:pointer" title="Clic para marcar Pagado/Exento" onclick="togglePago(\'' + mes + '\',\'' + id + '\')">' +
+        '<div class="dp-mes">' + mes + '</div>' +
+        '<div class="dp-icon">' + icon + '</div>' +
+        '<div class="dp-estado">' + estadoTxt + '</div>' +
+      '</div>' +
+      '<input type="number" class="dp-abono-input" placeholder="Abono $" value="' + (abono || '') + '" onclick="event.stopPropagation()" onchange="setAbono(\'' + mes + '\',\'' + id + '\',this.value)">' +
       '</div>';
   });
 
@@ -995,7 +1039,7 @@ function openDetail(id) {
       '<div class="d-col-right">' +
         '<div class="d-section" style="margin-top:0">Documentos</div>' +
         '<div style="margin-bottom:8px">' + docsHtml + '</div>' +
-        '<div class="d-section">Mensualidades (inscripción y pagos) — clic para cambiar</div>' +
+        '<div class="d-section">Mensualidades (inscripción y pagos) — clic en el mes o escribe un abono</div>' +
         '<div class="d-pagos-grid">' + pagosHtml + '</div>' +
         '<div class="d-section">Número de jugador</div>' +
         '<input type="number" id="modal-num" class="d-input" value="' + (f['Número Jugador']||'') + '" placeholder="Ej: 12">' +
@@ -1539,9 +1583,9 @@ function exportPagosPendientes() {
   var rows = [];
   allRecords.forEach(function(rec) {
     var f = rec.fields;
-    var pend = mesesVencidos.filter(function(m) { return (f['Pago ' + m]||'Pendiente') === 'Pendiente'; });
+    var pend = mesesVencidos.filter(function(m) { return esDeuda(f['Pago ' + m]); });
     if (!pend.length) return;
-    var deuda = pend.reduce(function(s, m) { return s + PAGOS_INFO[m].monto; }, 0);
+    var deuda = pend.reduce(function(s, m) { return s + deudaRestante(f, m); }, 0);
     rows.push({
       Jugador: (f['Nombre']||'') + ' ' + (f['Apellidos']||''),
       Categoría: f['Categoría']||'',
