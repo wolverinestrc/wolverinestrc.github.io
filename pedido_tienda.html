@@ -238,6 +238,7 @@ const PRODUCTS = [
   { id: 10, name: 'Pulsera Azul Wolverines',    price: 50,   img: 'pulsera.jpeg',         sizeType: 'fixed', sizes: ['Única'], categoria: 'oficial' },
   { id: 11, name: 'Headband GameBreaker',       price: 1250, img: 'headband.jpeg',        sizeType: 'fixed', sizes: ['XS-S (43–51 cm)','M-L (51–58 cm)','XL-2XL (58–66 cm)'], customizable: true, categoria: 'oficial' },
   { id: 12, name: 'Llavero Wolverines',         price: 150,  img: 'llavero.jpeg',         sizeType: 'fixed', sizes: ['Única'], categoria: 'oficial' },
+  { id: 17, name: 'Jersey Blanco Creatlets Bordado', price: 680, img: 'jersey_blanco_creatlets.jpeg', sizeType: 'fixed', sizes: JERSEY_BLANCO_TALLAS, customizable: true, categoria: 'oficial' },
 ];
 
 let jugadores = [];
@@ -550,7 +551,7 @@ async function confirmarPedido() {
     }
 
     if (o.items.length) {
-      const { error } = await sb.from('pedidos_tienda').insert({
+      const { data: pedidoIns, error } = await sb.from('pedidos_tienda').insert({
         jugador_id: o.jugadorId,
         jugador_nombre: o.jugadorNombre,
         tutor_nombre: o.tutorNombre,
@@ -558,7 +559,7 @@ async function confirmarPedido() {
         tutor_email: o.tutorEmail,
         items: o.items,
         total: o.total,
-      });
+      }).select('id').single();
       if (error) throw error;
 
       if (o.tutorEmail) {
@@ -573,7 +574,7 @@ async function confirmarPedido() {
       const waMsg = encodeURIComponent('Hola Viky, te envío el comprobante del pedido de Wolve Store de ' + o.jugadorNombre + ' por $' + o.total.toLocaleString() + '.');
       document.getElementById('success-whatsapp').href = 'https://wa.me/528713957332?text=' + waMsg;
       document.getElementById('success-pago-wrap').style.display = 'block';
-      lastOrder = { items: o.stripeItems, customer: { name: o.tutorNombre, phone: o.tutorTel, email: o.tutorEmail } };
+      lastOrder = { pedidoId: pedidoIns ? pedidoIns.id : null, items: o.stripeItems, customer: { name: o.tutorNombre, phone: o.tutorTel, email: o.tutorEmail } };
     } else {
       document.getElementById('success-msg').innerHTML = 'Actualizamos los datos de uniforme de <b>' + o.jugadorNombre + '</b>. No hay nada pendiente de pago en este pedido.';
       document.getElementById('success-pago-wrap').style.display = 'none';
@@ -601,7 +602,7 @@ async function payWithStripe() {
     const res = await fetch(PAYMENTS_API + '/create-checkout-session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ items: lastOrder.items, customer: lastOrder.customer, delivery: 'pickup', page: 'pedido_tienda.html' }),
+      body: JSON.stringify({ items: lastOrder.items, customer: lastOrder.customer, delivery: 'pickup', page: 'pedido_tienda.html', pedido_id: lastOrder.pedidoId }),
     });
     const data = await res.json();
     if (!res.ok || !data.url) throw new Error(data.error || 'Error al conectar con Stripe');
