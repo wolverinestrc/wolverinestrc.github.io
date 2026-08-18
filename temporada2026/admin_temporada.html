@@ -261,10 +261,12 @@ table.lt td{padding:12px 14px;font-size:13px;color:var(--text);border-top:1px so
             <option>U6 (2020-2021)</option>
             <option>U8 (2018-2019)</option>
             <option>U10 (2016-2017)</option>
-            <option>U12 (2014-2015)</option>
+            <option>U12 Femenil (2014-2015)</option>
+            <option>U12 Varonil (2014-2015)</option>
             <option>U14 (2012-2013)</option>
             <option>U16 (2010-2011)</option>
-            <option>U18 / Libre</option>
+            <option>U18 (2008-2009)</option>
+            <option>Libre</option>
             <option>Moms +30</option>
             <option>30+</option>
           </select>
@@ -448,7 +450,7 @@ function deudaRestante(f, mes) {
 function mapJugadorFromSupabase(j) {
   var fields = {
     'Nombre': j.nombre, 'Apellidos': j.apellidos, 'Fecha de Nacimiento': j.fecha_nacimiento,
-    'CURP': j.curp, 'Categoría': j.categoria, 'Género': j.genero,
+    'CURP': j.curp, 'Categoría': j.categoria, 'Categoría Secundaria': j.categoria_secundaria, 'Género': j.genero,
     'Tutor': j.tutor, 'Teléfono': j.telefono, 'Email': j.email,
     'Foto': j.foto_url, 'Acta de Nacimiento': j.acta_nacimiento_url,
     'CURP Documento': j.curp_documento_url, 'Seguro Médico': j.seguro_medico_url,
@@ -508,7 +510,7 @@ const ESTADO_SURTIDO_LABEL = { sin_ordenar: 'Sin ordenar', ordenado: 'Ordenado',
 const ESTADO_SURTIDO_NEXT  = { sin_ordenar: 'ordenado', ordenado: 'entregado', entregado: 'sin_ordenar' };
 const PRODUCTOS_UNIFORME = new Set(['Jersey Oficial', 'Jersey Blanco', 'Banderas Completas', 'Solo Banderas']);
 const PRODUCTOS_BANDERAS = new Set(['Banderas Completas', 'Solo Banderas']);
-const CATEGORIAS = ['U6 (2020-2021)','U8 (2018-2019)','U10 (2016-2017)','U12 (2014-2015)','U14 (2012-2013)','U16 (2010-2011)','U18 / Libre','Moms +30','30+'];
+const CATEGORIAS = ['U6 (2020-2021)','U8 (2018-2019)','U10 (2016-2017)','U12 Femenil (2014-2015)','U12 Varonil (2014-2015)','U14 (2012-2013)','U16 (2010-2011)','U18 (2008-2009)','Libre','Moms +30','30+'];
 
 // ── AUTH ──
 const AUTH_KEY = 'wolverines_admin_auth';
@@ -1026,6 +1028,10 @@ function openDetail(id) {
           '<div><div class="d-label">Categoría</div><select id="modal-categoria" class="d-select">' +
             CATEGORIAS.map(function(c) { return '<option value="' + c + '"' + (c === f['Categoría'] ? ' selected' : '') + '>' + c + '</option>'; }).join('') +
           '</select></div>' +
+          '<div><div class="d-label">Categoría secundaria (juega también arriba)</div><select id="modal-categoria-secundaria" class="d-select">' +
+            '<option value=""' + (!f['Categoría Secundaria'] ? ' selected' : '') + '>— Ninguna —</option>' +
+            CATEGORIAS.map(function(c) { return '<option value="' + c + '"' + (c === f['Categoría Secundaria'] ? ' selected' : '') + '>' + c + '</option>'; }).join('') +
+          '</select></div>' +
           '<div><div class="d-label">Género</div><select id="modal-genero" class="d-select">' +
             ['Masculino','Femenino'].map(function(g) { return '<option value="' + g + '"' + (g === f['Género'] ? ' selected' : '') + '>' + g + '</option>'; }).join('') +
           '</select></div>' +
@@ -1061,13 +1067,14 @@ async function saveDetail() {
   var nombre = document.getElementById('modal-nombre').value.trim();
   var apellidos = document.getElementById('modal-apellidos').value.trim();
   var categoria = document.getElementById('modal-categoria').value;
+  var categoriaSecundaria = document.getElementById('modal-categoria-secundaria').value;
   var genero = document.getElementById('modal-genero').value;
   var fechaNac = document.getElementById('modal-fecha-nac').value;
   var curp = document.getElementById('modal-curp').value.trim();
   var tutor = document.getElementById('modal-tutor').value.trim();
   var telefono = document.getElementById('modal-telefono').value.trim();
 
-  var fields = { 'Nombre': nombre, 'Apellidos': apellidos, 'Categoría': categoria, 'Género': genero, 'Fecha de Nacimiento': fechaNac, 'CURP': curp, 'Tutor': tutor, 'Teléfono': telefono };
+  var fields = { 'Nombre': nombre, 'Apellidos': apellidos, 'Categoría': categoria, 'Categoría Secundaria': categoriaSecundaria || null, 'Género': genero, 'Fecha de Nacimiento': fechaNac, 'CURP': curp, 'Tutor': tutor, 'Teléfono': telefono };
   if (num) fields['Número Jugador'] = num;
   if (email) fields['Email'] = email;
   UNIFORME_ITEMS.forEach(function(item) {
@@ -1081,7 +1088,7 @@ async function saveDetail() {
       p_pwd: PWD, p_id: currentId, p_numero_jugador: num, p_email: email || null,
       p_nombre: nombre || null, p_apellidos: apellidos || null, p_categoria: categoria || null,
       p_genero: genero || null, p_fecha_nacimiento: fechaNac || null, p_curp: curp || null,
-      p_tutor: tutor || null, p_telefono: telefono || null
+      p_tutor: tutor || null, p_telefono: telefono || null, p_categoria_secundaria: categoriaSecundaria
     });
     if (numErr) throw numErr;
 
