@@ -379,6 +379,7 @@ table.lt td{padding:12px 14px;font-size:13px;color:var(--text);border-top:1px so
             <div class="mor-sub">Pedidos de productos enviados por los papás desde pedido_tienda.html y tienda.html</div>
           </div>
           <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn-action" id="btn-sync-pedidos" onclick="sincronizarPedidos()">🔄 Sincronizar</button>
             <button class="btn-action btn-ghost" onclick="exportPedidosUniforme()">📥 Pedido de uniformes</button>
             <button class="btn-action btn-ghost" onclick="exportPedidosTienda()">📥 Artículos de tienda</button>
           </div>
@@ -1333,6 +1334,23 @@ function renderUniformes() {
 }
 
 // ── HISTORIAL DE PEDIDOS (pedido_tienda.html + tienda.html) ──
+async function sincronizarPedidos() {
+  var btn = document.getElementById('btn-sync-pedidos');
+  btn.disabled = true;
+  btn.textContent = '⏳ Sincronizando...';
+  try {
+    var { data: pedidosData, error } = await sb.rpc('admin_list_pedidos_tienda', { p_pwd: PWD });
+    if (error) throw error;
+    pedidosRecords = pedidosData || [];
+    renderPedidos();
+  } catch(e) {
+    alert('❌ Error al sincronizar: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🔄 Sincronizar';
+  }
+}
+
 function renderPedidos() {
   var container = document.getElementById('tienda-content');
   if (!pedidosRecords.length) { container.innerHTML = '<div class="empty">Aún no hay pedidos de Wolve Store.</div>'; return; }
