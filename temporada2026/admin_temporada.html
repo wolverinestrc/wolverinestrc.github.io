@@ -621,7 +621,7 @@ function renderTable() {
     var f = r.fields;
     return ((f['Nombre']||'') + ' ' + (f['Apellidos']||'') + ' ' + (f['CURP']||'')).toLowerCase().includes(search);
   });
-  if (catF) recs = recs.filter(function(r) { return r.fields['Categoría'] === catF; });
+  if (catF) recs = recs.filter(function(r) { return r.fields['Categoría'] === catF || r.fields['Categoría Secundaria'] === catF; });
   if (pagoF === 'atrasado') recs = recs.filter(function(r) { return tieneAtraso(r); });
   if (pagoF === 'alcorriente') recs = recs.filter(function(r) { return !tieneAtraso(r); });
 
