@@ -551,7 +551,9 @@ async function confirmarPedido() {
     }
 
     if (o.items.length) {
-      const { data: pedidoIns, error } = await sb.from('pedidos_tienda').insert({
+      const pedidoId = crypto.randomUUID();
+      const { error } = await sb.from('pedidos_tienda').insert({
+        id: pedidoId,
         jugador_id: o.jugadorId,
         jugador_nombre: o.jugadorNombre,
         tutor_nombre: o.tutorNombre,
@@ -559,7 +561,7 @@ async function confirmarPedido() {
         tutor_email: o.tutorEmail,
         items: o.items,
         total: o.total,
-      }).select('id').single();
+      });
       if (error) throw error;
 
       if (o.tutorEmail) {
@@ -574,7 +576,7 @@ async function confirmarPedido() {
       const waMsg = encodeURIComponent('Hola Viky, te envío el comprobante del pedido de Wolve Store de ' + o.jugadorNombre + ' por $' + o.total.toLocaleString() + '.');
       document.getElementById('success-whatsapp').href = 'https://wa.me/528713957332?text=' + waMsg;
       document.getElementById('success-pago-wrap').style.display = 'block';
-      lastOrder = { pedidoId: pedidoIns ? pedidoIns.id : null, items: o.stripeItems, customer: { name: o.tutorNombre, phone: o.tutorTel, email: o.tutorEmail } };
+      lastOrder = { pedidoId: pedidoId, items: o.stripeItems, customer: { name: o.tutorNombre, phone: o.tutorTel, email: o.tutorEmail } };
     } else {
       document.getElementById('success-msg').innerHTML = 'Actualizamos los datos de uniforme de <b>' + o.jugadorNombre + '</b>. No hay nada pendiente de pago en este pedido.';
       document.getElementById('success-pago-wrap').style.display = 'none';
