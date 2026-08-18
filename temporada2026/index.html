@@ -744,9 +744,9 @@ function calcCategoria() {
 
   let cat = '';
 
-  // 30+ primero: Moms +30 para mujeres, 30+ general para el resto
+  // 30+ primero: Moms +30 para mujeres, Libre para el resto
   if (age >= 30) {
-    cat = state.genero === 'Femenino' ? 'Moms +30' : '30+';
+    cat = state.genero === 'Femenino' ? 'Moms +30' : 'Libre';
   } else if (year >= 2020) {
     cat = 'U6 (2020-2021)';
   } else if (year >= 2018 && year <= 2019) {
