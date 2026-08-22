@@ -377,7 +377,7 @@ table.lt td{padding:12px 14px;font-size:13px;color:var(--text);border-top:1px so
         <div class="mor-header">
           <div>
             <div class="mor-title">Historial de Pedidos</div>
-            <div class="mor-sub">Pedidos de productos enviados por los papás desde pedido_tienda.html y tienda.html</div>
+            <div class="mor-sub">Pedidos de productos enviados por los papás desde wolvehub.html y tienda.html</div>
           </div>
           <div style="display:flex;gap:10px;flex-wrap:wrap">
             <button class="btn-action" id="btn-sync-pedidos" onclick="sincronizarPedidos()">🔄 Sincronizar</button>
@@ -1339,7 +1339,7 @@ function renderUniformes() {
     '<span style="color:var(--red);font-weight:700">Total pendiente: $' + totalPendiente.toLocaleString() + ' MXN</span></div>';
 }
 
-// ── HISTORIAL DE PEDIDOS (pedido_tienda.html + tienda.html) ──
+// ── HISTORIAL DE PEDIDOS (wolvehub.html + tienda.html) ──
 async function sincronizarPedidos() {
   var btn = document.getElementById('btn-sync-pedidos');
   btn.disabled = true;
