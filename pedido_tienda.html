@@ -476,7 +476,7 @@ function prepararPedido() {
     }
     if (p.categoria === 'uniforme') {
       needsNumero = true;
-      uniformeUpdates.push({ item: p.uniformeItem, talla: size });
+      if (p.uniformeItem) uniformeUpdates.push({ item: p.uniformeItem, talla: size });
     }
 
     displayItems.push({ name: p.name, talla: size, qty, subtotal: paid ? 0 : qty * p.price, paid, numero: numeroCustom || '' });
