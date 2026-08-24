@@ -414,7 +414,7 @@ table.lt td{padding:12px 14px;font-size:13px;color:var(--text);border-top:1px so
         <div class="mor-header">
           <div>
             <div class="mor-title">📢 Avisos por correo</div>
-            <div class="mor-sub">Manda un correo a coaches y staff, filtrado por categoría</div>
+            <div class="mor-sub">Manda un correo a los papás de los jugadores (a su correo registrado), y opcionalmente a coaches y staff, filtrado por categoría</div>
           </div>
         </div>
         <div class="controls" style="padding:0 24px 4px">
@@ -423,11 +423,16 @@ table.lt td{padding:12px 14px;font-size:13px;color:var(--text);border-top:1px so
         <div class="controls" style="padding:0 24px">
           <textarea id="aviso-mensaje" placeholder="Mensaje..." rows="4" style="flex:1;min-width:260px;padding:10px 14px;border:1px solid var(--border);border-radius:10px;font-family:inherit;font-size:13.5px;resize:vertical"></textarea>
         </div>
+        <div class="controls" style="padding:0 24px 4px">
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" id="aviso-a-papas" checked> 👨‍👩‍👧 Papás de jugadores</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" id="aviso-a-coaches"> 🧑‍🏫 Coaches</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" id="aviso-a-staff"> 📋 Staff</label>
+        </div>
         <div class="controls" style="padding:0 24px">
           <select class="filter-select" id="aviso-destinatario" onchange="onAvisoDestinatarioChange()">
             <option value="infantil">Infantil (U6 a U12)</option>
-            <option value="juvenil">Juvenil (U14 a U18)</option>
-            <option value="ambas">Ambas (Infantil + Juvenil)</option>
+            <option value="juvenil">Juvenil (U14, Libre, Moms +30)</option>
+            <option value="ambas">Ambas (todas las categorías)</option>
             <option value="categoria">Categoría específica...</option>
           </select>
           <select class="filter-select" id="aviso-categoria" style="display:none">
@@ -452,7 +457,7 @@ table.lt td{padding:12px 14px;font-size:13px;color:var(--text);border-top:1px so
         <div class="mor-header">
           <div>
             <div class="mor-title">Staff</div>
-            <div class="mor-sub">Personas que no son coaches pero siempre reciben los avisos (directivos, administrativos)</div>
+            <div class="mor-sub">Personas que no son coaches (directivos, administrativos) — reciben avisos solo si marcas la casilla "Staff"</div>
           </div>
         </div>
         <div class="controls" style="padding:0 24px">
@@ -573,7 +578,7 @@ const PRODUCTOS_UNIFORME = new Set(['Jersey Oficial', 'Jersey Blanco', 'Banderas
 const PRODUCTOS_BANDERAS = new Set(['Banderas Completas', 'Solo Banderas']);
 const CATEGORIAS = ['U6 (2020-2021)','U8 (2018-2019)','U10 (2016-2017)','U12 Femenil (2014-2015)','U12 Varonil (2014-2015)','U14 (2012-2013)','U16 (2010-2011)','U18 (2008-2009)','Libre','Moms +30'];
 const CATEGORIAS_INFANTIL = ['U6 (2020-2021)','U8 (2018-2019)','U10 (2016-2017)','U12 Femenil (2014-2015)','U12 Varonil (2014-2015)'];
-const CATEGORIAS_JUVENIL = ['U14 (2012-2013)','U16 (2010-2011)','U18 (2008-2009)'];
+const CATEGORIAS_JUVENIL = ['U14 (2012-2013)','U16 (2010-2011)','U18 (2008-2009)','Libre','Moms +30'];
 
 // ── AUTH ──
 const AUTH_KEY = 'wolverines_admin_auth';
@@ -1689,16 +1694,36 @@ function categoriasDelAviso() {
 
 function destinatariosAviso() {
   var categorias = categoriasDelAviso();
-  var coachesMatch = coachesRecords.filter(function(c) {
-    return (c.categorias || []).some(function(cat) { return categorias.indexOf(cat) !== -1; });
-  });
+  var incluyePapas = document.getElementById('aviso-a-papas').checked;
+  var incluyeCoaches = document.getElementById('aviso-a-coaches').checked;
+  var incluyeStaff = document.getElementById('aviso-a-staff').checked;
+
   var vistos = {};
   var destinatarios = [];
-  coachesMatch.concat(staffRecords).forEach(function(p) {
-    if (!p.email || vistos[p.email]) return;
-    vistos[p.email] = true;
-    destinatarios.push({ nombre: p.nombre, email: p.email, esStaff: staffRecords.indexOf(p) !== -1 });
-  });
+  function agregar(nombre, email, tipo) {
+    if (!email || vistos[email]) return;
+    vistos[email] = true;
+    destinatarios.push({ nombre: nombre, email: email, tipo: tipo });
+  }
+
+  if (incluyePapas) {
+    allRecords.forEach(function(r) {
+      var f = r.fields;
+      var coincide = categorias.indexOf(f['Categoría']) !== -1 || categorias.indexOf(f['Categoría Secundaria']) !== -1;
+      if (!coincide) return;
+      agregar(f['Tutor'] || 'Papá/Mamá', f['Email'], 'papá');
+    });
+  }
+  if (incluyeCoaches) {
+    coachesRecords.forEach(function(c) {
+      if (!(c.categorias || []).some(function(cat) { return categorias.indexOf(cat) !== -1; })) return;
+      agregar(c.nombre, c.email, 'coach');
+    });
+  }
+  if (incluyeStaff) {
+    staffRecords.forEach(function(s) { agregar(s.nombre, s.email, 'staff'); });
+  }
+
   return { categorias: categorias, destinatarios: destinatarios };
 }
 
@@ -1706,11 +1731,11 @@ function previewAviso() {
   var r = destinatariosAviso();
   var box = document.getElementById('aviso-preview');
   if (!r.destinatarios.length) {
-    box.innerHTML = '⚠️ No hay coaches asignados a esa(s) categoría(s) ni staff registrado. Nadie recibiría este aviso.';
+    box.innerHTML = '⚠️ Nadie recibiría este aviso — revisa las casillas marcadas, la categoría de los jugadores/coaches, o el correo registrado.';
     return;
   }
   box.innerHTML = '📬 Va a llegar a ' + r.destinatarios.length + ' persona(s): ' +
-    r.destinatarios.map(function(d) { return d.nombre + (d.esStaff ? ' (staff)' : ' (coach)'); }).join(', ');
+    r.destinatarios.map(function(d) { return d.nombre + ' (' + d.tipo + ')'; }).join(', ');
 }
 
 async function enviarAviso() {
@@ -1719,7 +1744,7 @@ async function enviarAviso() {
   if (!asunto || !mensaje) { alert('Falta el asunto o el mensaje.'); return; }
 
   var r = destinatariosAviso();
-  if (!r.destinatarios.length) { alert('No hay destinatarios para esa selección — revisa las categorías de los coaches o agrega staff.'); return; }
+  if (!r.destinatarios.length) { alert('No hay destinatarios para esa selección — revisa las casillas marcadas y la categoría.'); return; }
 
   if (!confirm('¿Enviar este aviso a ' + r.destinatarios.length + ' persona(s)?')) return;
 
