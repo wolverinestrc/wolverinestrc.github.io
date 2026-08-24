@@ -97,6 +97,10 @@ header{background:var(--navy);padding:18px 28px;display:flex;align-items:center;
 .badge-warn{background:var(--red-lt);color:var(--red)}
 .badge-num{background:var(--bg);color:var(--text);border:1.5px solid var(--border)}
 .badge-num.sin{color:var(--gray-lt);border-style:dashed}
+.cat-dd-btn{margin-bottom:0}
+.cat-dd-panel{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--card);border:1.5px solid var(--border);border-radius:9px;box-shadow:0 8px 24px rgba(16,31,61,0.14);padding:6px;z-index:20;max-height:220px;overflow-y:auto}
+.cat-dd-item{display:flex;align-items:center;gap:8px;font-size:13px;padding:7px 8px;border-radius:6px;cursor:pointer}
+.cat-dd-item:hover{background:var(--bg)}
 .p-months{display:flex;gap:4px}
 .m-dot{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;cursor:pointer;user-select:none;transition:transform .1s}
 .m-dot:hover{transform:scale(1.1)}
@@ -1559,9 +1563,9 @@ function renderCoaches() {
     var nombreEsc = ((c.nombre||'') + ' ' + (c.apellidos||'')).replace(/'/g,'');
     var categorias = c.categorias || [];
 
-    var optionsHtml = CATEGORIAS.map(function(cat) {
-      var sel = categorias.indexOf(cat) !== -1 ? ' selected' : '';
-      return '<option value="' + cat + '"' + sel + '>' + cat + '</option>';
+    var checkboxesHtml = CATEGORIAS.map(function(cat) {
+      var checked = categorias.indexOf(cat) !== -1 ? ' checked' : '';
+      return '<label class="cat-dd-item"><input type="checkbox" value="' + cat + '"' + checked + ' onchange="onCoachCategoriaCheck(\'' + c.id + '\', this)"> ' + cat + '</label>';
     }).join('');
 
     html += '<div class="p-row" style="cursor:default;flex-wrap:wrap">' +
@@ -1575,9 +1579,12 @@ function renderCoaches() {
         '<button class="icon-btn icon-cred" title="Credencial" onclick="openCredCoach(\'' + c.id + '\')">🎫</button>' +
         '<button class="icon-btn icon-del" title="Eliminar" onclick="deleteCoach(\'' + c.id + '\',\'' + nombreEsc + '\')">🗑</button>' +
       '</div>' +
-      '<div style="width:100%;margin-top:8px">' +
-        '<div style="font-size:11px;color:var(--gray);margin-bottom:4px">Categorías que entrena (Ctrl/Cmd + clic para elegir varias):</div>' +
-        '<select multiple size="4" class="filter-select" style="width:100%;height:auto" onchange="updateCoachCategorias(\'' + c.id + '\', this)">' + optionsHtml + '</select>' +
+      '<div style="width:100%;margin-top:8px;position:relative" class="cat-dd">' +
+        '<div style="font-size:11px;color:var(--gray);margin-bottom:4px">Categorías que entrena:</div>' +
+        '<button type="button" class="d-select cat-dd-btn" onclick="toggleCatDropdown(this)" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;text-align:left">' +
+          '<span class="cat-dd-label">' + catLabel(categorias) + '</span><span>▾</span>' +
+        '</button>' +
+        '<div class="cat-dd-panel" style="display:none">' + checkboxesHtml + '</div>' +
       '</div>' +
     '</div>';
   });
@@ -1594,9 +1601,33 @@ async function deleteCoach(id, nombre) {
   } catch(e) { alert('❌ Error: ' + e.message); }
 }
 
-async function updateCoachCategorias(id, selectEl) {
-  var categorias = Array.prototype.filter.call(selectEl.options, function(o) { return o.selected; })
-    .map(function(o) { return o.value; });
+function catLabel(categorias) {
+  if (!categorias.length) return '— Ninguna —';
+  if (categorias.length <= 2) return categorias.join(', ');
+  return categorias.length + ' categorías';
+}
+
+function toggleCatDropdown(btn) {
+  var panel = btn.nextElementSibling;
+  var wasOpen = panel.style.display !== 'none';
+  document.querySelectorAll('.cat-dd-panel').forEach(function(p) { p.style.display = 'none'; });
+  panel.style.display = wasOpen ? 'none' : 'block';
+}
+
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.cat-dd')) {
+    document.querySelectorAll('.cat-dd-panel').forEach(function(p) { p.style.display = 'none'; });
+  }
+});
+
+async function onCoachCategoriaCheck(id, checkboxEl) {
+  var panel = checkboxEl.closest('.cat-dd-panel');
+  var categorias = Array.prototype.filter.call(panel.querySelectorAll('input[type=checkbox]'), function(cb) { return cb.checked; })
+    .map(function(cb) { return cb.value; });
+
+  var btn = panel.previousElementSibling;
+  btn.querySelector('.cat-dd-label').textContent = catLabel(categorias);
+
   var coach = coachesRecords.find(function(c) { return c.id === id; });
   if (coach) coach.categorias = categorias;
   try {
