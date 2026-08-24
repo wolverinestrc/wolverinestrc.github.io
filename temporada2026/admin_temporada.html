@@ -97,8 +97,6 @@ header{background:var(--navy);padding:18px 28px;display:flex;align-items:center;
 .badge-warn{background:var(--red-lt);color:var(--red)}
 .badge-num{background:var(--bg);color:var(--text);border:1.5px solid var(--border)}
 .badge-num.sin{color:var(--gray-lt);border-style:dashed}
-.badge-toggle{cursor:pointer;user-select:none;border:1.5px solid var(--border);background:var(--bg);color:var(--gray)}
-.badge-toggle.on{background:var(--blue-lt);color:var(--blue-dk);border-color:transparent}
 .p-months{display:flex;gap:4px}
 .m-dot{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;cursor:pointer;user-select:none;transition:transform .1s}
 .m-dot:hover{transform:scale(1.1)}
@@ -1561,9 +1559,9 @@ function renderCoaches() {
     var nombreEsc = ((c.nombre||'') + ' ' + (c.apellidos||'')).replace(/'/g,'');
     var categorias = c.categorias || [];
 
-    var chipsHtml = CATEGORIAS.map(function(cat) {
-      var on = categorias.indexOf(cat) !== -1;
-      return '<span class="badge badge-toggle' + (on ? ' on' : '') + '" onclick="toggleCoachCategoria(\'' + c.id + '\',\'' + cat.replace(/'/g,"\\'") + '\')">' + cat + '</span>';
+    var optionsHtml = CATEGORIAS.map(function(cat) {
+      var sel = categorias.indexOf(cat) !== -1 ? ' selected' : '';
+      return '<option value="' + cat + '"' + sel + '>' + cat + '</option>';
     }).join('');
 
     html += '<div class="p-row" style="cursor:default;flex-wrap:wrap">' +
@@ -1577,7 +1575,10 @@ function renderCoaches() {
         '<button class="icon-btn icon-cred" title="Credencial" onclick="openCredCoach(\'' + c.id + '\')">🎫</button>' +
         '<button class="icon-btn icon-del" title="Eliminar" onclick="deleteCoach(\'' + c.id + '\',\'' + nombreEsc + '\')">🗑</button>' +
       '</div>' +
-      '<div class="p-badges" style="width:100%;margin-top:8px">' + chipsHtml + '</div>' +
+      '<div style="width:100%;margin-top:8px">' +
+        '<div style="font-size:11px;color:var(--gray);margin-bottom:4px">Categorías que entrena (Ctrl/Cmd + clic para elegir varias):</div>' +
+        '<select multiple size="4" class="filter-select" style="width:100%;height:auto" onchange="updateCoachCategorias(\'' + c.id + '\', this)">' + optionsHtml + '</select>' +
+      '</div>' +
     '</div>';
   });
   container.innerHTML = '<div class="list-wrap">' + html + '</div>';
@@ -1593,14 +1594,11 @@ async function deleteCoach(id, nombre) {
   } catch(e) { alert('❌ Error: ' + e.message); }
 }
 
-async function toggleCoachCategoria(id, categoria) {
+async function updateCoachCategorias(id, selectEl) {
+  var categorias = Array.prototype.filter.call(selectEl.options, function(o) { return o.selected; })
+    .map(function(o) { return o.value; });
   var coach = coachesRecords.find(function(c) { return c.id === id; });
-  if (!coach) return;
-  var categorias = (coach.categorias || []).slice();
-  var idx = categorias.indexOf(categoria);
-  if (idx === -1) categorias.push(categoria); else categorias.splice(idx, 1);
-  coach.categorias = categorias;
-  renderCoaches();
+  if (coach) coach.categorias = categorias;
   try {
     var { error } = await sb.rpc('admin_update_coach_categorias', { p_pwd: PWD, p_id: id, p_categorias: categorias });
     if (error) throw error;
