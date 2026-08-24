@@ -564,6 +564,7 @@ function montoUniforme(itemKey, talla) {
 }
 
 let allRecords   = [];
+let filteredRecords = [];
 let pedidosRecords = [];
 let gastosRecords = [];
 let pagosHistorial = [];
@@ -698,6 +699,8 @@ function renderTable() {
   if (catF) recs = recs.filter(function(r) { return r.fields['Categoría'] === catF || r.fields['Categoría Secundaria'] === catF; });
   if (pagoF === 'atrasado') recs = recs.filter(function(r) { return tieneAtraso(r); });
   if (pagoF === 'alcorriente') recs = recs.filter(function(r) { return !tieneAtraso(r); });
+
+  filteredRecords = recs;
 
   cont.innerHTML = '';
   empty.style.display = recs.length ? 'none' : 'block';
@@ -1780,8 +1783,8 @@ async function enviarAviso() {
 }
 
 function exportJugadores() {
-  if (!allRecords.length) { alert('No hay jugadores registrados.'); return; }
-  var rows = allRecords.map(function(rec) {
+  if (!filteredRecords.length) { alert('No hay jugadores para exportar con este filtro.'); return; }
+  var rows = filteredRecords.map(function(rec) {
     var f = rec.fields;
     return {
       Nombre: f['Nombre'] || '',
