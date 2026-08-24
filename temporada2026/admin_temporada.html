@@ -97,6 +97,8 @@ header{background:var(--navy);padding:18px 28px;display:flex;align-items:center;
 .badge-warn{background:var(--red-lt);color:var(--red)}
 .badge-num{background:var(--bg);color:var(--text);border:1.5px solid var(--border)}
 .badge-num.sin{color:var(--gray-lt);border-style:dashed}
+.badge-toggle{cursor:pointer;user-select:none;border:1.5px solid var(--border);background:var(--bg);color:var(--gray)}
+.badge-toggle.on{background:var(--blue-lt);color:var(--blue-dk);border-color:transparent}
 .p-months{display:flex;gap:4px}
 .m-dot{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;cursor:pointer;user-select:none;transition:transform .1s}
 .m-dot:hover{transform:scale(1.1)}
@@ -245,6 +247,7 @@ table.lt td{padding:12px 14px;font-size:13px;color:var(--text);border-top:1px so
       <button class="tab-btn" id="tb-uniformes" onclick="switchTab('uniformes')">🎽 Uniformes</button>
       <button class="tab-btn" id="tb-tienda" onclick="switchTab('tienda')">📋 Historial de Pedidos</button>
       <button class="tab-btn" id="tb-coaches" onclick="switchTab('coaches')">🧑‍🏫 Coaches</button>
+      <button class="tab-btn" id="tb-avisos" onclick="switchTab('avisos')">📢 Avisos</button>
     </div>
 
     <!-- JUGADORES -->
@@ -402,6 +405,62 @@ table.lt td{padding:12px 14px;font-size:13px;color:var(--text);border-top:1px so
         <div id="coaches-content"></div>
       </div>
     </div>
+
+    <!-- AVISOS -->
+    <div class="morosos-section" id="section-avisos" style="display:none">
+      <div class="content-card">
+        <div class="mor-header">
+          <div>
+            <div class="mor-title">📢 Avisos por correo</div>
+            <div class="mor-sub">Manda un correo a coaches y staff, filtrado por categoría</div>
+          </div>
+        </div>
+        <div class="controls" style="padding:0 24px 4px">
+          <input class="search-box" type="text" id="aviso-asunto" placeholder="Asunto" style="flex:2;min-width:220px">
+        </div>
+        <div class="controls" style="padding:0 24px">
+          <textarea id="aviso-mensaje" placeholder="Mensaje..." rows="4" style="flex:1;min-width:260px;padding:10px 14px;border:1px solid var(--border);border-radius:10px;font-family:inherit;font-size:13.5px;resize:vertical"></textarea>
+        </div>
+        <div class="controls" style="padding:0 24px">
+          <select class="filter-select" id="aviso-destinatario" onchange="onAvisoDestinatarioChange()">
+            <option value="infantil">Infantil (U6 a U12)</option>
+            <option value="juvenil">Juvenil (U14 a U18)</option>
+            <option value="ambas">Ambas (Infantil + Juvenil)</option>
+            <option value="categoria">Categoría específica...</option>
+          </select>
+          <select class="filter-select" id="aviso-categoria" style="display:none">
+            <option>U6 (2020-2021)</option>
+            <option>U8 (2018-2019)</option>
+            <option>U10 (2016-2017)</option>
+            <option>U12 Femenil (2014-2015)</option>
+            <option>U12 Varonil (2014-2015)</option>
+            <option>U14 (2012-2013)</option>
+            <option>U16 (2010-2011)</option>
+            <option>U18 (2008-2009)</option>
+            <option>Libre</option>
+            <option>Moms +30</option>
+          </select>
+          <button class="btn-action btn-ghost" onclick="previewAviso()">👀 Ver destinatarios</button>
+          <button class="btn-action" onclick="enviarAviso()" id="btn-enviar-aviso">📧 Enviar aviso</button>
+        </div>
+        <div id="aviso-preview" style="padding:0 24px 20px;font-size:13px;color:var(--gray)"></div>
+      </div>
+
+      <div class="content-card" style="margin-top:20px">
+        <div class="mor-header">
+          <div>
+            <div class="mor-title">Staff</div>
+            <div class="mor-sub">Personas que no son coaches pero siempre reciben los avisos (directivos, administrativos)</div>
+          </div>
+        </div>
+        <div class="controls" style="padding:0 24px">
+          <input class="search-box" type="text" id="staff-nombre" placeholder="Nombre" style="flex:1;min-width:160px">
+          <input class="search-box" type="email" id="staff-email" placeholder="Correo" style="flex:1;min-width:200px">
+          <button class="btn-action" onclick="addStaffAviso()">➕ Agregar</button>
+        </div>
+        <div id="staff-content"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -502,6 +561,7 @@ let pedidosRecords = [];
 let gastosRecords = [];
 let pagosHistorial = [];
 let coachesRecords = [];
+let staffRecords = [];
 let currentId    = null;
 const ESTADO_PAGO_LABEL = { pendiente: 'Pendiente', abono: 'Abono', pagado: 'Pagado' };
 const ESTADO_PAGO_NEXT  = { pendiente: 'abono', abono: 'pagado', pagado: 'pendiente' };
@@ -510,6 +570,8 @@ const ESTADO_SURTIDO_NEXT  = { sin_ordenar: 'ordenado', ordenado: 'entregado', e
 const PRODUCTOS_UNIFORME = new Set(['Jersey Oficial', 'Jersey Blanco', 'Banderas Completas', 'Solo Banderas']);
 const PRODUCTOS_BANDERAS = new Set(['Banderas Completas', 'Solo Banderas']);
 const CATEGORIAS = ['U6 (2020-2021)','U8 (2018-2019)','U10 (2016-2017)','U12 Femenil (2014-2015)','U12 Varonil (2014-2015)','U14 (2012-2013)','U16 (2010-2011)','U18 (2008-2009)','Libre','Moms +30'];
+const CATEGORIAS_INFANTIL = ['U6 (2020-2021)','U8 (2018-2019)','U10 (2016-2017)','U12 Femenil (2014-2015)','U12 Varonil (2014-2015)'];
+const CATEGORIAS_JUVENIL = ['U14 (2012-2013)','U16 (2010-2011)','U18 (2008-2009)'];
 
 // ── AUTH ──
 const AUTH_KEY = 'wolverines_admin_auth';
@@ -560,6 +622,10 @@ async function loadData() {
     if (coachesErr) throw coachesErr;
     coachesRecords = coachesData || [];
 
+    const { data: staffData, error: staffErr } = await sb.rpc('admin_list_staff_avisos', { p_pwd: PWD });
+    if (staffErr) throw staffErr;
+    staffRecords = staffData || [];
+
     updateStats();
     renderTable();
     document.getElementById('loading').style.display = 'none';
@@ -590,7 +656,7 @@ function tieneAtraso(rec) {
 
 // ── TABS ──
 function switchTab(tab) {
-  ['jugadores','pagos','morosos','uniformes','tienda','coaches'].forEach(function(t) {
+  ['jugadores','pagos','morosos','uniformes','tienda','coaches','avisos'].forEach(function(t) {
     var btn = document.getElementById('tb-' + t);
     if (btn) btn.classList.remove('active');
     var sec = document.getElementById('section-' + t);
@@ -606,6 +672,7 @@ function switchTab(tab) {
   if (tab === 'uniformes') renderUniformes();
   if (tab === 'tienda') renderPedidos();
   if (tab === 'coaches') renderCoaches();
+  if (tab === 'avisos') { renderStaffAvisos(); document.getElementById('aviso-preview').innerHTML = ''; }
 }
 
 // ── LIST (jugadores) ──
@@ -1492,8 +1559,14 @@ function renderCoaches() {
     if (c.seguro_medico_url) docsHtml += '<a href="' + c.seguro_medico_url + '" target="_blank" class="doc-link" title="Seguro">🏥</a>';
 
     var nombreEsc = ((c.nombre||'') + ' ' + (c.apellidos||'')).replace(/'/g,'');
+    var categorias = c.categorias || [];
 
-    html += '<div class="p-row" style="cursor:default">' +
+    var chipsHtml = CATEGORIAS.map(function(cat) {
+      var on = categorias.indexOf(cat) !== -1;
+      return '<span class="badge badge-toggle' + (on ? ' on' : '') + '" onclick="toggleCoachCategoria(\'' + c.id + '\',\'' + cat.replace(/'/g,"\\'") + '\')">' + cat + '</span>';
+    }).join('');
+
+    html += '<div class="p-row" style="cursor:default;flex-wrap:wrap">' +
       avatarHtml +
       '<div class="p-info">' +
         '<div class="p-name">' + (c.nombre||'') + ' ' + (c.apellidos||'') + '</div>' +
@@ -1504,6 +1577,7 @@ function renderCoaches() {
         '<button class="icon-btn icon-cred" title="Credencial" onclick="openCredCoach(\'' + c.id + '\')">🎫</button>' +
         '<button class="icon-btn icon-del" title="Eliminar" onclick="deleteCoach(\'' + c.id + '\',\'' + nombreEsc + '\')">🗑</button>' +
       '</div>' +
+      '<div class="p-badges" style="width:100%;margin-top:8px">' + chipsHtml + '</div>' +
     '</div>';
   });
   container.innerHTML = '<div class="list-wrap">' + html + '</div>';
@@ -1517,6 +1591,138 @@ async function deleteCoach(id, nombre) {
     coachesRecords = coachesRecords.filter(function(c) { return c.id !== id; });
     renderCoaches();
   } catch(e) { alert('❌ Error: ' + e.message); }
+}
+
+async function toggleCoachCategoria(id, categoria) {
+  var coach = coachesRecords.find(function(c) { return c.id === id; });
+  if (!coach) return;
+  var categorias = (coach.categorias || []).slice();
+  var idx = categorias.indexOf(categoria);
+  if (idx === -1) categorias.push(categoria); else categorias.splice(idx, 1);
+  coach.categorias = categorias;
+  renderCoaches();
+  try {
+    var { error } = await sb.rpc('admin_update_coach_categorias', { p_pwd: PWD, p_id: id, p_categorias: categorias });
+    if (error) throw error;
+  } catch(e) { alert('❌ Error: ' + e.message); }
+}
+
+// ── AVISOS ──
+function renderStaffAvisos() {
+  var container = document.getElementById('staff-content');
+  if (!staffRecords.length) { container.innerHTML = '<div class="empty">Aún no hay staff agregado.</div>'; return; }
+  var html = staffRecords.map(function(s) {
+    return '<div class="p-row" style="cursor:default">' +
+      '<div class="p-avatar-ph">👤</div>' +
+      '<div class="p-info"><div class="p-name">' + s.nombre + '</div><div class="p-sub">' + s.email + '</div></div>' +
+      '<div class="p-actions"><button class="icon-btn icon-del" title="Eliminar" onclick="deleteStaffAviso(\'' + s.id + '\')">🗑</button></div>' +
+    '</div>';
+  }).join('');
+  container.innerHTML = '<div class="list-wrap">' + html + '</div>';
+}
+
+async function addStaffAviso() {
+  var nombre = document.getElementById('staff-nombre').value.trim();
+  var email = document.getElementById('staff-email').value.trim();
+  if (!nombre || !email) { alert('Falta nombre o correo.'); return; }
+  try {
+    var { data, error } = await sb.rpc('admin_add_staff_aviso', { p_pwd: PWD, p_nombre: nombre, p_email: email });
+    if (error) throw error;
+    staffRecords.push(data);
+    document.getElementById('staff-nombre').value = '';
+    document.getElementById('staff-email').value = '';
+    renderStaffAvisos();
+  } catch(e) { alert('❌ Error: ' + e.message); }
+}
+
+async function deleteStaffAviso(id) {
+  if (!confirm('¿Eliminar de la lista de staff?')) return;
+  try {
+    var { error } = await sb.rpc('admin_delete_staff_aviso', { p_pwd: PWD, p_id: id });
+    if (error) throw error;
+    staffRecords = staffRecords.filter(function(s) { return s.id !== id; });
+    renderStaffAvisos();
+  } catch(e) { alert('❌ Error: ' + e.message); }
+}
+
+function onAvisoDestinatarioChange() {
+  var tipo = document.getElementById('aviso-destinatario').value;
+  document.getElementById('aviso-categoria').style.display = tipo === 'categoria' ? '' : 'none';
+}
+
+function categoriasDelAviso() {
+  var tipo = document.getElementById('aviso-destinatario').value;
+  if (tipo === 'infantil') return CATEGORIAS_INFANTIL;
+  if (tipo === 'juvenil') return CATEGORIAS_JUVENIL;
+  if (tipo === 'ambas') return CATEGORIAS_INFANTIL.concat(CATEGORIAS_JUVENIL);
+  return [document.getElementById('aviso-categoria').value];
+}
+
+function destinatariosAviso() {
+  var categorias = categoriasDelAviso();
+  var coachesMatch = coachesRecords.filter(function(c) {
+    return (c.categorias || []).some(function(cat) { return categorias.indexOf(cat) !== -1; });
+  });
+  var vistos = {};
+  var destinatarios = [];
+  coachesMatch.concat(staffRecords).forEach(function(p) {
+    if (!p.email || vistos[p.email]) return;
+    vistos[p.email] = true;
+    destinatarios.push({ nombre: p.nombre, email: p.email, esStaff: staffRecords.indexOf(p) !== -1 });
+  });
+  return { categorias: categorias, destinatarios: destinatarios };
+}
+
+function previewAviso() {
+  var r = destinatariosAviso();
+  var box = document.getElementById('aviso-preview');
+  if (!r.destinatarios.length) {
+    box.innerHTML = '⚠️ No hay coaches asignados a esa(s) categoría(s) ni staff registrado. Nadie recibiría este aviso.';
+    return;
+  }
+  box.innerHTML = '📬 Va a llegar a ' + r.destinatarios.length + ' persona(s): ' +
+    r.destinatarios.map(function(d) { return d.nombre + (d.esStaff ? ' (staff)' : ' (coach)'); }).join(', ');
+}
+
+async function enviarAviso() {
+  var asunto = document.getElementById('aviso-asunto').value.trim();
+  var mensaje = document.getElementById('aviso-mensaje').value.trim();
+  if (!asunto || !mensaje) { alert('Falta el asunto o el mensaje.'); return; }
+
+  var r = destinatariosAviso();
+  if (!r.destinatarios.length) { alert('No hay destinatarios para esa selección — revisa las categorías de los coaches o agrega staff.'); return; }
+
+  if (!confirm('¿Enviar este aviso a ' + r.destinatarios.length + ' persona(s)?')) return;
+
+  var btn = document.getElementById('btn-enviar-aviso');
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+
+  var ok = 0, fallos = [];
+  for (var i = 0; i < r.destinatarios.length; i++) {
+    var d = r.destinatarios[i];
+    try {
+      var resp = await fetch('https://xaawoqyjavqcybafirri.supabase.co/functions/v1/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + SUPABASE_ANON_KEY },
+        body: JSON.stringify({
+          tipo: 'aviso',
+          to: d.email,
+          data: { nombre: d.nombre, asunto: asunto, mensaje: mensaje, categorias_label: r.categorias.join(', ') }
+        })
+      });
+      var result = await resp.json();
+      if (result.ok) ok++; else fallos.push(d.nombre);
+    } catch(e) { fallos.push(d.nombre); }
+  }
+
+  btn.disabled = false;
+  btn.textContent = '📧 Enviar aviso';
+  document.getElementById('aviso-preview').innerHTML = '✅ Enviado a ' + ok + ' persona(s).' + (fallos.length ? ' ❌ Falló con: ' + fallos.join(', ') : '');
+  if (ok > 0) {
+    document.getElementById('aviso-asunto').value = '';
+    document.getElementById('aviso-mensaje').value = '';
+  }
 }
 
 function exportJugadores() {
