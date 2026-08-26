@@ -210,6 +210,7 @@ table.lt td{padding:12px 14px;font-size:13px;color:var(--text);border-top:1px so
 .roster-print-sub{font-size:12px;color:#555;margin-bottom:16px}
 .roster-print-table{width:100%;border-collapse:collapse;font-size:12px}
 .roster-print-table th,.roster-print-table td{border:1px solid #ccc;padding:6px 8px;text-align:left}
+.roster-print-foto{width:36px;height:36px;border-radius:50%;object-fit:cover;display:block}
 .roster-print-table thead{display:table-header-group}
 .roster-print-table tr{page-break-inside:avoid}
 @media print{
@@ -1806,14 +1807,22 @@ function printRoster() {
   var catFiltro = document.getElementById('cat-filter').value || 'Todas las categorías';
   var rowsHtml = recs.map(function(r, i) {
     var f = r.fields;
-    return '<tr><td>' + (i + 1) + '</td><td>' + (f['Nombre'] || '') + ' ' + (f['Apellidos'] || '') + '</td>' +
+    var fotoHtml = f['Foto'] ? '<img src="' + f['Foto'] + '" class="roster-print-foto">' : '';
+    return '<tr><td>' + (i + 1) + '</td><td>' + fotoHtml + '</td><td>' + (f['Nombre'] || '') + ' ' + (f['Apellidos'] || '') + '</td>' +
       '<td>' + (f['Categoría'] || '') + '</td><td>' + (f['Número Jugador'] || '—') + '</td><td>' + (f['Género'] || '') + '</td></tr>';
   }).join('');
   document.getElementById('roster-print').innerHTML =
     '<h1>Wolverines TRC · Roster</h1>' +
     '<div class="roster-print-sub">' + catFiltro + ' · ' + recs.length + ' jugador(es) · ' + new Date().toLocaleDateString('es-MX') + '</div>' +
-    '<table class="roster-print-table"><thead><tr><th>#</th><th>Nombre</th><th>Categoría</th><th>Número</th><th>Género</th></tr></thead><tbody>' + rowsHtml + '</tbody></table>';
-  window.print();
+    '<table class="roster-print-table"><thead><tr><th>#</th><th>Foto</th><th>Nombre</th><th>Categoría</th><th>Número</th><th>Género</th></tr></thead><tbody>' + rowsHtml + '</tbody></table>';
+
+  var imgs = document.querySelectorAll('#roster-print img');
+  var espera = Array.prototype.map.call(imgs, function(img) {
+    if (img.complete) return Promise.resolve();
+    return new Promise(function(resolve) { img.onload = img.onerror = resolve; });
+  });
+  Promise.race([Promise.all(espera), new Promise(function(resolve) { setTimeout(resolve, 3000); })])
+    .then(function() { window.print(); });
 }
 
 function exportJugadores() {
