@@ -209,10 +209,12 @@ table.lt td{padding:12px 14px;font-size:13px;color:var(--text);border-top:1px so
 .roster-print-foto{width:36px;height:36px;border-radius:50%;object-fit:cover;display:block}
 .roster-print-table thead{display:table-header-group}
 .roster-print-table tr{page-break-inside:avoid}
+.roster-print-staff{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:14px}
+.roster-print-staff-item{display:flex;align-items:center;gap:8px;font-size:12px}
+.roster-print-staff-item b{display:block;font-size:13px}
 @media print{
-  body *{visibility:hidden}
-  #roster-print,#roster-print *{visibility:visible}
-  #roster-print{display:block;position:absolute;top:0;left:0;width:100%}
+  body > *:not(#roster-print){display:none!important}
+  #roster-print{display:block!important}
 }
 </style>
 </head>
@@ -1859,12 +1861,21 @@ function printRosterEquipo(rosterId) {
   if (!miembros.length) { alert('Este roster no tiene jugadores todavía.'); return; }
 
   var coachesDeRoster = rosterCoachesRecords.filter(function(c) { return c.roster_id === rosterId; });
-  function nombreCoachPorRol(rol) {
+  function coachPorId(id) { return coachesRecords.find(function(cc) { return cc.id === id; }); }
+  function staffItemHtml(rol, etiqueta) {
     var row = coachesDeRoster.find(function(c) { return c.rol === rol; });
-    return row ? nombreCoachPorId(row.coach_id) : '—';
+    if (!row) return '<div class="roster-print-staff-item">' + etiqueta + ': —</div>';
+    var c = coachPorId(row.coach_id);
+    if (!c) return '<div class="roster-print-staff-item">' + etiqueta + ': —</div>';
+    var fotoHtml = c.foto_url ? '<img src="' + c.foto_url + '" class="roster-print-foto">' : '';
+    return '<div class="roster-print-staff-item">' + fotoHtml + '<div>' + etiqueta + '<br><b>' + c.nombre + ' ' + (c.apellidos || '') + '</b></div></div>';
   }
-  var asistentesNombres = coachesDeRoster.filter(function(c) { return c.rol === 'Asistente'; })
-    .map(function(c) { return nombreCoachPorId(c.coach_id); }).join(', ') || '—';
+  var asistentesHtml = coachesDeRoster.filter(function(c) { return c.rol === 'Asistente'; }).map(function(c) {
+    var cc = coachPorId(c.coach_id);
+    if (!cc) return '';
+    var fotoHtml = cc.foto_url ? '<img src="' + cc.foto_url + '" class="roster-print-foto">' : '';
+    return '<div class="roster-print-staff-item">' + fotoHtml + '<div>Asistente<br><b>' + cc.nombre + ' ' + (cc.apellidos || '') + '</b></div></div>';
+  }).join('');
 
   var rowsHtml = miembros.map(function(r, i) {
     var f = r.fields;
@@ -1875,9 +1886,12 @@ function printRosterEquipo(rosterId) {
 
   document.getElementById('roster-print').innerHTML =
     '<h1>Wolverines TRC · ' + ros.nombre + '</h1>' +
-    '<div class="roster-print-sub">HC: ' + nombreCoachPorRol('HC') + ' · Playcaller: ' + nombreCoachPorRol('Playcaller') + ' · Asistentes: ' + asistentesNombres + '</div>' +
+    '<div class="roster-print-staff">' + staffItemHtml('HC', 'HC') + staffItemHtml('Playcaller', 'Playcaller') + asistentesHtml + '</div>' +
     '<div class="roster-print-sub">' + miembros.length + ' jugador(es) · ' + new Date().toLocaleDateString('es-MX') + '</div>' +
     '<table class="roster-print-table"><thead><tr><th>#</th><th>Foto</th><th>Nombre</th><th>Categoría</th><th>Número</th><th>Género</th></tr></thead><tbody>' + rowsHtml + '</tbody></table>';
+
+  var tituloOriginal = document.title;
+  document.title = 'Roster ' + ros.nombre;
 
   var imgs = document.querySelectorAll('#roster-print img');
   var espera = Array.prototype.map.call(imgs, function(img) {
@@ -1885,7 +1899,13 @@ function printRosterEquipo(rosterId) {
     return new Promise(function(resolve) { img.onload = img.onerror = resolve; });
   });
   Promise.race([Promise.all(espera), new Promise(function(resolve) { setTimeout(resolve, 3000); })])
-    .then(function() { window.print(); });
+    .then(function() {
+      window.addEventListener('afterprint', function restaurarTitulo() {
+        document.title = tituloOriginal;
+        window.removeEventListener('afterprint', restaurarTitulo);
+      });
+      window.print();
+    });
 }
 
 function onAvisoDestinatarioChange() {
@@ -2021,13 +2041,22 @@ function printRoster() {
     '<div class="roster-print-sub">' + catFiltro + ' · ' + recs.length + ' jugador(es) · ' + new Date().toLocaleDateString('es-MX') + '</div>' +
     '<table class="roster-print-table"><thead><tr><th>#</th><th>Foto</th><th>Nombre</th><th>Categoría</th><th>Número</th><th>Género</th></tr></thead><tbody>' + rowsHtml + '</tbody></table>';
 
+  var tituloOriginal = document.title;
+  document.title = 'Roster ' + catFiltro;
+
   var imgs = document.querySelectorAll('#roster-print img');
   var espera = Array.prototype.map.call(imgs, function(img) {
     if (img.complete) return Promise.resolve();
     return new Promise(function(resolve) { img.onload = img.onerror = resolve; });
   });
   Promise.race([Promise.all(espera), new Promise(function(resolve) { setTimeout(resolve, 3000); })])
-    .then(function() { window.print(); });
+    .then(function() {
+      window.addEventListener('afterprint', function restaurarTitulo() {
+        document.title = tituloOriginal;
+        window.removeEventListener('afterprint', restaurarTitulo);
+      });
+      window.print();
+    });
 }
 
 function exportJugadores() {
