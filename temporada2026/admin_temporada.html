@@ -97,10 +97,6 @@ header{background:var(--navy);padding:18px 28px;display:flex;align-items:center;
 .badge-warn{background:var(--red-lt);color:var(--red)}
 .badge-num{background:var(--bg);color:var(--text);border:1.5px solid var(--border)}
 .badge-num.sin{color:var(--gray-lt);border-style:dashed}
-.cat-dd-btn{margin-bottom:0}
-.cat-dd-panel{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--card);border:1.5px solid var(--border);border-radius:9px;box-shadow:0 8px 24px rgba(16,31,61,0.14);padding:6px;z-index:20;max-height:220px;overflow-y:auto}
-.cat-dd-item{display:flex;align-items:center;gap:8px;font-size:13px;padding:7px 8px;border-radius:6px;cursor:pointer}
-.cat-dd-item:hover{background:var(--bg)}
 .p-months{display:flex;gap:4px}
 .m-dot{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;cursor:pointer;user-select:none;transition:transform .1s}
 .m-dot:hover{transform:scale(1.1)}
@@ -262,6 +258,7 @@ table.lt td{padding:12px 14px;font-size:13px;color:var(--text);border-top:1px so
       <button class="tab-btn" id="tb-tienda" onclick="switchTab('tienda')">📋 Historial de Pedidos</button>
       <button class="tab-btn" id="tb-coaches" onclick="switchTab('coaches')">🧑‍🏫 Coaches</button>
       <button class="tab-btn" id="tb-avisos" onclick="switchTab('avisos')">📢 Avisos</button>
+      <button class="tab-btn" id="tb-rosters" onclick="switchTab('rosters')">🗂️ Rosters</button>
     </div>
 
     <!-- JUGADORES -->
@@ -412,7 +409,7 @@ table.lt td{padding:12px 14px;font-size:13px;color:var(--text);border-top:1px so
         <div class="mor-header">
           <div>
             <div class="mor-title">Coaches registrados</div>
-            <div class="mor-sub">Registro de coaches (sin mensualidades ni uniforme)</div>
+            <div class="mor-sub">Información de contacto y documentos — para asignarlos a un equipo/categoría, ve a la pestaña Rosters</div>
           </div>
           <button class="btn-action btn-ghost" onclick="exportCoaches()">📥 Exportar Excel</button>
         </div>
@@ -479,6 +476,23 @@ table.lt td{padding:12px 14px;font-size:13px;color:var(--text);border-top:1px so
         </div>
         <div id="staff-content"></div>
       </div>
+    </div>
+
+    <!-- ROSTERS -->
+    <div class="morosos-section" id="section-rosters" style="display:none">
+      <div class="content-card">
+        <div class="mor-header">
+          <div>
+            <div class="mor-title">🗂️ Rosters</div>
+            <div class="mor-sub">Arma los equipos de la temporada: jugadores + HC, Playcaller y asistentes</div>
+          </div>
+        </div>
+        <div class="controls" style="padding:0 24px 20px">
+          <input class="search-box" type="text" id="roster-nuevo-nombre" placeholder="Nombre del roster (ej. U15 Femenil)" style="flex:1;min-width:220px">
+          <button class="btn-action" onclick="crearRoster()">➕ Crear roster</button>
+        </div>
+      </div>
+      <div id="rosters-content"></div>
     </div>
   </div>
 </div>
@@ -584,6 +598,9 @@ let gastosRecords = [];
 let pagosHistorial = [];
 let coachesRecords = [];
 let staffRecords = [];
+let rostersRecords = [];
+let rosterMiembrosRecords = [];
+let rosterCoachesRecords = [];
 let currentId    = null;
 const ESTADO_PAGO_LABEL = { pendiente: 'Pendiente', abono: 'Abono', pagado: 'Pagado' };
 const ESTADO_PAGO_NEXT  = { pendiente: 'abono', abono: 'pagado', pagado: 'pendiente' };
@@ -648,6 +665,18 @@ async function loadData() {
     if (staffErr) throw staffErr;
     staffRecords = staffData || [];
 
+    const { data: rostersData, error: rostersErr } = await sb.rpc('admin_list_rosters', { p_pwd: PWD });
+    if (rostersErr) throw rostersErr;
+    rostersRecords = rostersData || [];
+
+    const { data: rmData, error: rmErr } = await sb.rpc('admin_list_roster_miembros', { p_pwd: PWD });
+    if (rmErr) throw rmErr;
+    rosterMiembrosRecords = rmData || [];
+
+    const { data: rcData, error: rcErr } = await sb.rpc('admin_list_roster_coaches', { p_pwd: PWD });
+    if (rcErr) throw rcErr;
+    rosterCoachesRecords = rcData || [];
+
     updateStats();
     renderTable();
     document.getElementById('loading').style.display = 'none';
@@ -678,7 +707,7 @@ function tieneAtraso(rec) {
 
 // ── TABS ──
 function switchTab(tab) {
-  ['jugadores','pagos','morosos','uniformes','tienda','coaches','avisos'].forEach(function(t) {
+  ['jugadores','pagos','morosos','uniformes','tienda','coaches','avisos','rosters'].forEach(function(t) {
     var btn = document.getElementById('tb-' + t);
     if (btn) btn.classList.remove('active');
     var sec = document.getElementById('section-' + t);
@@ -695,6 +724,7 @@ function switchTab(tab) {
   if (tab === 'tienda') renderPedidos();
   if (tab === 'coaches') renderCoaches();
   if (tab === 'avisos') { renderStaffAvisos(); document.getElementById('aviso-preview').innerHTML = ''; }
+  if (tab === 'rosters') renderRosters();
 }
 
 // ── LIST (jugadores) ──
@@ -1583,12 +1613,12 @@ function renderCoaches() {
     if (c.seguro_medico_url) docsHtml += '<a href="' + c.seguro_medico_url + '" target="_blank" class="doc-link" title="Seguro">🏥</a>';
 
     var nombreEsc = ((c.nombre||'') + ' ' + (c.apellidos||'')).replace(/'/g,'');
-    var categorias = c.categorias || [];
 
-    var checkboxesHtml = CATEGORIAS.map(function(cat) {
-      var checked = categorias.indexOf(cat) !== -1 ? ' checked' : '';
-      return '<label class="cat-dd-item"><input type="checkbox" value="' + cat + '"' + checked + ' onchange="onCoachCategoriaCheck(\'' + c.id + '\', this)"> ' + cat + '</label>';
-    }).join('');
+    var rosterBadges = rosterCoachesRecords.filter(function(rc) { return rc.coach_id === c.id; }).map(function(rc) {
+      var ros = rostersRecords.find(function(r) { return r.id === rc.roster_id; });
+      if (!ros) return '';
+      return '<span class="badge badge-cat">' + ros.nombre + ' · ' + rc.rol + '</span>';
+    }).join(' ') || '<span style="font-size:12px;color:var(--gray-lt)">Sin roster asignado</span>';
 
     html += '<div class="p-row" style="cursor:default;flex-wrap:wrap">' +
       avatarHtml +
@@ -1601,13 +1631,7 @@ function renderCoaches() {
         '<button class="icon-btn icon-cred" title="Credencial" onclick="openCredCoach(\'' + c.id + '\')">🎫</button>' +
         '<button class="icon-btn icon-del" title="Eliminar" onclick="deleteCoach(\'' + c.id + '\',\'' + nombreEsc + '\')">🗑</button>' +
       '</div>' +
-      '<div style="width:100%;margin-top:8px;position:relative" class="cat-dd">' +
-        '<div style="font-size:11px;color:var(--gray);margin-bottom:4px">Categorías que entrena:</div>' +
-        '<button type="button" class="d-select cat-dd-btn" onclick="toggleCatDropdown(this)" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;text-align:left">' +
-          '<span class="cat-dd-label">' + catLabel(categorias) + '</span><span>▾</span>' +
-        '</button>' +
-        '<div class="cat-dd-panel" style="display:none">' + checkboxesHtml + '</div>' +
-      '</div>' +
+      '<div class="p-badges" style="width:100%;margin-top:8px">' + rosterBadges + '</div>' +
     '</div>';
   });
   container.innerHTML = '<div class="list-wrap">' + html + '</div>';
@@ -1620,41 +1644,6 @@ async function deleteCoach(id, nombre) {
     if (error) throw error;
     coachesRecords = coachesRecords.filter(function(c) { return c.id !== id; });
     renderCoaches();
-  } catch(e) { alert('❌ Error: ' + e.message); }
-}
-
-function catLabel(categorias) {
-  if (!categorias.length) return '— Ninguna —';
-  if (categorias.length <= 2) return categorias.join(', ');
-  return categorias.length + ' categorías';
-}
-
-function toggleCatDropdown(btn) {
-  var panel = btn.nextElementSibling;
-  var wasOpen = panel.style.display !== 'none';
-  document.querySelectorAll('.cat-dd-panel').forEach(function(p) { p.style.display = 'none'; });
-  panel.style.display = wasOpen ? 'none' : 'block';
-}
-
-document.addEventListener('click', function(e) {
-  if (!e.target.closest('.cat-dd')) {
-    document.querySelectorAll('.cat-dd-panel').forEach(function(p) { p.style.display = 'none'; });
-  }
-});
-
-async function onCoachCategoriaCheck(id, checkboxEl) {
-  var panel = checkboxEl.closest('.cat-dd-panel');
-  var categorias = Array.prototype.filter.call(panel.querySelectorAll('input[type=checkbox]'), function(cb) { return cb.checked; })
-    .map(function(cb) { return cb.value; });
-
-  var btn = panel.previousElementSibling;
-  btn.querySelector('.cat-dd-label').textContent = catLabel(categorias);
-
-  var coach = coachesRecords.find(function(c) { return c.id === id; });
-  if (coach) coach.categorias = categorias;
-  try {
-    var { error } = await sb.rpc('admin_update_coach_categorias', { p_pwd: PWD, p_id: id, p_categorias: categorias });
-    if (error) throw error;
   } catch(e) { alert('❌ Error: ' + e.message); }
 }
 
@@ -1696,6 +1685,209 @@ async function deleteStaffAviso(id) {
   } catch(e) { alert('❌ Error: ' + e.message); }
 }
 
+// ── ROSTERS ──
+function coachSelectHtml(selectedId) {
+  return '<option value="">—</option>' + coachesRecords.map(function(c) {
+    return '<option value="' + c.id + '"' + (c.id === selectedId ? ' selected' : '') + '>' + c.nombre + ' ' + (c.apellidos || '') + '</option>';
+  }).join('');
+}
+
+function nombreCoachPorId(id) {
+  var c = coachesRecords.find(function(cc) { return cc.id === id; });
+  return c ? (c.nombre + ' ' + (c.apellidos || '')).trim() : '';
+}
+
+function renderRosters() {
+  var container = document.getElementById('rosters-content');
+  if (!rostersRecords.length) { container.innerHTML = '<div class="empty">Aún no hay rosters. Créalo arriba.</div>'; return; }
+
+  var jugadorOptionsHtml = '<option value="">+ Agregar jugador individual...</option>' + allRecords.slice()
+    .sort(function(a, b) { return (a.fields['Nombre'] || '').localeCompare(b.fields['Nombre'] || ''); })
+    .map(function(r) { return '<option value="' + r.id + '">' + r.fields['Nombre'] + ' ' + r.fields['Apellidos'] + ' (' + (r.fields['Categoría'] || '') + ')</option>'; })
+    .join('');
+
+  var html = rostersRecords.map(function(ros) {
+    var miembrosIds = rosterMiembrosRecords.filter(function(m) { return m.roster_id === ros.id; }).map(function(m) { return m.jugador_id; });
+    var miembros = allRecords.filter(function(r) { return miembrosIds.indexOf(r.id) !== -1; })
+      .sort(function(a, b) { return (a.fields['Nombre'] || '').localeCompare(b.fields['Nombre'] || ''); });
+
+    var coachesDeRoster = rosterCoachesRecords.filter(function(c) { return c.roster_id === ros.id; });
+    var hc = coachesDeRoster.find(function(c) { return c.rol === 'HC'; });
+    var pc = coachesDeRoster.find(function(c) { return c.rol === 'Playcaller'; });
+    var asistentes = coachesDeRoster.filter(function(c) { return c.rol === 'Asistente'; });
+
+    var asistentesHtml = asistentes.map(function(a) {
+      return '<span class="badge badge-cat">' + nombreCoachPorId(a.coach_id) +
+        ' <span style="cursor:pointer" onclick="quitarRosterCoach(\'' + ros.id + '\',\'' + a.coach_id + '\')">✕</span></span>';
+    }).join(' ') || '<span style="font-size:12px;color:var(--gray-lt)">Sin asistentes</span>';
+
+    var asistenteAddOptions = '<option value="">+ Agregar asistente...</option>' + coachesRecords
+      .filter(function(c) { return !asistentes.some(function(a) { return a.coach_id === c.id; }); })
+      .map(function(c) { return '<option value="' + c.id + '">' + c.nombre + ' ' + (c.apellidos || '') + '</option>'; }).join('');
+
+    var miembrosHtml = miembros.map(function(m) {
+      var f = m.fields;
+      var avatarHtml = f['Foto'] ? '<img src="' + f['Foto'] + '" class="p-avatar">' : '<div class="p-avatar-ph">👤</div>';
+      return '<div class="p-row" style="cursor:default">' + avatarHtml +
+        '<div class="p-info"><div class="p-name">' + f['Nombre'] + ' ' + f['Apellidos'] + '</div>' +
+        '<div class="p-sub">' + (f['Categoría'] || '') + (f['Número Jugador'] ? ' · #' + f['Número Jugador'] : '') + '</div></div>' +
+        '<button class="icon-btn icon-del" title="Quitar del roster" onclick="quitarRosterMiembro(\'' + ros.id + '\',\'' + m.id + '\')">🗑</button>' +
+      '</div>';
+    }).join('') || '<div class="empty">Sin jugadores todavía.</div>';
+
+    return '<div class="content-card" style="margin-top:16px">' +
+      '<div class="mor-header"><div><div class="mor-title">' + ros.nombre + '</div><div class="mor-sub">' + miembros.length + ' jugador(es)</div></div>' +
+        '<div style="display:flex;gap:8px">' +
+          '<button class="btn-action btn-ghost" onclick="printRosterEquipo(\'' + ros.id + '\')">🖨️ Imprimir</button>' +
+          '<button class="icon-btn icon-del" title="Eliminar roster" onclick="eliminarRoster(\'' + ros.id + '\',\'' + ros.nombre.replace(/'/g,'') + '\')">🗑</button>' +
+        '</div>' +
+      '</div>' +
+      '<div style="padding:0 24px 16px">' +
+        '<div class="d-label">Coaching Staff</div>' +
+        '<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;font-size:12.5px">' +
+          '<div>HC<br><select class="d-select" style="margin:0" onchange="asignarRosterCoach(\'' + ros.id + '\',\'HC\',this.value)">' + coachSelectHtml(hc ? hc.coach_id : null) + '</select></div>' +
+          '<div>Playcaller<br><select class="d-select" style="margin:0" onchange="asignarRosterCoach(\'' + ros.id + '\',\'Playcaller\',this.value)">' + coachSelectHtml(pc ? pc.coach_id : null) + '</select></div>' +
+        '</div>' +
+        '<div style="margin-top:10px">Asistentes<br>' +
+          '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:4px">' + asistentesHtml + '</div>' +
+          '<select class="d-select" style="margin-top:6px;max-width:280px" onchange="asignarRosterCoach(\'' + ros.id + '\',\'Asistente\',this.value);this.value=\'\'">' + asistenteAddOptions + '</select>' +
+        '</div>' +
+      '</div>' +
+      '<div class="controls" style="padding:0 24px">' +
+        '<input type="number" placeholder="Año min" id="roster-anio-min-' + ros.id + '" class="search-box" style="max-width:100px">' +
+        '<input type="number" placeholder="Año max" id="roster-anio-max-' + ros.id + '" class="search-box" style="max-width:100px">' +
+        '<select class="filter-select" id="roster-genero-' + ros.id + '"><option value="">Ambos géneros</option><option value="Femenino">Femenino</option><option value="Masculino">Masculino</option></select>' +
+        '<button class="btn-action btn-ghost" onclick="bulkAddRoster(\'' + ros.id + '\')">➕ Agregar por año</button>' +
+        '<select class="filter-select" onchange="agregarRosterMiembro(\'' + ros.id + '\', this.value);this.value=\'\'">' + jugadorOptionsHtml + '</select>' +
+      '</div>' +
+      '<div class="list-wrap">' + miembrosHtml + '</div>' +
+    '</div>';
+  }).join('');
+
+  container.innerHTML = html;
+}
+
+async function crearRoster() {
+  var nombre = document.getElementById('roster-nuevo-nombre').value.trim();
+  if (!nombre) { alert('Ponle un nombre al roster.'); return; }
+  try {
+    var { data, error } = await sb.rpc('admin_create_roster', { p_pwd: PWD, p_nombre: nombre });
+    if (error) throw error;
+    rostersRecords.push(data);
+    document.getElementById('roster-nuevo-nombre').value = '';
+    renderRosters();
+  } catch(e) { alert('❌ Error: ' + e.message); }
+}
+
+async function eliminarRoster(id, nombre) {
+  if (!confirm('¿Eliminar el roster "' + nombre + '"?\n\nEsto no borra a los jugadores ni coaches, solo el roster.')) return;
+  try {
+    var { error } = await sb.rpc('admin_delete_roster', { p_pwd: PWD, p_id: id });
+    if (error) throw error;
+    rostersRecords = rostersRecords.filter(function(r) { return r.id !== id; });
+    rosterMiembrosRecords = rosterMiembrosRecords.filter(function(m) { return m.roster_id !== id; });
+    rosterCoachesRecords = rosterCoachesRecords.filter(function(c) { return c.roster_id !== id; });
+    renderRosters();
+  } catch(e) { alert('❌ Error: ' + e.message); }
+}
+
+async function agregarRosterMiembro(rosterId, jugadorId) {
+  if (!jugadorId) return;
+  try {
+    var { error } = await sb.rpc('admin_add_roster_miembro', { p_pwd: PWD, p_roster_id: rosterId, p_jugador_id: jugadorId });
+    if (error) throw error;
+    rosterMiembrosRecords.push({ roster_id: rosterId, jugador_id: jugadorId });
+    renderRosters();
+  } catch(e) { alert('❌ Error: ' + e.message); }
+}
+
+async function quitarRosterMiembro(rosterId, jugadorId) {
+  try {
+    var { error } = await sb.rpc('admin_remove_roster_miembro', { p_pwd: PWD, p_roster_id: rosterId, p_jugador_id: jugadorId });
+    if (error) throw error;
+    rosterMiembrosRecords = rosterMiembrosRecords.filter(function(m) { return !(m.roster_id === rosterId && m.jugador_id === jugadorId); });
+    renderRosters();
+  } catch(e) { alert('❌ Error: ' + e.message); }
+}
+
+async function bulkAddRoster(rosterId) {
+  var min = parseInt(document.getElementById('roster-anio-min-' + rosterId).value, 10);
+  var max = parseInt(document.getElementById('roster-anio-max-' + rosterId).value, 10);
+  var genero = document.getElementById('roster-genero-' + rosterId).value || null;
+  if (!min || !max) { alert('Pon año mínimo y máximo de nacimiento.'); return; }
+  try {
+    var { data, error } = await sb.rpc('admin_bulk_add_roster_por_anio', { p_pwd: PWD, p_roster_id: rosterId, p_anio_min: min, p_anio_max: max, p_genero: genero });
+    if (error) throw error;
+    var { data: rmData, error: rmErr } = await sb.rpc('admin_list_roster_miembros', { p_pwd: PWD });
+    if (rmErr) throw rmErr;
+    rosterMiembrosRecords = rmData || [];
+    renderRosters();
+    alert('✅ Se agregaron ' + data + ' jugador(es) nuevo(s) al roster.');
+  } catch(e) { alert('❌ Error: ' + e.message); }
+}
+
+async function asignarRosterCoach(rosterId, rol, coachId) {
+  if (!coachId) {
+    var actual = rosterCoachesRecords.find(function(c) { return c.roster_id === rosterId && c.rol === rol; });
+    if (actual) await quitarRosterCoach(rosterId, actual.coach_id);
+    return;
+  }
+  try {
+    var { error } = await sb.rpc('admin_set_roster_coach', { p_pwd: PWD, p_roster_id: rosterId, p_coach_id: coachId, p_rol: rol });
+    if (error) throw error;
+    rosterCoachesRecords = rosterCoachesRecords.filter(function(c) { return !(c.roster_id === rosterId && (c.coach_id === coachId || c.rol === rol)); });
+    rosterCoachesRecords.push({ roster_id: rosterId, coach_id: coachId, rol: rol });
+    renderRosters();
+  } catch(e) { alert('❌ Error: ' + e.message); }
+}
+
+async function quitarRosterCoach(rosterId, coachId) {
+  try {
+    var { error } = await sb.rpc('admin_remove_roster_coach', { p_pwd: PWD, p_roster_id: rosterId, p_coach_id: coachId });
+    if (error) throw error;
+    rosterCoachesRecords = rosterCoachesRecords.filter(function(c) { return !(c.roster_id === rosterId && c.coach_id === coachId); });
+    renderRosters();
+  } catch(e) { alert('❌ Error: ' + e.message); }
+}
+
+function printRosterEquipo(rosterId) {
+  var ros = rostersRecords.find(function(r) { return r.id === rosterId; });
+  if (!ros) return;
+  var miembrosIds = rosterMiembrosRecords.filter(function(m) { return m.roster_id === rosterId; }).map(function(m) { return m.jugador_id; });
+  var miembros = allRecords.filter(function(r) { return miembrosIds.indexOf(r.id) !== -1; })
+    .sort(function(a, b) { return (a.fields['Nombre'] || '').localeCompare(b.fields['Nombre'] || ''); });
+  if (!miembros.length) { alert('Este roster no tiene jugadores todavía.'); return; }
+
+  var coachesDeRoster = rosterCoachesRecords.filter(function(c) { return c.roster_id === rosterId; });
+  function nombreCoachPorRol(rol) {
+    var row = coachesDeRoster.find(function(c) { return c.rol === rol; });
+    return row ? nombreCoachPorId(row.coach_id) : '—';
+  }
+  var asistentesNombres = coachesDeRoster.filter(function(c) { return c.rol === 'Asistente'; })
+    .map(function(c) { return nombreCoachPorId(c.coach_id); }).join(', ') || '—';
+
+  var rowsHtml = miembros.map(function(r, i) {
+    var f = r.fields;
+    var fotoHtml = f['Foto'] ? '<img src="' + f['Foto'] + '" class="roster-print-foto">' : '';
+    return '<tr><td>' + (i + 1) + '</td><td>' + fotoHtml + '</td><td>' + (f['Nombre'] || '') + ' ' + (f['Apellidos'] || '') + '</td>' +
+      '<td>' + (f['Categoría'] || '') + '</td><td>' + (f['Número Jugador'] || '—') + '</td><td>' + (f['Género'] || '') + '</td></tr>';
+  }).join('');
+
+  document.getElementById('roster-print').innerHTML =
+    '<h1>Wolverines TRC · ' + ros.nombre + '</h1>' +
+    '<div class="roster-print-sub">HC: ' + nombreCoachPorRol('HC') + ' · Playcaller: ' + nombreCoachPorRol('Playcaller') + ' · Asistentes: ' + asistentesNombres + '</div>' +
+    '<div class="roster-print-sub">' + miembros.length + ' jugador(es) · ' + new Date().toLocaleDateString('es-MX') + '</div>' +
+    '<table class="roster-print-table"><thead><tr><th>#</th><th>Foto</th><th>Nombre</th><th>Categoría</th><th>Número</th><th>Género</th></tr></thead><tbody>' + rowsHtml + '</tbody></table>';
+
+  var imgs = document.querySelectorAll('#roster-print img');
+  var espera = Array.prototype.map.call(imgs, function(img) {
+    if (img.complete) return Promise.resolve();
+    return new Promise(function(resolve) { img.onload = img.onerror = resolve; });
+  });
+  Promise.race([Promise.all(espera), new Promise(function(resolve) { setTimeout(resolve, 3000); })])
+    .then(function() { window.print(); });
+}
+
 function onAvisoDestinatarioChange() {
   var tipo = document.getElementById('aviso-destinatario').value;
   document.getElementById('aviso-categoria').style.display = tipo === 'categoria' ? '' : 'none';
@@ -1707,6 +1899,19 @@ function categoriasDelAviso() {
   if (tipo === 'juvenil') return CATEGORIAS_JUVENIL;
   if (tipo === 'ambas') return CATEGORIAS_INFANTIL.concat(CATEGORIAS_JUVENIL);
   return [document.getElementById('aviso-categoria').value];
+}
+
+function categoriasDelCoach(coachId) {
+  var rosterIds = rosterCoachesRecords.filter(function(rc) { return rc.coach_id === coachId; }).map(function(rc) { return rc.roster_id; });
+  if (!rosterIds.length) return [];
+  var jugadorIds = rosterMiembrosRecords.filter(function(m) { return rosterIds.indexOf(m.roster_id) !== -1; }).map(function(m) { return m.jugador_id; });
+  var cats = {};
+  allRecords.forEach(function(r) {
+    if (jugadorIds.indexOf(r.id) === -1) return;
+    if (r.fields['Categoría']) cats[r.fields['Categoría']] = true;
+    if (r.fields['Categoría Secundaria']) cats[r.fields['Categoría Secundaria']] = true;
+  });
+  return Object.keys(cats);
 }
 
 function destinatariosAviso() {
@@ -1733,7 +1938,7 @@ function destinatariosAviso() {
   }
   if (incluyeCoaches) {
     coachesRecords.forEach(function(c) {
-      if (!(c.categorias || []).some(function(cat) { return categorias.indexOf(cat) !== -1; })) return;
+      if (!categoriasDelCoach(c.id).some(function(cat) { return categorias.indexOf(cat) !== -1; })) return;
       agregar(c.nombre, c.email, 'coach');
     });
   }
