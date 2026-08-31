@@ -519,6 +519,17 @@ table.lt td{padding:12px 14px;font-size:13px;color:var(--text);border-top:1px so
   </div>
 </div>
 
+<!-- ROSTER DETAIL MODAL -->
+<div class="modal-overlay" id="roster-detail-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="roster-modal-title">Roster</h3>
+      <button class="modal-close" onclick="closeModal('roster-detail-modal')">✕</button>
+    </div>
+    <div class="modal-body" id="roster-modal-body"></div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL = 'https://xaawoqyjavqcybafirri.supabase.co';
@@ -1699,74 +1710,101 @@ function nombreCoachPorId(id) {
   return c ? (c.nombre + ' ' + (c.apellidos || '')).trim() : '';
 }
 
+var currentRosterId = null;
+
 function renderRosters() {
   var container = document.getElementById('rosters-content');
   if (!rostersRecords.length) { container.innerHTML = '<div class="empty">Aún no hay rosters. Créalo arriba.</div>'; return; }
+
+  var html = rostersRecords.map(function(ros) {
+    var count = rosterMiembrosRecords.filter(function(m) { return m.roster_id === ros.id; }).length;
+    var coachCount = rosterCoachesRecords.filter(function(c) { return c.roster_id === ros.id; }).length;
+    var nombreEsc = ros.nombre.replace(/'/g, "\\'");
+    return '<div class="p-row" onclick="abrirRosterDetalle(\'' + ros.id + '\')">' +
+      '<div class="p-avatar-ph">🗂️</div>' +
+      '<div class="p-info"><div class="p-name">' + ros.nombre + '</div><div class="p-sub">' + count + ' jugador(es) · ' + coachCount + ' coach(es)</div></div>' +
+      '<div class="p-actions">' +
+        '<button class="icon-btn icon-cred" title="Imprimir" onclick="event.stopPropagation();printRosterEquipo(\'' + ros.id + '\')">🖨️</button>' +
+        '<button class="icon-btn icon-edit" title="Cambiar nombre" onclick="event.stopPropagation();renombrarRoster(\'' + ros.id + '\',\'' + nombreEsc + '\')">✏️</button>' +
+        '<button class="icon-btn icon-del" title="Eliminar roster" onclick="event.stopPropagation();eliminarRoster(\'' + ros.id + '\',\'' + nombreEsc + '\')">🗑</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  container.innerHTML = '<div class="list-wrap">' + html + '</div>';
+}
+
+function refrescarRosterUI() {
+  renderRosters();
+  if (currentRosterId && document.getElementById('roster-detail-modal').classList.contains('open')) {
+    abrirRosterDetalle(currentRosterId);
+  }
+}
+
+function rosterDetalleHtml(ros) {
+  var miembrosIds = rosterMiembrosRecords.filter(function(m) { return m.roster_id === ros.id; }).map(function(m) { return m.jugador_id; });
+  var miembros = allRecords.filter(function(r) { return miembrosIds.indexOf(r.id) !== -1; })
+    .sort(function(a, b) { return (a.fields['Nombre'] || '').localeCompare(b.fields['Nombre'] || ''); });
+
+  var coachesDeRoster = rosterCoachesRecords.filter(function(c) { return c.roster_id === ros.id; });
+  var hc = coachesDeRoster.find(function(c) { return c.rol === 'HC'; });
+  var pc = coachesDeRoster.find(function(c) { return c.rol === 'Playcaller'; });
+  var asistentes = coachesDeRoster.filter(function(c) { return c.rol === 'Asistente'; });
+
+  var asistentesHtml = asistentes.map(function(a) {
+    return '<span class="badge badge-cat">' + nombreCoachPorId(a.coach_id) +
+      ' <span style="cursor:pointer" onclick="quitarRosterCoach(\'' + ros.id + '\',\'' + a.coach_id + '\')">✕</span></span>';
+  }).join(' ') || '<span style="font-size:12px;color:var(--gray-lt)">Sin asistentes</span>';
+
+  var asistenteAddOptions = '<option value="">+ Agregar asistente...</option>' + coachesRecords
+    .filter(function(c) { return !asistentes.some(function(a) { return a.coach_id === c.id; }); })
+    .map(function(c) { return '<option value="' + c.id + '">' + c.nombre + ' ' + (c.apellidos || '') + '</option>'; }).join('');
 
   var jugadorOptionsHtml = '<option value="">+ Agregar jugador individual...</option>' + allRecords.slice()
     .sort(function(a, b) { return (a.fields['Nombre'] || '').localeCompare(b.fields['Nombre'] || ''); })
     .map(function(r) { return '<option value="' + r.id + '">' + r.fields['Nombre'] + ' ' + r.fields['Apellidos'] + ' (' + (r.fields['Categoría'] || '') + ')</option>'; })
     .join('');
 
-  var html = rostersRecords.map(function(ros) {
-    var miembrosIds = rosterMiembrosRecords.filter(function(m) { return m.roster_id === ros.id; }).map(function(m) { return m.jugador_id; });
-    var miembros = allRecords.filter(function(r) { return miembrosIds.indexOf(r.id) !== -1; })
-      .sort(function(a, b) { return (a.fields['Nombre'] || '').localeCompare(b.fields['Nombre'] || ''); });
-
-    var coachesDeRoster = rosterCoachesRecords.filter(function(c) { return c.roster_id === ros.id; });
-    var hc = coachesDeRoster.find(function(c) { return c.rol === 'HC'; });
-    var pc = coachesDeRoster.find(function(c) { return c.rol === 'Playcaller'; });
-    var asistentes = coachesDeRoster.filter(function(c) { return c.rol === 'Asistente'; });
-
-    var asistentesHtml = asistentes.map(function(a) {
-      return '<span class="badge badge-cat">' + nombreCoachPorId(a.coach_id) +
-        ' <span style="cursor:pointer" onclick="quitarRosterCoach(\'' + ros.id + '\',\'' + a.coach_id + '\')">✕</span></span>';
-    }).join(' ') || '<span style="font-size:12px;color:var(--gray-lt)">Sin asistentes</span>';
-
-    var asistenteAddOptions = '<option value="">+ Agregar asistente...</option>' + coachesRecords
-      .filter(function(c) { return !asistentes.some(function(a) { return a.coach_id === c.id; }); })
-      .map(function(c) { return '<option value="' + c.id + '">' + c.nombre + ' ' + (c.apellidos || '') + '</option>'; }).join('');
-
-    var miembrosHtml = miembros.map(function(m) {
-      var f = m.fields;
-      var avatarHtml = f['Foto'] ? '<img src="' + f['Foto'] + '" class="p-avatar">' : '<div class="p-avatar-ph">👤</div>';
-      return '<div class="p-row" style="cursor:default">' + avatarHtml +
-        '<div class="p-info"><div class="p-name">' + f['Nombre'] + ' ' + f['Apellidos'] + '</div>' +
-        '<div class="p-sub">' + (f['Categoría'] || '') + (f['Número Jugador'] ? ' · #' + f['Número Jugador'] : '') + '</div></div>' +
-        '<button class="icon-btn icon-del" title="Quitar del roster" onclick="quitarRosterMiembro(\'' + ros.id + '\',\'' + m.id + '\')">🗑</button>' +
-      '</div>';
-    }).join('') || '<div class="empty">Sin jugadores todavía.</div>';
-
-    return '<div class="content-card" style="margin-top:16px">' +
-      '<div class="mor-header"><div><div class="mor-title">' + ros.nombre + '</div><div class="mor-sub">' + miembros.length + ' jugador(es)</div></div>' +
-        '<div style="display:flex;gap:8px">' +
-          '<button class="btn-action btn-ghost" onclick="printRosterEquipo(\'' + ros.id + '\')">🖨️ Imprimir</button>' +
-          '<button class="icon-btn icon-del" title="Eliminar roster" onclick="eliminarRoster(\'' + ros.id + '\',\'' + ros.nombre.replace(/'/g,'') + '\')">🗑</button>' +
-        '</div>' +
-      '</div>' +
-      '<div style="padding:0 24px 16px">' +
-        '<div class="d-label">Coaching Staff</div>' +
-        '<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;font-size:12.5px">' +
-          '<div>HC<br><select class="d-select" style="margin:0" onchange="asignarRosterCoach(\'' + ros.id + '\',\'HC\',this.value)">' + coachSelectHtml(hc ? hc.coach_id : null) + '</select></div>' +
-          '<div>Playcaller<br><select class="d-select" style="margin:0" onchange="asignarRosterCoach(\'' + ros.id + '\',\'Playcaller\',this.value)">' + coachSelectHtml(pc ? pc.coach_id : null) + '</select></div>' +
-        '</div>' +
-        '<div style="margin-top:10px">Asistentes<br>' +
-          '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:4px">' + asistentesHtml + '</div>' +
-          '<select class="d-select" style="margin-top:6px;max-width:280px" onchange="asignarRosterCoach(\'' + ros.id + '\',\'Asistente\',this.value);this.value=\'\'">' + asistenteAddOptions + '</select>' +
-        '</div>' +
-      '</div>' +
-      '<div class="controls" style="padding:0 24px">' +
-        '<input type="number" placeholder="Año min" id="roster-anio-min-' + ros.id + '" class="search-box" style="max-width:100px">' +
-        '<input type="number" placeholder="Año max" id="roster-anio-max-' + ros.id + '" class="search-box" style="max-width:100px">' +
-        '<select class="filter-select" id="roster-genero-' + ros.id + '"><option value="">Ambos géneros</option><option value="Femenino">Femenino</option><option value="Masculino">Masculino</option></select>' +
-        '<button class="btn-action btn-ghost" onclick="bulkAddRoster(\'' + ros.id + '\')">➕ Agregar por año</button>' +
-        '<select class="filter-select" onchange="agregarRosterMiembro(\'' + ros.id + '\', this.value);this.value=\'\'">' + jugadorOptionsHtml + '</select>' +
-      '</div>' +
-      '<div class="list-wrap">' + miembrosHtml + '</div>' +
+  var miembrosHtml = miembros.map(function(m) {
+    var f = m.fields;
+    var avatarHtml = f['Foto'] ? '<img src="' + f['Foto'] + '" class="p-avatar">' : '<div class="p-avatar-ph">👤</div>';
+    return '<div class="p-row" style="cursor:default">' + avatarHtml +
+      '<div class="p-info"><div class="p-name">' + f['Nombre'] + ' ' + f['Apellidos'] + '</div>' +
+      '<div class="p-sub">' + (f['Categoría'] || '') + (f['Número Jugador'] ? ' · #' + f['Número Jugador'] : '') + '</div></div>' +
+      '<button class="icon-btn icon-del" title="Quitar del roster" onclick="quitarRosterMiembro(\'' + ros.id + '\',\'' + m.id + '\')">🗑</button>' +
     '</div>';
-  }).join('');
+  }).join('') || '<div class="empty">Sin jugadores todavía.</div>';
 
-  container.innerHTML = html;
+  return '<div style="margin-bottom:16px">' +
+      '<div class="d-label">Coaching Staff</div>' +
+      '<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;font-size:12.5px">' +
+        '<div>HC<br><select class="d-select" style="margin:0" onchange="asignarRosterCoach(\'' + ros.id + '\',\'HC\',this.value)">' + coachSelectHtml(hc ? hc.coach_id : null) + '</select></div>' +
+        '<div>Playcaller<br><select class="d-select" style="margin:0" onchange="asignarRosterCoach(\'' + ros.id + '\',\'Playcaller\',this.value)">' + coachSelectHtml(pc ? pc.coach_id : null) + '</select></div>' +
+      '</div>' +
+      '<div style="margin-top:10px">Asistentes<br>' +
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:4px">' + asistentesHtml + '</div>' +
+        '<select class="d-select" style="margin-top:6px;max-width:280px" onchange="asignarRosterCoach(\'' + ros.id + '\',\'Asistente\',this.value);this.value=\'\'">' + asistenteAddOptions + '</select>' +
+      '</div>' +
+    '</div>' +
+    '<div class="controls" style="padding:0">' +
+      '<input type="number" placeholder="Año min" id="roster-anio-min-' + ros.id + '" class="search-box" style="max-width:100px">' +
+      '<input type="number" placeholder="Año max" id="roster-anio-max-' + ros.id + '" class="search-box" style="max-width:100px">' +
+      '<select class="filter-select" id="roster-genero-' + ros.id + '"><option value="">Ambos géneros</option><option value="Femenino">Femenino</option><option value="Masculino">Masculino</option></select>' +
+      '<button class="btn-action btn-ghost" onclick="bulkAddRoster(\'' + ros.id + '\')">➕ Agregar por año</button>' +
+    '</div>' +
+    '<div class="controls" style="padding:8px 0 0">' +
+      '<select class="filter-select" style="width:100%" onchange="agregarRosterMiembro(\'' + ros.id + '\', this.value);this.value=\'\'">' + jugadorOptionsHtml + '</select>' +
+    '</div>' +
+    '<div class="list-wrap" style="margin:12px 0 0">' + miembrosHtml + '</div>';
+}
+
+function abrirRosterDetalle(id) {
+  var ros = rostersRecords.find(function(r) { return r.id === id; });
+  if (!ros) return;
+  currentRosterId = id;
+  document.getElementById('roster-modal-title').textContent = ros.nombre;
+  document.getElementById('roster-modal-body').innerHTML = rosterDetalleHtml(ros);
+  document.getElementById('roster-detail-modal').classList.add('open');
 }
 
 async function crearRoster() {
@@ -1781,6 +1819,19 @@ async function crearRoster() {
   } catch(e) { alert('❌ Error: ' + e.message); }
 }
 
+async function renombrarRoster(id, nombreActual) {
+  var nuevo = prompt('Nuevo nombre del roster:', nombreActual);
+  if (!nuevo || !nuevo.trim() || nuevo.trim() === nombreActual) return;
+  nuevo = nuevo.trim();
+  try {
+    var { error } = await sb.rpc('admin_rename_roster', { p_pwd: PWD, p_id: id, p_nombre: nuevo });
+    if (error) throw error;
+    var ros = rostersRecords.find(function(r) { return r.id === id; });
+    if (ros) ros.nombre = nuevo;
+    refrescarRosterUI();
+  } catch(e) { alert('❌ Error: ' + e.message); }
+}
+
 async function eliminarRoster(id, nombre) {
   if (!confirm('¿Eliminar el roster "' + nombre + '"?\n\nEsto no borra a los jugadores ni coaches, solo el roster.')) return;
   try {
@@ -1789,6 +1840,7 @@ async function eliminarRoster(id, nombre) {
     rostersRecords = rostersRecords.filter(function(r) { return r.id !== id; });
     rosterMiembrosRecords = rosterMiembrosRecords.filter(function(m) { return m.roster_id !== id; });
     rosterCoachesRecords = rosterCoachesRecords.filter(function(c) { return c.roster_id !== id; });
+    if (currentRosterId === id) { closeModal('roster-detail-modal'); currentRosterId = null; }
     renderRosters();
   } catch(e) { alert('❌ Error: ' + e.message); }
 }
@@ -1799,7 +1851,7 @@ async function agregarRosterMiembro(rosterId, jugadorId) {
     var { error } = await sb.rpc('admin_add_roster_miembro', { p_pwd: PWD, p_roster_id: rosterId, p_jugador_id: jugadorId });
     if (error) throw error;
     rosterMiembrosRecords.push({ roster_id: rosterId, jugador_id: jugadorId });
-    renderRosters();
+    refrescarRosterUI();
   } catch(e) { alert('❌ Error: ' + e.message); }
 }
 
@@ -1808,7 +1860,7 @@ async function quitarRosterMiembro(rosterId, jugadorId) {
     var { error } = await sb.rpc('admin_remove_roster_miembro', { p_pwd: PWD, p_roster_id: rosterId, p_jugador_id: jugadorId });
     if (error) throw error;
     rosterMiembrosRecords = rosterMiembrosRecords.filter(function(m) { return !(m.roster_id === rosterId && m.jugador_id === jugadorId); });
-    renderRosters();
+    refrescarRosterUI();
   } catch(e) { alert('❌ Error: ' + e.message); }
 }
 
@@ -1823,7 +1875,7 @@ async function bulkAddRoster(rosterId) {
     var { data: rmData, error: rmErr } = await sb.rpc('admin_list_roster_miembros', { p_pwd: PWD });
     if (rmErr) throw rmErr;
     rosterMiembrosRecords = rmData || [];
-    renderRosters();
+    refrescarRosterUI();
     alert('✅ Se agregaron ' + data + ' jugador(es) nuevo(s) al roster.');
   } catch(e) { alert('❌ Error: ' + e.message); }
 }
@@ -1839,7 +1891,7 @@ async function asignarRosterCoach(rosterId, rol, coachId) {
     if (error) throw error;
     rosterCoachesRecords = rosterCoachesRecords.filter(function(c) { return !(c.roster_id === rosterId && (c.coach_id === coachId || c.rol === rol)); });
     rosterCoachesRecords.push({ roster_id: rosterId, coach_id: coachId, rol: rol });
-    renderRosters();
+    refrescarRosterUI();
   } catch(e) { alert('❌ Error: ' + e.message); }
 }
 
@@ -1848,7 +1900,7 @@ async function quitarRosterCoach(rosterId, coachId) {
     var { error } = await sb.rpc('admin_remove_roster_coach', { p_pwd: PWD, p_roster_id: rosterId, p_coach_id: coachId });
     if (error) throw error;
     rosterCoachesRecords = rosterCoachesRecords.filter(function(c) { return !(c.roster_id === rosterId && c.coach_id === coachId); });
-    renderRosters();
+    refrescarRosterUI();
   } catch(e) { alert('❌ Error: ' + e.message); }
 }
 
