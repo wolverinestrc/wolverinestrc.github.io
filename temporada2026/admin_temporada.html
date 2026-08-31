@@ -1748,17 +1748,21 @@ function rosterDetalleHtml(ros) {
 
   var coachesDeRoster = rosterCoachesRecords.filter(function(c) { return c.roster_id === ros.id; });
   var hc = coachesDeRoster.find(function(c) { return c.rol === 'HC'; });
-  var pc = coachesDeRoster.find(function(c) { return c.rol === 'Playcaller'; });
-  var asistentes = coachesDeRoster.filter(function(c) { return c.rol === 'Asistente'; });
 
-  var asistentesHtml = asistentes.map(function(a) {
-    return '<span class="badge badge-cat">' + nombreCoachPorId(a.coach_id) +
-      ' <span style="cursor:pointer" onclick="quitarRosterCoach(\'' + ros.id + '\',\'' + a.coach_id + '\')">✕</span></span>';
-  }).join(' ') || '<span style="font-size:12px;color:var(--gray-lt)">Sin asistentes</span>';
-
-  var asistenteAddOptions = '<option value="">+ Agregar asistente...</option>' + coachesRecords
-    .filter(function(c) { return !asistentes.some(function(a) { return a.coach_id === c.id; }); })
-    .map(function(c) { return '<option value="' + c.id + '">' + c.nombre + ' ' + (c.apellidos || '') + '</option>'; }).join('');
+  function multiCoachHtml(rol, etiqueta) {
+    var asignados = coachesDeRoster.filter(function(c) { return c.rol === rol; });
+    var badgesHtml = asignados.map(function(a) {
+      return '<span class="badge badge-cat">' + nombreCoachPorId(a.coach_id) +
+        ' <span style="cursor:pointer" onclick="quitarRosterCoach(\'' + ros.id + '\',\'' + a.coach_id + '\',\'' + rol + '\')">✕</span></span>';
+    }).join(' ') || '<span style="font-size:12px;color:var(--gray-lt)">Sin ' + etiqueta.toLowerCase() + '</span>';
+    var addOptions = '<option value="">+ Agregar ' + etiqueta.toLowerCase() + '...</option>' + coachesRecords
+      .filter(function(c) { return !asignados.some(function(a) { return a.coach_id === c.id; }); })
+      .map(function(c) { return '<option value="' + c.id + '">' + c.nombre + ' ' + (c.apellidos || '') + '</option>'; }).join('');
+    return '<div style="margin-top:10px">' + etiqueta + '<br>' +
+      '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:4px">' + badgesHtml + '</div>' +
+      '<select class="d-select" style="margin-top:6px;max-width:280px" onchange="asignarRosterCoach(\'' + ros.id + '\',\'' + rol + '\',this.value);this.value=\'\'">' + addOptions + '</select>' +
+    '</div>';
+  }
 
   var jugadorOptionsHtml = '<option value="">+ Agregar jugador individual...</option>' + allRecords.slice()
     .sort(function(a, b) { return (a.fields['Nombre'] || '').localeCompare(b.fields['Nombre'] || ''); })
@@ -1779,12 +1783,9 @@ function rosterDetalleHtml(ros) {
       '<div class="d-label">Coaching Staff</div>' +
       '<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;font-size:12.5px">' +
         '<div>HC<br><select class="d-select" style="margin:0" onchange="asignarRosterCoach(\'' + ros.id + '\',\'HC\',this.value)">' + coachSelectHtml(hc ? hc.coach_id : null) + '</select></div>' +
-        '<div>Playcaller<br><select class="d-select" style="margin:0" onchange="asignarRosterCoach(\'' + ros.id + '\',\'Playcaller\',this.value)">' + coachSelectHtml(pc ? pc.coach_id : null) + '</select></div>' +
       '</div>' +
-      '<div style="margin-top:10px">Asistentes<br>' +
-        '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:4px">' + asistentesHtml + '</div>' +
-        '<select class="d-select" style="margin-top:6px;max-width:280px" onchange="asignarRosterCoach(\'' + ros.id + '\',\'Asistente\',this.value);this.value=\'\'">' + asistenteAddOptions + '</select>' +
-      '</div>' +
+      multiCoachHtml('Playcaller', 'Playcallers') +
+      multiCoachHtml('Asistente', 'Asistentes') +
     '</div>' +
     '<div class="controls" style="padding:0">' +
       '<input type="number" placeholder="Año min" id="roster-anio-min-' + ros.id + '" class="search-box" style="max-width:100px">' +
@@ -1882,24 +1883,29 @@ async function bulkAddRoster(rosterId) {
 
 async function asignarRosterCoach(rosterId, rol, coachId) {
   if (!coachId) {
-    var actual = rosterCoachesRecords.find(function(c) { return c.roster_id === rosterId && c.rol === rol; });
-    if (actual) await quitarRosterCoach(rosterId, actual.coach_id);
+    if (rol === 'HC') {
+      var actual = rosterCoachesRecords.find(function(c) { return c.roster_id === rosterId && c.rol === 'HC'; });
+      if (actual) await quitarRosterCoach(rosterId, actual.coach_id, 'HC');
+    }
     return;
   }
   try {
     var { error } = await sb.rpc('admin_set_roster_coach', { p_pwd: PWD, p_roster_id: rosterId, p_coach_id: coachId, p_rol: rol });
     if (error) throw error;
-    rosterCoachesRecords = rosterCoachesRecords.filter(function(c) { return !(c.roster_id === rosterId && (c.coach_id === coachId || c.rol === rol)); });
+    if (rol === 'HC') {
+      rosterCoachesRecords = rosterCoachesRecords.filter(function(c) { return !(c.roster_id === rosterId && c.rol === 'HC'); });
+    }
+    rosterCoachesRecords = rosterCoachesRecords.filter(function(c) { return !(c.roster_id === rosterId && c.coach_id === coachId && c.rol === rol); });
     rosterCoachesRecords.push({ roster_id: rosterId, coach_id: coachId, rol: rol });
     refrescarRosterUI();
   } catch(e) { alert('❌ Error: ' + e.message); }
 }
 
-async function quitarRosterCoach(rosterId, coachId) {
+async function quitarRosterCoach(rosterId, coachId, rol) {
   try {
-    var { error } = await sb.rpc('admin_remove_roster_coach', { p_pwd: PWD, p_roster_id: rosterId, p_coach_id: coachId });
+    var { error } = await sb.rpc('admin_remove_roster_coach', { p_pwd: PWD, p_roster_id: rosterId, p_coach_id: coachId, p_rol: rol });
     if (error) throw error;
-    rosterCoachesRecords = rosterCoachesRecords.filter(function(c) { return !(c.roster_id === rosterId && c.coach_id === coachId); });
+    rosterCoachesRecords = rosterCoachesRecords.filter(function(c) { return !(c.roster_id === rosterId && c.coach_id === coachId && c.rol === rol); });
     refrescarRosterUI();
   } catch(e) { alert('❌ Error: ' + e.message); }
 }
@@ -1922,12 +1928,14 @@ function printRosterEquipo(rosterId) {
     var fotoHtml = c.foto_url ? '<img src="' + c.foto_url + '" class="roster-print-foto">' : '';
     return '<div class="roster-print-staff-item">' + fotoHtml + '<div>' + etiqueta + '<br><b>' + c.nombre + ' ' + (c.apellidos || '') + '</b></div></div>';
   }
-  var asistentesHtml = coachesDeRoster.filter(function(c) { return c.rol === 'Asistente'; }).map(function(c) {
-    var cc = coachPorId(c.coach_id);
-    if (!cc) return '';
-    var fotoHtml = cc.foto_url ? '<img src="' + cc.foto_url + '" class="roster-print-foto">' : '';
-    return '<div class="roster-print-staff-item">' + fotoHtml + '<div>Asistente<br><b>' + cc.nombre + ' ' + (cc.apellidos || '') + '</b></div></div>';
-  }).join('');
+  function multiStaffPrintHtml(rol, etiqueta) {
+    return coachesDeRoster.filter(function(c) { return c.rol === rol; }).map(function(c) {
+      var cc = coachPorId(c.coach_id);
+      if (!cc) return '';
+      var fotoHtml = cc.foto_url ? '<img src="' + cc.foto_url + '" class="roster-print-foto">' : '';
+      return '<div class="roster-print-staff-item">' + fotoHtml + '<div>' + etiqueta + '<br><b>' + cc.nombre + ' ' + (cc.apellidos || '') + '</b></div></div>';
+    }).join('');
+  }
 
   var rowsHtml = miembros.map(function(r, i) {
     var f = r.fields;
@@ -1938,7 +1946,7 @@ function printRosterEquipo(rosterId) {
 
   document.getElementById('roster-print').innerHTML =
     '<h1>Wolverines TRC · ' + ros.nombre + '</h1>' +
-    '<div class="roster-print-staff">' + staffItemHtml('HC', 'HC') + staffItemHtml('Playcaller', 'Playcaller') + asistentesHtml + '</div>' +
+    '<div class="roster-print-staff">' + staffItemHtml('HC', 'HC') + multiStaffPrintHtml('Playcaller', 'Playcaller') + multiStaffPrintHtml('Asistente', 'Asistente') + '</div>' +
     '<div class="roster-print-sub">' + miembros.length + ' jugador(es) · ' + new Date().toLocaleDateString('es-MX') + '</div>' +
     '<table class="roster-print-table"><thead><tr><th>#</th><th>Foto</th><th>Nombre</th><th>Categoría</th><th>Número</th><th>Género</th></tr></thead><tbody>' + rowsHtml + '</tbody></table>';
 
