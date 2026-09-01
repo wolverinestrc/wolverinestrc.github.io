@@ -209,6 +209,10 @@ table.lt td{padding:12px 14px;font-size:13px;color:var(--text);border-top:1px so
 .roster-print-foto{width:36px;height:36px;border-radius:50%;object-fit:cover;display:block}
 .roster-print-table thead{display:table-header-group}
 .roster-print-table tr{page-break-inside:avoid}
+.multi-dd-btn{margin-bottom:0}
+.multi-dd-panel{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--card);border:1.5px solid var(--border);border-radius:9px;box-shadow:0 8px 24px rgba(16,31,61,0.14);padding:6px;z-index:20;max-height:220px;overflow-y:auto}
+.multi-dd-item{display:flex;align-items:center;gap:8px;font-size:13px;padding:7px 8px;border-radius:6px;cursor:pointer}
+.multi-dd-item:hover{background:var(--bg)}
 .roster-print-staff{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:14px}
 .roster-print-staff-item{display:flex;align-items:center;gap:8px;font-size:12px}
 .roster-print-staff-item b{display:block;font-size:13px}
@@ -272,19 +276,7 @@ table.lt td{padding:12px 14px;font-size:13px;color:var(--text);border-top:1px so
         </div>
         <div class="controls">
           <input class="search-box" type="text" id="search" placeholder="🔍 Buscar jugador..." oninput="renderTable()">
-          <select class="filter-select" id="cat-filter" onchange="renderTable()">
-            <option value="">Todas las categorías</option>
-            <option>U6 (2020-2021)</option>
-            <option>U8 (2018-2019)</option>
-            <option>U10 (2016-2017)</option>
-            <option>U12 Femenil (2014-2015)</option>
-            <option>U12 Varonil (2014-2015)</option>
-            <option>U14 (2012-2013)</option>
-            <option>U16 (2010-2011)</option>
-            <option>U18 (2008-2009)</option>
-            <option>Libre</option>
-            <option>Moms +30</option>
-          </select>
+          <div id="anio-filtro-container" style="position:relative;display:inline-block"></div>
           <select class="filter-select" id="pago-filter" onchange="renderTable()">
             <option value="">Todos</option>
             <option value="atrasado">Con atraso</option>
@@ -691,6 +683,7 @@ async function loadData() {
     rosterCoachesRecords = rcData || [];
 
     updateStats();
+    renderAnioFiltro();
     renderTable();
     document.getElementById('loading').style.display = 'none';
   } catch(e) {
@@ -741,9 +734,74 @@ function switchTab(tab) {
 }
 
 // ── LIST (jugadores) ──
+// ── FILTRO POR AÑO DE NACIMIENTO (multi-select reutilizable) ──
+function anioDeJugador(r) {
+  var f = r.fields['Fecha de Nacimiento'];
+  return f ? f.split('-')[0] : null;
+}
+
+function aniosDisponibles() {
+  var anios = {};
+  allRecords.forEach(function(r) {
+    var a = anioDeJugador(r);
+    if (a) anios[a] = true;
+  });
+  return Object.keys(anios).sort().reverse();
+}
+
+function multiDdLabel(seleccionados, vacioTexto) {
+  if (!seleccionados.length) return vacioTexto;
+  if (seleccionados.length <= 3) return seleccionados.join(', ');
+  return seleccionados.length + ' seleccionados';
+}
+
+function toggleMultiDropdown(btn) {
+  var panel = btn.nextElementSibling;
+  var wasOpen = panel.style.display !== 'none';
+  document.querySelectorAll('.multi-dd-panel').forEach(function(p) { p.style.display = 'none'; });
+  panel.style.display = wasOpen ? 'none' : 'block';
+}
+
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.multi-dd')) {
+    document.querySelectorAll('.multi-dd-panel').forEach(function(p) { p.style.display = 'none'; });
+  }
+});
+
+var anioFiltroSeleccionado = [];
+
+function renderAnioFiltro() {
+  var anios = aniosDisponibles();
+  var checkboxesHtml = anios.map(function(a) {
+    var checked = anioFiltroSeleccionado.indexOf(a) !== -1 ? ' checked' : '';
+    return '<label class="multi-dd-item"><input type="checkbox" value="' + a + '"' + checked + ' onchange="onAnioFiltroCheck(this)"> ' + a + '</label>';
+  }).join('');
+  document.getElementById('anio-filtro-container').innerHTML =
+    '<div class="multi-dd" style="position:relative">' +
+      '<button type="button" class="filter-select multi-dd-btn" onclick="toggleMultiDropdown(this)" style="display:flex;justify-content:space-between;gap:8px;align-items:center;cursor:pointer;min-width:170px">' +
+        '<span class="multi-dd-label">' + multiDdLabel(anioFiltroSeleccionado, 'Todos los años') + '</span><span>▾</span>' +
+      '</button>' +
+      '<div class="multi-dd-panel" style="display:none">' + checkboxesHtml + '</div>' +
+    '</div>';
+}
+
+function actualizarLabelMultiDd(checkboxEl, vacioTexto) {
+  var panel = checkboxEl.closest('.multi-dd-panel');
+  var seleccionados = Array.prototype.filter.call(panel.querySelectorAll('input[type=checkbox]'), function(cb) { return cb.checked; })
+    .map(function(cb) { return cb.value; });
+  panel.previousElementSibling.querySelector('.multi-dd-label').textContent = multiDdLabel(seleccionados, vacioTexto);
+}
+
+function onAnioFiltroCheck(checkboxEl) {
+  var panel = checkboxEl.closest('.multi-dd-panel');
+  anioFiltroSeleccionado = Array.prototype.filter.call(panel.querySelectorAll('input[type=checkbox]'), function(cb) { return cb.checked; })
+    .map(function(cb) { return cb.value; });
+  panel.previousElementSibling.querySelector('.multi-dd-label').textContent = multiDdLabel(anioFiltroSeleccionado, 'Todos los años');
+  renderTable();
+}
+
 function renderTable() {
   const search = document.getElementById('search').value.toLowerCase();
-  const catF   = document.getElementById('cat-filter').value;
   const pagoF  = document.getElementById('pago-filter').value;
   const cont   = document.getElementById('tbody');
   const empty  = document.getElementById('empty-msg');
@@ -753,7 +811,7 @@ function renderTable() {
     var f = r.fields;
     return ((f['Nombre']||'') + ' ' + (f['Apellidos']||'') + ' ' + (f['CURP']||'')).toLowerCase().includes(search);
   });
-  if (catF) recs = recs.filter(function(r) { return r.fields['Categoría'] === catF || r.fields['Categoría Secundaria'] === catF; });
+  if (anioFiltroSeleccionado.length) recs = recs.filter(function(r) { return anioFiltroSeleccionado.indexOf(anioDeJugador(r)) !== -1; });
   if (pagoF === 'atrasado') recs = recs.filter(function(r) { return tieneAtraso(r); });
   if (pagoF === 'alcorriente') recs = recs.filter(function(r) { return !tieneAtraso(r); });
 
@@ -1788,8 +1846,14 @@ function rosterDetalleHtml(ros) {
       multiCoachHtml('Asistente', 'Asistentes') +
     '</div>' +
     '<div class="controls" style="padding:0">' +
-      '<input type="number" placeholder="Año min" id="roster-anio-min-' + ros.id + '" class="search-box" style="max-width:100px">' +
-      '<input type="number" placeholder="Año max" id="roster-anio-max-' + ros.id + '" class="search-box" style="max-width:100px">' +
+      '<div class="multi-dd" id="roster-anios-' + ros.id + '" style="position:relative;display:inline-block">' +
+        '<button type="button" class="filter-select multi-dd-btn" onclick="toggleMultiDropdown(this)" style="display:flex;justify-content:space-between;gap:8px;align-items:center;cursor:pointer;min-width:150px">' +
+          '<span class="multi-dd-label">Elegir año(s)</span><span>▾</span>' +
+        '</button>' +
+        '<div class="multi-dd-panel" style="display:none">' + aniosDisponibles().map(function(a) {
+          return '<label class="multi-dd-item"><input type="checkbox" value="' + a + '" onchange="actualizarLabelMultiDd(this,\'Elegir año(s)\')"> ' + a + '</label>';
+        }).join('') + '</div>' +
+      '</div>' +
       '<select class="filter-select" id="roster-genero-' + ros.id + '"><option value="">Ambos géneros</option><option value="Femenino">Femenino</option><option value="Masculino">Masculino</option></select>' +
       '<button class="btn-action btn-ghost" onclick="bulkAddRoster(\'' + ros.id + '\')">➕ Agregar por año</button>' +
     '</div>' +
@@ -1866,12 +1930,14 @@ async function quitarRosterMiembro(rosterId, jugadorId) {
 }
 
 async function bulkAddRoster(rosterId) {
-  var min = parseInt(document.getElementById('roster-anio-min-' + rosterId).value, 10);
-  var max = parseInt(document.getElementById('roster-anio-max-' + rosterId).value, 10);
+  var anios = Array.prototype.filter.call(
+    document.querySelectorAll('#roster-anios-' + rosterId + ' input[type=checkbox]'),
+    function(cb) { return cb.checked; }
+  ).map(function(cb) { return parseInt(cb.value, 10); });
   var genero = document.getElementById('roster-genero-' + rosterId).value || null;
-  if (!min || !max) { alert('Pon año mínimo y máximo de nacimiento.'); return; }
+  if (!anios.length) { alert('Elige al menos un año de nacimiento.'); return; }
   try {
-    var { data, error } = await sb.rpc('admin_bulk_add_roster_por_anio', { p_pwd: PWD, p_roster_id: rosterId, p_anio_min: min, p_anio_max: max, p_genero: genero });
+    var { data, error } = await sb.rpc('admin_bulk_add_roster_por_anios', { p_pwd: PWD, p_roster_id: rosterId, p_anios: anios, p_genero: genero });
     if (error) throw error;
     var { data: rmData, error: rmErr } = await sb.rpc('admin_list_roster_miembros', { p_pwd: PWD });
     if (rmErr) throw rmErr;
@@ -2089,7 +2155,7 @@ function printRoster() {
     if (ai !== bi) return ai - bi;
     return (a.fields['Nombre'] || '').localeCompare(b.fields['Nombre'] || '');
   });
-  var catFiltro = document.getElementById('cat-filter').value || 'Todas las categorías';
+  var catFiltro = anioFiltroSeleccionado.length ? ('Años ' + anioFiltroSeleccionado.join(', ')) : 'Todos los años';
   var rowsHtml = recs.map(function(r, i) {
     var f = r.fields;
     var fotoHtml = f['Foto'] ? '<img src="' + f['Foto'] + '" class="roster-print-foto">' : '';
