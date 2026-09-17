@@ -1824,7 +1824,7 @@ function rosterDetalleHtml(ros) {
 
   var jugadorOptionsHtml = '<option value="">+ Agregar jugador individual...</option>' + allRecords.slice()
     .sort(function(a, b) { return (a.fields['Nombre'] || '').localeCompare(b.fields['Nombre'] || ''); })
-    .map(function(r) { return '<option value="' + r.id + '">' + r.fields['Nombre'] + ' ' + r.fields['Apellidos'] + ' (' + (r.fields['Categoría'] || '') + ')</option>'; })
+    .map(function(r) { return '<option value="' + r.id + '">' + r.fields['Nombre'] + ' ' + r.fields['Apellidos'] + ' (' + (anioDeJugador(r) || '—') + ')</option>'; })
     .join('');
 
   var miembrosHtml = miembros.map(function(m) {
@@ -1832,7 +1832,7 @@ function rosterDetalleHtml(ros) {
     var avatarHtml = f['Foto'] ? '<img src="' + f['Foto'] + '" class="p-avatar">' : '<div class="p-avatar-ph">👤</div>';
     return '<div class="p-row" style="cursor:default">' + avatarHtml +
       '<div class="p-info"><div class="p-name">' + f['Nombre'] + ' ' + f['Apellidos'] + '</div>' +
-      '<div class="p-sub">' + (f['Categoría'] || '') + (f['Número Jugador'] ? ' · #' + f['Número Jugador'] : '') + '</div></div>' +
+      '<div class="p-sub">' + (anioDeJugador(m) || '—') + (f['Número Jugador'] ? ' · #' + f['Número Jugador'] : '') + '</div></div>' +
       '<button class="icon-btn icon-del" title="Quitar del roster" onclick="quitarRosterMiembro(\'' + ros.id + '\',\'' + m.id + '\')">🗑</button>' +
     '</div>';
   }).join('') || '<div class="empty">Sin jugadores todavía.</div>';
