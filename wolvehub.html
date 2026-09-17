@@ -828,26 +828,38 @@ function reiniciarConsultaPagos() {
   document.getElementById('pagos-email').value = '';
 }
 
-function extraerTokenCategoria(texto) {
+function extraerInfoCategoria(texto) {
   if (!texto) return null;
   const m = texto.match(/U\s?(\d+)/i);
-  if (m) return 'U' + m[1];
-  if (/libre/i.test(texto)) return 'LIBRE';
-  if (/moms/i.test(texto)) return 'MOMS';
-  return null;
+  if (!m) {
+    if (/libre/i.test(texto)) return { numero: 'LIBRE', genero: null };
+    if (/moms/i.test(texto)) return { numero: 'MOMS', genero: null };
+    return null;
+  }
+  let genero = null;
+  if (/varonil/i.test(texto)) genero = 'VARONIL';
+  else if (/femenil/i.test(texto)) genero = 'FEMENIL';
+  else if (/mixto/i.test(texto)) genero = 'MIXTO';
+  return { numero: m[1], genero };
+}
+
+function coincideCategoria(a, b) {
+  if (!a || !b || a.numero !== b.numero) return false;
+  if (!a.genero || !b.genero) return true; // si alguno no especifica género, no se descarta
+  return a.genero === b.genero;
 }
 
 function tokensDeJugador(j) {
   const fuentes = (j.rosters || []).map(r => r.nombre).concat([j.categoria, j.categoria_secundaria]);
-  return [...new Set(fuentes.map(extraerTokenCategoria).filter(Boolean))];
+  return fuentes.map(extraerInfoCategoria).filter(Boolean);
 }
 
 function partidosDeJugadorHtml(j, todosJuegos) {
-  const tokens = tokensDeJugador(j);
-  if (!tokens.length) {
+  const infos = tokensDeJugador(j);
+  if (!infos.length) {
     return '<div class="section-label" style="margin-top:0">🏈 Próximos partidos</div><div class="pagos-jugador-sub" style="margin-bottom:0">Todavía no está en ningún roster — en cuanto lo asignen, aquí van a salir sus partidos.</div>';
   }
-  const juegos = todosJuegos.filter(g => !g.pospuesto && tokens.includes(extraerTokenCategoria(g.categoria)));
+  const juegos = todosJuegos.filter(g => !g.pospuesto && infos.some(info => coincideCategoria(info, extraerInfoCategoria(g.categoria))));
   if (!juegos.length) {
     return '<div class="section-label" style="margin-top:0">🏈 Próximos partidos</div><div class="pagos-jugador-sub" style="margin-bottom:0">No hay partidos programados por ahora.</div>';
   }
