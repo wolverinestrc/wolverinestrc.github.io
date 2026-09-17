@@ -828,18 +828,34 @@ function reiniciarConsultaPagos() {
   document.getElementById('pagos-email').value = '';
 }
 
-async function renderProximosPartidosHtml() {
-  try {
-    const { data, error } = await sb.rpc('public_list_juegos');
-    if (error) throw error;
-    const juegos = (data || []).filter(j => !j.pospuesto);
-    if (!juegos.length) return '';
-    const filas = juegos.map(j => `<div class="hub-partido-mini">
-      <div><b>${j.partido}</b><span>${j.categoria || ''}${j.campo ? ' · ' + j.campo : ''}${j.sede ? ' · ' + j.sede : ''}</span></div>
-      <span>${j.dia}${j.hora ? ' ' + j.hora : ''}</span>
-    </div>`).join('');
-    return `<div class="pagos-jugador-card"><div class="section-label" style="margin-top:0">🏈 Próximos partidos</div>${filas}</div>`;
-  } catch(e) { return ''; }
+function extraerTokenCategoria(texto) {
+  if (!texto) return null;
+  const m = texto.match(/U\s?(\d+)/i);
+  if (m) return 'U' + m[1];
+  if (/libre/i.test(texto)) return 'LIBRE';
+  if (/moms/i.test(texto)) return 'MOMS';
+  return null;
+}
+
+function tokensDeJugador(j) {
+  const fuentes = (j.rosters || []).map(r => r.nombre).concat([j.categoria, j.categoria_secundaria]);
+  return [...new Set(fuentes.map(extraerTokenCategoria).filter(Boolean))];
+}
+
+function partidosDeJugadorHtml(j, todosJuegos) {
+  const tokens = tokensDeJugador(j);
+  if (!tokens.length) {
+    return '<div class="section-label" style="margin-top:0">🏈 Próximos partidos</div><div class="pagos-jugador-sub" style="margin-bottom:0">Todavía no está en ningún roster — en cuanto lo asignen, aquí van a salir sus partidos.</div>';
+  }
+  const juegos = todosJuegos.filter(g => !g.pospuesto && tokens.includes(extraerTokenCategoria(g.categoria)));
+  if (!juegos.length) {
+    return '<div class="section-label" style="margin-top:0">🏈 Próximos partidos</div><div class="pagos-jugador-sub" style="margin-bottom:0">No hay partidos programados por ahora.</div>';
+  }
+  const filas = juegos.map(g => `<div class="hub-partido-mini">
+    <div><b>${g.partido}</b><span>${g.categoria || ''}${g.campo ? ' · ' + g.campo : ''}${g.sede ? ' · ' + g.sede : ''}</span></div>
+    <span>${g.dia}${g.hora ? ' ' + g.hora : ''}</span>
+  </div>`).join('');
+  return `<div class="section-label" style="margin-top:0">🏈 Próximos partidos</div>${filas}`;
 }
 
 async function renderResumenPagos(jugadoresData) {
@@ -849,7 +865,12 @@ async function renderResumenPagos(jugadoresData) {
     return;
   }
 
-  const proximosHtml = await renderProximosPartidosHtml();
+  let todosJuegos = [];
+  try {
+    const { data, error } = await sb.rpc('public_list_juegos');
+    if (error) throw error;
+    todosJuegos = data || [];
+  } catch(e) {}
 
   const tarjetasHtml = jugadoresData.map(j => {
     const mesesHtml = MESES_ORDEN.map(mes => {
@@ -906,6 +927,7 @@ async function renderResumenPagos(jugadoresData) {
         <a href="credencial.html?id=${j.id}" target="_blank" class="stripe-btn" style="width:auto;flex:1;text-align:center;text-decoration:none;font-size:12.5px;padding:10px 14px">🎫 Ver credencial</a>
         <button class="stripe-btn" style="width:auto;flex:1;font-size:12.5px;padding:10px 14px" onclick="switchHubTab('pedido')">🛍️ Pedir uniforme</button>
       </div>
+      ${partidosDeJugadorHtml(j, todosJuegos)}
       <div class="section-label">Mensualidades</div>
       <div class="pagos-mes-grid">${mesesHtml}</div>
       ${uniHtml ? '<div class="section-label">Uniforme</div>' + uniHtml : ''}
@@ -913,7 +935,7 @@ async function renderResumenPagos(jugadoresData) {
     </div>`;
   }).join('');
 
-  cont.innerHTML = proximosHtml + tarjetasHtml +
+  cont.innerHTML = tarjetasHtml +
     `<a href="https://wa.me/528713957332?text=${encodeURIComponent('Hola, tengo una duda sobre mi cuenta de Wolve Hub.')}" target="_blank" class="wa-btn" style="display:block;text-align:center;margin-top:8px">📲 Escribir a Wolverines por WhatsApp</a>` +
     `<div class="hub-logout" onclick="reiniciarConsultaPagos()">Cerrar sesión / usar otro correo</div>`;
 }
