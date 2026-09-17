@@ -149,13 +149,42 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
   </div>
 </header>
 
-<div class="hub-tabs">
-  <button class="hub-tab active" id="hub-tab-pedido" onclick="switchHubTab('pedido')">🛍️ Hacer un pedido</button>
-  <button class="hub-tab" id="hub-tab-pagos" onclick="switchHubTab('pagos')">💰 Consultar mis pagos</button>
-  <button class="hub-tab" id="hub-tab-rol" onclick="switchHubTab('rol')">📅 Rol de juegos</button>
+<div id="hub-auth-gate">
+  <div class="wrap" style="grid-template-columns:1fr;max-width:520px">
+    <div>
+      <div class="card" id="pagos-paso-email">
+        <h2>👋 Bienvenido a Wolve Hub</h2>
+        <div class="sub">Escribe el correo con el que registraste a tu jugador/a — te mandamos un código de verificación para entrar</div>
+        <div class="field">
+          <label>Correo electrónico <span>*</span></label>
+          <input type="email" id="pagos-email" placeholder="correo@ejemplo.com">
+        </div>
+        <div class="alert error" id="pagos-alert-email"></div>
+        <button class="submit-btn" id="pagos-btn-email" onclick="solicitarCodigoPagos()">📧 Enviar código</button>
+      </div>
+
+      <div class="card" id="pagos-paso-codigo" style="display:none">
+        <h2>🔐 Verifica tu código</h2>
+        <div class="sub">Te mandamos un código de 6 dígitos a <b id="pagos-email-confirm"></b> — expira en 10 minutos</div>
+        <div class="field">
+          <label>Código <span>*</span></label>
+          <input type="text" id="pagos-codigo" maxlength="6" placeholder="000000" style="text-align:center;letter-spacing:6px;font-size:18px;font-weight:800" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+        </div>
+        <div class="alert error" id="pagos-alert-codigo"></div>
+        <button class="submit-btn" id="pagos-btn-codigo" onclick="verificarCodigoPagos()">✅ Verificar</button>
+        <button class="submit-btn secondary" style="margin-top:8px" onclick="reiniciarConsultaPagos()">← Usar otro correo</button>
+      </div>
+    </div>
+  </div>
 </div>
 
-<div id="hub-pedido-section">
+<div class="hub-tabs" id="hub-tabs-bar" style="display:none">
+  <button class="hub-tab active" id="hub-tab-pagos" onclick="switchHubTab('pagos')">💰 Consultar mis pagos</button>
+  <button class="hub-tab" id="hub-tab-rol" onclick="switchHubTab('rol')">📅 Rol de juegos</button>
+  <button class="hub-tab" id="hub-tab-pedido" onclick="switchHubTab('pedido')">🛍️ Hacer un pedido</button>
+</div>
+
+<div id="hub-pedido-section" style="display:none">
 <div id="form-screen">
   <div class="wrap">
     <div>
@@ -254,29 +283,6 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
 <div id="hub-pagos-section" style="display:none">
   <div class="wrap" style="grid-template-columns:1fr;max-width:520px">
     <div>
-      <div class="card" id="pagos-paso-email">
-        <h2>💰 Consulta tus pagos</h2>
-        <div class="sub">Escribe el correo con el que registraste a tu jugador/a — te mandamos un código de verificación</div>
-        <div class="field">
-          <label>Correo electrónico <span>*</span></label>
-          <input type="email" id="pagos-email" placeholder="correo@ejemplo.com">
-        </div>
-        <div class="alert error" id="pagos-alert-email"></div>
-        <button class="submit-btn" id="pagos-btn-email" onclick="solicitarCodigoPagos()">📧 Enviar código</button>
-      </div>
-
-      <div class="card" id="pagos-paso-codigo" style="display:none">
-        <h2>🔐 Verifica tu código</h2>
-        <div class="sub">Te mandamos un código de 6 dígitos a <b id="pagos-email-confirm"></b> — expira en 10 minutos</div>
-        <div class="field">
-          <label>Código <span>*</span></label>
-          <input type="text" id="pagos-codigo" maxlength="6" placeholder="000000" style="text-align:center;letter-spacing:6px;font-size:18px;font-weight:800" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
-        </div>
-        <div class="alert error" id="pagos-alert-codigo"></div>
-        <button class="submit-btn" id="pagos-btn-codigo" onclick="verificarCodigoPagos()">✅ Verificar</button>
-        <button class="submit-btn secondary" style="margin-top:8px" onclick="reiniciarConsultaPagos()">← Usar otro correo</button>
-      </div>
-
       <div id="pagos-resultado"></div>
     </div>
   </div>
@@ -324,7 +330,6 @@ const PRODUCTS = [
   { id: 12, name: 'Llavero Wolverines',         price: 150,  img: 'llavero.jpeg',         sizeType: 'fixed', sizes: ['Única'], categoria: 'oficial' },
 ];
 
-let jugadores = [];
 let estadoUniforme = null;
 let lastOrder = null;
 const PAYMENTS_API = 'https://wolverines-payments.wolverinestrc.workers.dev';
@@ -443,6 +448,12 @@ function renderProducts() {
 async function onJugadorChange() {
   const id = document.getElementById('f-jugador').value;
   estadoUniforme = null;
+  const j = jugadoresActuales.find(x => x.id === id);
+  if (j) {
+    document.getElementById('f-tutor-nombre').value = j.tutor || '';
+    document.getElementById('f-tutor-tel').value = j.telefono || '';
+  }
+  document.getElementById('f-tutor-email').value = verificadoEmail || '';
   if (id) {
     try {
       const { data, error } = await sb.rpc('public_get_jugador_uniforme_estado', { p_id: id });
@@ -495,17 +506,15 @@ function updateTotal() {
     : 'Opcional, máx. 12 caracteres — se imprime debajo de tu número';
 }
 
-async function loadJugadores() {
+function cargarJugadorSelectPedido() {
   const sel = document.getElementById('f-jugador');
-  try {
-    const { data, error } = await sb.rpc('list_jugadores_publico');
-    if (error) throw error;
-    jugadores = data || [];
-    sel.innerHTML = '<option value="">Selecciona...</option>' +
-      jugadores.map(j => `<option value="${j.id}">${j.nombre} ${j.apellidos} · ${j.categoria}</option>`).join('');
-    sel.addEventListener('change', onJugadorChange);
-  } catch(e) {
-    sel.innerHTML = '<option value="">Error al cargar roster</option>';
+  sel.innerHTML = '<option value="">Selecciona...</option>' +
+    jugadoresActuales.map(j => `<option value="${j.id}">${j.nombre_completo} · ${j.categoria}</option>`).join('');
+  sel.removeEventListener('change', onJugadorChange);
+  sel.addEventListener('change', onJugadorChange);
+  if (jugadoresActuales.length === 1) {
+    sel.value = jugadoresActuales[0].id;
+    onJugadorChange();
   }
 }
 
@@ -577,8 +586,8 @@ function prepararPedido() {
   }
 
   const total = items.reduce((s, i) => s + i.subtotal, 0);
-  const jugador = jugadores.find(j => j.id === jugadorId);
-  const jugadorNombre = jugador ? (jugador.nombre + ' ' + jugador.apellidos) : '';
+  const jugador = jugadoresActuales.find(j => j.id === jugadorId);
+  const jugadorNombre = jugador ? jugador.nombre_completo : '';
 
   pendingOrder = {
     jugadorId, jugadorNombre, tutorNombre, tutorTel, tutorEmail,
@@ -713,12 +722,11 @@ async function payWithStripe() {
 })();
 
 renderProducts();
-loadJugadores();
 cargarStock();
 
 // ── HUB TABS ──
-let sesionIntentada = false;
 let jugadoresActuales = [];
+let verificadoEmail = null;
 function switchHubTab(tab) {
   document.getElementById('hub-tab-pedido').classList.toggle('active', tab === 'pedido');
   document.getElementById('hub-tab-pagos').classList.toggle('active', tab === 'pagos');
@@ -726,11 +734,17 @@ function switchHubTab(tab) {
   document.getElementById('hub-pedido-section').style.display = tab === 'pedido' ? 'block' : 'none';
   document.getElementById('hub-pagos-section').style.display = tab === 'pagos' ? 'block' : 'none';
   document.getElementById('hub-rol-section').style.display = tab === 'rol' ? 'block' : 'none';
-  if ((tab === 'pagos' || tab === 'rol') && !sesionIntentada) {
-    sesionIntentada = true;
-    intentarSesionGuardada();
-  }
   if (tab === 'rol') renderMisPartidosRol();
+}
+
+async function entrarAlHub(jugadoresData, email) {
+  jugadoresActuales = jugadoresData || [];
+  verificadoEmail = email || null;
+  document.getElementById('hub-auth-gate').style.display = 'none';
+  document.getElementById('hub-tabs-bar').style.display = 'flex';
+  cargarJugadorSelectPedido();
+  await renderResumenPagos(jugadoresActuales);
+  switchHubTab('pagos');
 }
 
 // ── CONSULTAR MIS PAGOS ──
@@ -779,9 +793,7 @@ async function verificarCodigoPagos() {
     if (data && data.session_token) {
       try { localStorage.setItem(WOLVE_SESSION_KEY, data.session_token); } catch(e) {}
     }
-    document.getElementById('pagos-paso-codigo').style.display = 'none';
-    await renderResumenPagos((data && data.jugadores) || []);
-    renderMisPartidosRol();
+    await entrarAlHub((data && data.jugadores) || [], email);
   } catch(e) {
     alertEl.textContent = '❌ ' + e.message;
     alertEl.classList.add('show');
@@ -797,10 +809,7 @@ async function intentarSesionGuardada() {
   try {
     const { data, error } = await sb.rpc('public_reautenticar_sesion', { p_token: token });
     if (error) throw error;
-    document.getElementById('pagos-paso-email').style.display = 'none';
-    document.getElementById('pagos-paso-codigo').style.display = 'none';
-    await renderResumenPagos((data && data.jugadores) || []);
-    renderMisPartidosRol();
+    await entrarAlHub((data && data.jugadores) || [], (data && data.email) || null);
   } catch(e) {
     try { localStorage.removeItem(WOLVE_SESSION_KEY); } catch(e2) {}
   }
@@ -809,6 +818,9 @@ async function intentarSesionGuardada() {
 function reiniciarConsultaPagos() {
   try { localStorage.removeItem(WOLVE_SESSION_KEY); } catch(e) {}
   jugadoresActuales = [];
+  verificadoEmail = null;
+  document.getElementById('hub-tabs-bar').style.display = 'none';
+  document.getElementById('hub-auth-gate').style.display = 'block';
   document.getElementById('pagos-paso-codigo').style.display = 'none';
   document.getElementById('pagos-paso-email').style.display = 'block';
   document.getElementById('pagos-resultado').innerHTML = '';
@@ -974,31 +986,31 @@ async function renderMisPartidosRol() {
 }
 
 // ── VISTA PREVIA ADMIN (sin OTP) ──
+let modoVistaPrevia = false;
+
 (function initVistaPreviaAdmin() {
   const params = new URLSearchParams(window.location.search);
   const adminPwd = params.get('admin_pwd');
   const adminEmail = params.get('admin_email');
   if (!adminPwd || !adminEmail) return;
 
-  sesionIntentada = true; // evita que intentarSesionGuardada pise esta vista
-  switchHubTab('pagos');
-  document.getElementById('pagos-paso-email').style.display = 'none';
-  document.getElementById('pagos-paso-codigo').style.display = 'none';
-  document.getElementById('pagos-resultado').innerHTML = '<div class="hub-preview-banner">👁 Modo vista previa (admin) — esto no guarda sesión</div>';
-
-  sb.rpc('admin_ver_cuenta_por_email', { p_pwd: adminPwd, p_email: adminEmail }).then(({ data, error }) => {
+  modoVistaPrevia = true;
+  sb.rpc('admin_ver_cuenta_por_email', { p_pwd: adminPwd, p_email: adminEmail }).then(async ({ data, error }) => {
     if (error) {
-      document.getElementById('pagos-resultado').innerHTML += `<div class="card"><div class="sub" style="margin:0">❌ ${error.message}</div></div>`;
+      document.getElementById('hub-auth-gate').style.display = 'none';
+      document.getElementById('hub-tabs-bar').style.display = 'flex';
+      document.getElementById('pagos-resultado').innerHTML = `<div class="card"><div class="sub" style="margin:0">❌ ${error.message}</div></div>`;
+      switchHubTab('pagos');
       return;
     }
-    renderResumenPagos(data || []).then(() => {
-      document.getElementById('pagos-resultado').innerHTML =
-        '<div class="hub-preview-banner">👁 Modo vista previa (admin) — esto no guarda sesión</div>' +
-        document.getElementById('pagos-resultado').innerHTML;
-      renderMisPartidosRol();
-    });
+    await entrarAlHub(data || [], adminEmail);
+    document.getElementById('pagos-resultado').innerHTML =
+      '<div class="hub-preview-banner">👁 Modo vista previa (admin) — esto no guarda sesión</div>' +
+      document.getElementById('pagos-resultado').innerHTML;
   });
 })();
+
+if (!modoVistaPrevia) intentarSesionGuardada();
 </script>
 </body>
 </html>
