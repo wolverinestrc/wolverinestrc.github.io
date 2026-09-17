@@ -265,6 +265,7 @@ table.lt td{padding:12px 14px;font-size:13px;color:var(--text);border-top:1px so
       <button class="tab-btn" id="tb-coaches" onclick="switchTab('coaches')">🧑‍🏫 Coaches</button>
       <button class="tab-btn" id="tb-avisos" onclick="switchTab('avisos')">📢 Avisos</button>
       <button class="tab-btn" id="tb-rosters" onclick="switchTab('rosters')">🗂️ Rosters</button>
+      <button class="tab-btn" id="tb-juegos" onclick="switchTab('juegos')">🏈 Juegos</button>
     </div>
 
     <!-- JUGADORES -->
@@ -488,6 +489,34 @@ table.lt td{padding:12px 14px;font-size:13px;color:var(--text);border-top:1px so
       </div>
       <div id="rosters-content"></div>
     </div>
+
+    <!-- JUEGOS -->
+    <div class="morosos-section" id="section-juegos" style="display:none">
+      <div class="content-card">
+        <div class="mor-header">
+          <div>
+            <div class="mor-title">🏈 Rol de juegos</div>
+            <div class="mor-sub">Se publica en wolverines.mx/games.html — los borradores no se ven ahí hasta que le des "Publicar rol"</div>
+          </div>
+          <button class="btn-action" onclick="publicarJuegos()">📢 Publicar rol</button>
+        </div>
+        <div class="controls" style="padding:0 24px;flex-wrap:wrap">
+          <select class="filter-select" id="juego-dia"><option>Viernes</option><option>Sábado</option></select>
+          <input class="search-box" type="text" id="juego-liga" placeholder="Liga (opcional)" style="max-width:140px">
+          <input class="search-box" type="text" id="juego-categoria" placeholder="Categoría" style="max-width:150px">
+          <input class="search-box" type="text" id="juego-partido" placeholder="Equipo A vs Equipo B" style="flex:1;min-width:200px">
+        </div>
+        <div class="controls" style="padding:0 24px">
+          <input class="search-box" type="text" id="juego-hora" placeholder="Hora (HH:MM)" style="max-width:120px">
+          <input class="search-box" type="text" id="juego-campo" placeholder="Campo" style="max-width:120px">
+          <input class="search-box" type="text" id="juego-sede" placeholder="Sede" style="max-width:180px">
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px"><input type="checkbox" id="juego-pospuesto"> Pospuesto</label>
+          <button class="btn-action btn-ghost" id="btn-guardar-juego" onclick="crearJuego()">➕ Agregar juego</button>
+          <button class="btn-action btn-ghost" onclick="limpiarFormJuego()">✕ Cancelar</button>
+        </div>
+      </div>
+      <div id="juegos-content"></div>
+    </div>
   </div>
 </div>
 
@@ -606,6 +635,7 @@ let staffRecords = [];
 let rostersRecords = [];
 let rosterMiembrosRecords = [];
 let rosterCoachesRecords = [];
+let juegosRecords = [];
 let currentId    = null;
 const ESTADO_PAGO_LABEL = { pendiente: 'Pendiente', abono: 'Abono', pagado: 'Pagado' };
 const ESTADO_PAGO_NEXT  = { pendiente: 'abono', abono: 'pagado', pagado: 'pendiente' };
@@ -682,6 +712,10 @@ async function loadData() {
     if (rcErr) throw rcErr;
     rosterCoachesRecords = rcData || [];
 
+    const { data: juegosData, error: juegosErr } = await sb.rpc('admin_list_juegos', { p_pwd: PWD });
+    if (juegosErr) throw juegosErr;
+    juegosRecords = juegosData || [];
+
     updateStats();
     renderAnioFiltro();
     renderTable();
@@ -713,7 +747,7 @@ function tieneAtraso(rec) {
 
 // ── TABS ──
 function switchTab(tab) {
-  ['jugadores','pagos','morosos','uniformes','tienda','coaches','avisos','rosters'].forEach(function(t) {
+  ['jugadores','pagos','morosos','uniformes','tienda','coaches','avisos','rosters','juegos'].forEach(function(t) {
     var btn = document.getElementById('tb-' + t);
     if (btn) btn.classList.remove('active');
     var sec = document.getElementById('section-' + t);
@@ -731,6 +765,7 @@ function switchTab(tab) {
   if (tab === 'coaches') renderCoaches();
   if (tab === 'avisos') { renderStaffAvisos(); document.getElementById('aviso-preview').innerHTML = ''; }
   if (tab === 'rosters') renderRosters();
+  if (tab === 'juegos') renderJuegos();
 }
 
 // ── LIST (jugadores) ──
@@ -2332,6 +2367,120 @@ function exportUniformesPendientes() {
 }
 
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ── JUEGOS ──
+var juegoEditandoId = null;
+
+function renderJuegos() {
+  var cont = document.getElementById('juegos-content');
+  if (!juegosRecords.length) { cont.innerHTML = '<div class="empty">Aún no hay juegos cargados.</div>'; return; }
+  var orden = { 'Viernes': 0, 'Sábado': 1 };
+  var recs = juegosRecords.slice().sort(function(a, b) {
+    if (orden[a.dia] !== orden[b.dia]) return orden[a.dia] - orden[b.dia];
+    return (a.hora || '').localeCompare(b.hora || '');
+  });
+  var html = recs.map(function(j) {
+    var estado = j.publicado ? '<span class="badge badge-ok">Publicado</span>' : '<span class="badge badge-num">Borrador</span>';
+    var pospuestoBadge = j.pospuesto ? ' <span class="badge badge-warn">Pospuesto</span>' : '';
+    return '<div class="p-row" style="cursor:default">' +
+      '<div class="p-avatar-ph">🏈</div>' +
+      '<div class="p-info"><div class="p-name">' + j.dia + ' ' + (j.hora || 'sin hora') + ' · ' + j.partido + '</div>' +
+      '<div class="p-sub">' + (j.liga ? j.liga + ' · ' : '') + (j.categoria || '') + (j.campo ? ' · ' + j.campo : '') + (j.sede ? ' · ' + j.sede : '') + '</div></div>' +
+      '<div class="p-badges">' + estado + pospuestoBadge + '</div>' +
+      '<div class="p-actions">' +
+        '<button class="icon-btn icon-edit" title="Editar" onclick="editarJuego(\'' + j.id + '\')">✏️</button>' +
+        '<button class="icon-btn icon-del" title="Eliminar" onclick="eliminarJuego(\'' + j.id + '\')">🗑</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+  cont.innerHTML = '<div class="list-wrap">' + html + '</div>';
+}
+
+function limpiarFormJuego() {
+  document.getElementById('juego-dia').value = 'Viernes';
+  document.getElementById('juego-liga').value = '';
+  document.getElementById('juego-categoria').value = '';
+  document.getElementById('juego-partido').value = '';
+  document.getElementById('juego-hora').value = '';
+  document.getElementById('juego-campo').value = '';
+  document.getElementById('juego-sede').value = '';
+  document.getElementById('juego-pospuesto').checked = false;
+  juegoEditandoId = null;
+  document.getElementById('btn-guardar-juego').textContent = '➕ Agregar juego';
+}
+
+function editarJuego(id) {
+  var j = juegosRecords.find(function(x) { return x.id === id; });
+  if (!j) return;
+  document.getElementById('juego-dia').value = j.dia;
+  document.getElementById('juego-liga').value = j.liga || '';
+  document.getElementById('juego-categoria').value = j.categoria || '';
+  document.getElementById('juego-partido').value = j.partido || '';
+  document.getElementById('juego-hora').value = j.hora || '';
+  document.getElementById('juego-campo').value = j.campo || '';
+  document.getElementById('juego-sede').value = j.sede || '';
+  document.getElementById('juego-pospuesto').checked = !!j.pospuesto;
+  juegoEditandoId = id;
+  document.getElementById('btn-guardar-juego').textContent = '💾 Guardar cambios';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function crearJuego() {
+  var partido = document.getElementById('juego-partido').value.trim();
+  if (!partido) { alert('Falta el partido (Equipo A vs Equipo B).'); return; }
+  var datos = {
+    dia: document.getElementById('juego-dia').value,
+    liga: document.getElementById('juego-liga').value.trim() || null,
+    categoria: document.getElementById('juego-categoria').value.trim() || null,
+    partido: partido,
+    hora: document.getElementById('juego-hora').value.trim() || null,
+    campo: document.getElementById('juego-campo').value.trim() || null,
+    sede: document.getElementById('juego-sede').value.trim() || null,
+    pospuesto: document.getElementById('juego-pospuesto').checked,
+  };
+  try {
+    if (juegoEditandoId) {
+      var { error } = await sb.rpc('admin_update_juego', {
+        p_pwd: PWD, p_id: juegoEditandoId, p_dia: datos.dia, p_liga: datos.liga, p_categoria: datos.categoria,
+        p_partido: datos.partido, p_hora: datos.hora, p_campo: datos.campo, p_sede: datos.sede, p_pospuesto: datos.pospuesto
+      });
+      if (error) throw error;
+      var j = juegosRecords.find(function(x) { return x.id === juegoEditandoId; });
+      Object.assign(j, datos);
+    } else {
+      var { data, error } = await sb.rpc('admin_create_juego', {
+        p_pwd: PWD, p_dia: datos.dia, p_liga: datos.liga, p_categoria: datos.categoria, p_partido: datos.partido,
+        p_hora: datos.hora, p_campo: datos.campo, p_sede: datos.sede, p_pospuesto: datos.pospuesto
+      });
+      if (error) throw error;
+      juegosRecords.push(data);
+    }
+    limpiarFormJuego();
+    renderJuegos();
+  } catch(e) { alert('❌ Error: ' + e.message); }
+}
+
+async function eliminarJuego(id) {
+  if (!confirm('¿Eliminar este juego?')) return;
+  try {
+    var { error } = await sb.rpc('admin_delete_juego', { p_pwd: PWD, p_id: id });
+    if (error) throw error;
+    juegosRecords = juegosRecords.filter(function(j) { return j.id !== id; });
+    if (juegoEditandoId === id) limpiarFormJuego();
+    renderJuegos();
+  } catch(e) { alert('❌ Error: ' + e.message); }
+}
+
+async function publicarJuegos() {
+  if (!confirm('¿Publicar todos los juegos en borrador? Se van a ver de inmediato en wolverines.mx/games.html')) return;
+  try {
+    var { data, error } = await sb.rpc('admin_publicar_juegos', { p_pwd: PWD });
+    if (error) throw error;
+    juegosRecords.forEach(function(j) { j.publicado = true; });
+    renderJuegos();
+    alert('✅ Se publicaron ' + data + ' juego(s) nuevo(s).');
+  } catch(e) { alert('❌ Error: ' + e.message); }
+}
 </script>
 </body>
 </html>
