@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Juegos · Wolverines TRC</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy:    #070f1e;
+    --navy2:   #0d1f3c;
+    --card:    #111d36;
+    --lite:    #162545;
+    --gold:    #FFCB05;
+    --gold-dk: #d4a800;
+    --white:   #ffffff;
+    --gray:    #8899bb;
+    --light:   #ccdaff;
+  }
+
+  body {
+    background: var(--navy);
+    font-family: 'Montserrat', sans-serif;
+    color: var(--white);
+    min-height: 100vh;
+    padding: 0 0 60px;
+  }
+
+  header {
+    background: var(--navy2);
+    border-bottom: 3px solid var(--gold);
+    padding: 20px 32px;
+  }
+  .header-text h1 { font-size: 20px; font-weight: 900; color: var(--gold); letter-spacing: 1px; }
+  .header-text p {
+    font-size: 12px; color: var(--gray); font-weight: 600;
+    letter-spacing: 2px; text-transform: uppercase; margin-top: 2px;
+  }
+
+  .hero { padding: 28px 20px 4px; max-width: 640px; margin: 0 auto; text-align: center; }
+  .hero h2 { font-size: 22px; font-weight: 900; line-height: 1.4; }
+  .hero p { font-size: 13px; color: var(--light); margin-top: 8px; line-height: 1.6; }
+
+  .container { max-width: 640px; margin: 24px auto 0; padding: 0 20px; }
+
+  .dia-titulo {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 15px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase;
+    color: var(--gold); margin: 28px 0 14px;
+  }
+  .dia-titulo:first-child { margin-top: 0; }
+  .dia-titulo::after { content: ''; flex: 1; height: 1px; background: var(--lite); }
+
+  .juego-card {
+    background: var(--card);
+    border: 1px solid var(--lite);
+    border-left: 4px solid var(--gold);
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 18px;
+  }
+
+  .juego-liga {
+    display: inline-block;
+    background: var(--lite);
+    color: var(--light);
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 20px;
+  }
+
+  .juego-badges { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; }
+
+  .juego-partido {
+    font-size: 17px;
+    font-weight: 900;
+    color: var(--white);
+    flex: 1;
+    min-width: 120px;
+    width: 100%;
+  }
+
+  .juego-detalles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 20px;
+    width: 100%;
+    font-size: 13px;
+    color: var(--light);
+  }
+
+  .juego-detalle { display: flex; align-items: center; gap: 6px; }
+  .juego-detalle b { color: var(--white); font-weight: 700; }
+
+  .vacio {
+    text-align: center;
+    color: var(--gray);
+    font-size: 13px;
+    padding: 40px 20px;
+    background: var(--card);
+    border: 1px dashed var(--lite);
+    border-radius: 10px;
+  }
+
+  footer {
+    text-align: center;
+    color: var(--gray);
+    font-size: 11px;
+    margin-top: 40px;
+    padding: 0 20px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-text">
+    <h1>WOLVERINES 🏈</h1>
+    <p>Juegos de la semana</p>
+  </div>
+</header>
+
+<div class="hero">
+  <h2>Calendario de juegos</h2>
+  <p>Consulta categoría, hora, campo y sede de los juegos de viernes y sábado en cada liga.</p>
+</div>
+
+<div class="container" id="juegos-container"></div>
+
+<footer>Wolverines TRC · Este calendario se actualiza cada semana</footer>
+
+<script>
+/*
+ * Actualiza este arreglo cada semana con los juegos.
+ * dia: 'Viernes' o 'Sábado'
+ * hora: formato 24h "HH:MM" para que ordene bien (ej. "17:30")
+ * partido: "Equipo A vs Equipo B"
+ * liga: opcional, déjalo fuera si no aplica
+ */
+const JUEGOS = [
+  { dia: 'Viernes', categoria: 'U15 Femenil', partido: 'Wolverines Azul vs Borregas Laguna', hora: '18:00', campo: 'Campo 1', sede: 'Tec de Monterrey' },
+  { dia: 'Viernes', categoria: 'U17 Femenil', partido: 'Wolverines Azul vs UAD Torreón', hora: '19:00', campo: 'Campo 2', sede: 'Tec de Monterrey' },
+  { dia: 'Viernes', categoria: 'U17 Femenil', partido: 'Borregas Laguna vs Wolverines Blanco', hora: '20:00', campo: 'Campo 1', sede: 'Tec de Monterrey' },
+];
+
+const DIAS_ORDEN = ['Viernes', 'Sábado'];
+
+function renderJuegos() {
+  const cont = document.getElementById('juegos-container');
+
+  if (!JUEGOS.length) {
+    cont.innerHTML = '<div class="vacio">Todavía no hay juegos programados para esta semana.</div>';
+    return;
+  }
+
+  let html = '';
+  DIAS_ORDEN.forEach(function(dia) {
+    const juegosDia = JUEGOS.filter(function(j) { return j.dia === dia; })
+      .sort(function(a, b) { return (a.hora || '').localeCompare(b.hora || ''); });
+    if (!juegosDia.length) return;
+
+    html += '<div class="dia-titulo">📅 ' + dia + '</div>';
+    juegosDia.forEach(function(j) {
+      var badges = (j.liga ? '<span class="juego-liga">' + j.liga + '</span>' : '') +
+        (j.categoria ? '<span class="juego-liga">' + j.categoria + '</span>' : '');
+      html += '<div class="juego-card">' +
+        (badges ? '<div class="juego-badges">' + badges + '</div>' : '') +
+        '<div class="juego-partido">' + (j.partido || '') + '</div>' +
+        '<div class="juego-detalles">' +
+          '<span class="juego-detalle">🕐 <b>' + (j.hora || '—') + '</b></span>' +
+          '<span class="juego-detalle">🏟️ <b>' + (j.campo || '—') + '</b></span>' +
+          '<span class="juego-detalle">📍 ' + (j.sede || '—') + '</span>' +
+        '</div>' +
+      '</div>';
+    });
+  });
+
+  cont.innerHTML = html || '<div class="vacio">Todavía no hay juegos programados para esta semana.</div>';
+}
+
+renderJuegos();
+</script>
+</body>
+</html>
