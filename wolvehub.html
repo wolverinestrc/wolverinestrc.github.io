@@ -131,16 +131,6 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
 .hub-logout{display:block;text-align:center;font-size:12px;color:var(--gray);margin-top:16px;cursor:pointer;text-decoration:underline}
 .hub-preview-banner{background:#fef3e0;color:#b45309;font-size:12.5px;font-weight:700;text-align:center;padding:10px;border-radius:10px;margin-bottom:16px}
 
-.dia-titulo{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:800;letter-spacing:0.6px;text-transform:uppercase;color:var(--navy);margin:20px 0 12px}
-.dia-titulo:first-child{margin-top:0}
-.dia-titulo::after{content:'';flex:1;height:1px;background:var(--border)}
-.juego-card{background:var(--card);border:1px solid var(--border);border-left:4px solid var(--blue);border-radius:12px;box-shadow:var(--shadow);padding:14px 16px;margin-bottom:10px;display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px}
-.juego-card.pospuesto{border-left-color:#f59e0b}
-.juego-badges{display:flex;flex-wrap:wrap;gap:6px;width:100%}
-.badge-juego{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;padding:4px 10px;border-radius:20px;white-space:nowrap;background:var(--blue-lt);color:var(--blue-dk)}
-.badge-juego.pospuesto{background:#fef3e0;color:#b45309}
-.juego-partido{font-size:15px;font-weight:800;color:var(--navy);width:100%}
-.juego-detalles{display:flex;flex-wrap:wrap;gap:4px 16px;width:100%;font-size:12.5px;color:var(--gray)}
 </style>
 </head>
 <body>
@@ -290,15 +280,6 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
   <div class="wrap" style="grid-template-columns:1fr;max-width:640px">
     <div>
       <div id="rol-mis-partidos"></div>
-      <div class="card">
-        <h2>📅 Rol de juegos</h2>
-        <div class="sub">Filtra por categoría para encontrar más rápido el juego que buscas</div>
-        <div class="field" style="margin-bottom:0">
-          <label>Categoría</label>
-          <select id="rol-categoria-filtro" onchange="renderRolJuegos()"><option value="">Todas las categorías</option></select>
-        </div>
-      </div>
-      <div id="rol-juegos-contenido"></div>
     </div>
   </div>
 </div>
@@ -731,7 +712,6 @@ cargarStock();
 
 // ── HUB TABS ──
 let sesionIntentada = false;
-let rolCargado = false;
 let jugadoresActuales = [];
 function switchHubTab(tab) {
   document.getElementById('hub-tab-pedido').classList.toggle('active', tab === 'pedido');
@@ -744,10 +724,7 @@ function switchHubTab(tab) {
     sesionIntentada = true;
     intentarSesionGuardada();
   }
-  if (tab === 'rol' && !rolCargado) {
-    rolCargado = true;
-    cargarRolJuegos();
-  }
+  if (tab === 'rol') renderMisPartidosRol();
 }
 
 // ── CONSULTAR MIS PAGOS ──
@@ -860,22 +837,6 @@ function tokensDeJugador(j) {
   return fuentes.map(extraerInfoCategoria).filter(Boolean);
 }
 
-function partidosDeJugadorHtml(j, todosJuegos) {
-  const infos = tokensDeJugador(j);
-  if (!infos.length) {
-    return '<div class="section-label" style="margin-top:0">🏈 Próximos partidos</div><div class="pagos-jugador-sub" style="margin-bottom:0">Todavía no está en ningún roster — en cuanto lo asignen, aquí van a salir sus partidos.</div>';
-  }
-  const juegos = todosJuegos.filter(g => !g.pospuesto && infos.some(info => coincideCategoria(info, extraerInfoCategoria(g.categoria))));
-  if (!juegos.length) {
-    return '<div class="section-label" style="margin-top:0">🏈 Próximos partidos</div><div class="pagos-jugador-sub" style="margin-bottom:0">No hay partidos programados por ahora.</div>';
-  }
-  const filas = juegos.map(g => `<div class="hub-partido-mini">
-    <div><b>${g.partido}</b><span>${g.categoria || ''}${g.campo ? ' · ' + g.campo : ''}${g.sede ? ' · ' + g.sede : ''}</span></div>
-    <span>${g.dia}${g.hora ? ' ' + g.hora : ''}</span>
-  </div>`).join('');
-  return `<div class="section-label" style="margin-top:0">🏈 Próximos partidos</div>${filas}`;
-}
-
 async function renderResumenPagos(jugadoresData) {
   const cont = document.getElementById('pagos-resultado');
   jugadoresActuales = jugadoresData || [];
@@ -948,82 +909,52 @@ async function renderResumenPagos(jugadoresData) {
     `<div class="hub-logout" onclick="reiniciarConsultaPagos()">Cerrar sesión / usar otro correo</div>`;
 }
 
-// ── ROL DE JUEGOS ──
-let JUEGOS_ROL = [];
+// ── ROL DE JUEGOS (solo los partidos de la familia, en orden cronológico) ──
+let JUEGOS_ROL_CACHE = [];
 const DIAS_ORDEN_ROL = ['Viernes', 'Sábado'];
-
-async function cargarRolJuegos() {
-  const cont = document.getElementById('rol-juegos-contenido');
-  cont.innerHTML = '<div class="card"><div class="sub" style="margin:0">Cargando…</div></div>';
-  try {
-    const { data, error } = await sb.rpc('public_list_juegos');
-    if (error) throw error;
-    JUEGOS_ROL = data || [];
-    const select = document.getElementById('rol-categoria-filtro');
-    const categorias = [...new Set(JUEGOS_ROL.map(j => j.categoria).filter(Boolean))].sort();
-    select.innerHTML = '<option value="">Todas las categorías</option>' + categorias.map(c => `<option value="${c}">${c}</option>`).join('');
-    renderRolJuegos();
-    renderMisPartidosRol();
-  } catch(e) {
-    cont.innerHTML = '<div class="card"><div class="sub" style="margin:0">No se pudo cargar el rol. Intenta de nuevo más tarde.</div></div>';
-  }
-}
 
 async function renderMisPartidosRol() {
   const cont = document.getElementById('rol-mis-partidos');
   if (!cont) return;
-  if (!jugadoresActuales.length) { cont.innerHTML = ''; return; }
-  let juegos = JUEGOS_ROL;
+  if (!jugadoresActuales.length) {
+    cont.innerHTML = '<div class="card"><div class="sub" style="margin:0">Verifica tu correo en "Consultar mis pagos" para ver los partidos de tus jugadores.</div></div>';
+    return;
+  }
+
+  let juegos = JUEGOS_ROL_CACHE;
   if (!juegos.length) {
     try {
       const { data, error } = await sb.rpc('public_list_juegos');
       if (error) throw error;
       juegos = data || [];
+      JUEGOS_ROL_CACHE = juegos;
     } catch(e) { juegos = []; }
   }
-  const html = jugadoresActuales.map(j => `<div class="pagos-jugador-card">
-    <h3 style="margin-bottom:8px">${j.nombre_completo}</h3>
-    ${partidosDeJugadorHtml(j, juegos)}
-  </div>`).join('');
-  cont.innerHTML = `<div class="section-label" style="margin:0 0 8px">🏈 Los partidos de tus jugadores</div>${html}`;
-}
 
-function renderRolJuegos() {
-  const cont = document.getElementById('rol-juegos-contenido');
-  const catFiltro = document.getElementById('rol-categoria-filtro').value;
-  const juegos = catFiltro ? JUEGOS_ROL.filter(j => j.categoria === catFiltro) : JUEGOS_ROL;
+  const filas = [];
+  juegos.filter(g => !g.pospuesto).forEach(g => {
+    const infoJuego = extraerInfoCategoria(g.categoria);
+    const hijos = jugadoresActuales.filter(j => tokensDeJugador(j).some(info => coincideCategoria(info, infoJuego)));
+    if (hijos.length) filas.push({ juego: g, hijos: hijos.map(j => j.nombre_completo.split(' ')[0]) });
+  });
 
-  if (!juegos.length) {
-    cont.innerHTML = '<div class="card"><div class="sub" style="margin:0">No hay juegos para mostrar.</div></div>';
+  const ordenDia = { 'Viernes': 0, 'Sábado': 1 };
+  filas.sort((a, b) => {
+    if (ordenDia[a.juego.dia] !== ordenDia[b.juego.dia]) return ordenDia[a.juego.dia] - ordenDia[b.juego.dia];
+    return (a.juego.hora || '').localeCompare(b.juego.hora || '');
+  });
+
+  if (!filas.length) {
+    cont.innerHTML = '<div class="pagos-jugador-card"><div class="section-label" style="margin-top:0">🏈 Próximos partidos</div><div class="pagos-jugador-sub" style="margin-bottom:0">No hay partidos programados por ahora.</div></div>';
     return;
   }
 
-  let html = '';
-  DIAS_ORDEN_ROL.forEach(dia => {
-    const juegosDia = juegos.filter(j => j.dia === dia)
-      .sort((a, b) => {
-        if (!!a.pospuesto !== !!b.pospuesto) return a.pospuesto ? 1 : -1;
-        return (a.hora || '').localeCompare(b.hora || '');
-      });
-    if (!juegosDia.length) return;
+  const html = filas.map(f => `<div class="hub-partido-mini">
+    <div><b>${f.juego.partido}</b><span>${f.hijos.join(', ')} · ${f.juego.categoria || ''}${f.juego.campo ? ' · ' + f.juego.campo : ''}${f.juego.sede ? ' · ' + f.juego.sede : ''}</span></div>
+    <span>${f.juego.dia}${f.juego.hora ? ' ' + f.juego.hora : ''}</span>
+  </div>`).join('');
 
-    html += `<div class="dia-titulo">📅 ${dia}</div>`;
-    juegosDia.forEach(j => {
-      const badges = (j.liga ? `<span class="badge-juego">${j.liga}</span>` : '') +
-        (j.categoria ? `<span class="badge-juego">${j.categoria}</span>` : '') +
-        (j.pospuesto ? '<span class="badge-juego pospuesto">⏸ Pospuesto</span>' : '');
-      const detalles = j.pospuesto
-        ? '<span>Se reprogramó — todavía sin nueva fecha/hora confirmada</span>'
-        : `<span>🕐 <b>${j.hora || '—'}</b></span><span>🏟️ ${j.campo || '—'}</span><span>📍 ${j.sede || '—'}</span>`;
-      html += `<div class="juego-card${j.pospuesto ? ' pospuesto' : ''}">
-        <div class="juego-badges">${badges}</div>
-        <div class="juego-partido">${j.partido || ''}</div>
-        <div class="juego-detalles">${detalles}</div>
-      </div>`;
-    });
-  });
-
-  cont.innerHTML = html;
+  cont.innerHTML = `<div class="pagos-jugador-card"><div class="section-label" style="margin-top:0">🏈 Próximos partidos de tus jugadores</div>${html}</div>`;
 }
 
 // ── VISTA PREVIA ADMIN (sin OTP) ──
