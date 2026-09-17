@@ -38,13 +38,19 @@
 
   .container { max-width: 640px; margin: 24px auto 0; padding: 0 20px; }
 
-  .dia-titulo {
-    display: flex; align-items: center; gap: 10px;
-    font-size: 14px; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase;
-    color: var(--navy); margin: 28px 0 14px;
+  .dia-banner {
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 14px;
+    padding: 14px 18px; border-radius: 12px; margin: 32px 0 14px;
+    color: #fff; box-shadow: var(--shadow);
   }
-  .dia-titulo:first-child { margin-top: 0; }
-  .dia-titulo::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .dia-banner:first-child { margin-top: 0; }
+  .dia-banner.viernes { background: linear-gradient(90deg, var(--navy), var(--navy2)); border-left: 5px solid var(--gold); }
+  .dia-banner.sabado  { background: linear-gradient(90deg, var(--blue-dk), var(--blue)); border-left: 5px solid var(--gold); }
+  .dia-banner .dia-nombre { font-size: 15px; font-weight: 900; letter-spacing: 0.6px; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+  .dia-banner .dia-liga { display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; color: var(--navy); background: #fff; padding: 5px 14px; border-radius: 20px; white-space: nowrap; }
+  .dia-banner .dia-liga img { height: 22px; width: auto; display: block; }
+  .badge-liga-otra { display: inline-flex; align-items: center; gap: 5px; background: var(--blue-lt); color: var(--blue-dk); }
+  .badge-liga-otra img { height: 14px; width: auto; }
 
   .juego-card {
     background: var(--card);
@@ -109,6 +115,19 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let JUEGOS = [];
 const DIAS_ORDEN = ['Viernes', 'Sábado'];
 
+const LOGOS_LIGA = {
+  'all pro': 'assets/ligas/logo-allpro.png',
+  'allpro': 'assets/ligas/logo-allpro.png',
+  'ltl kids': 'assets/ligas/logo-ltlkids.png',
+  'ltlkids': 'assets/ligas/logo-ltlkids.png',
+  'playmkr': 'assets/ligas/logo-playmkr.png',
+  'play mkr': 'assets/ligas/logo-playmkr.png',
+};
+function logoLiga(liga) {
+  if (!liga) return null;
+  return LOGOS_LIGA[liga.trim().toLowerCase()] || null;
+}
+
 async function cargarJuegos() {
   const cont = document.getElementById('juegos-container');
   try {
@@ -138,9 +157,17 @@ function renderJuegos() {
       });
     if (!juegosDia.length) return;
 
-    html += '<div class="dia-titulo">📅 ' + dia + '</div>';
+    var ligaDia = juegosDia.find(function(j) { return j.liga; });
+    var claseDia = dia === 'Viernes' ? 'viernes' : 'sabado';
+    var logoDia = ligaDia ? logoLiga(ligaDia.liga) : null;
+    html += '<div class="dia-banner ' + claseDia + '">' +
+      '<span class="dia-nombre">📅 ' + dia + '</span>' +
+      (ligaDia ? '<span class="dia-liga">' + (logoDia ? '<img src="' + logoDia + '" alt="' + ligaDia.liga + '">' : '🏆 ' + ligaDia.liga) + '</span>' : '') +
+    '</div>';
     juegosDia.forEach(function(j) {
-      var badges = (j.liga ? '<span class="badge badge-cat">' + j.liga + '</span>' : '') +
+      var ligaDistinta = j.liga && ligaDia && j.liga !== ligaDia.liga;
+      var logoJuego = ligaDistinta ? logoLiga(j.liga) : null;
+      var badges = (ligaDistinta ? '<span class="badge badge-liga-otra">' + (logoJuego ? '<img src="' + logoJuego + '" alt="' + j.liga + '">' : '🏆 ' + j.liga) + '</span>' : '') +
         (j.categoria ? '<span class="badge badge-cat">' + j.categoria + '</span>' : '') +
         (j.pospuesto ? '<span class="badge badge-pospuesto">⏸ Pospuesto</span>' : '');
 
