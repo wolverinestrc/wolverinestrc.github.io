@@ -117,6 +117,18 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
 .pagos-mes-chip .pm-estado{font-size:9.5px;color:var(--gray)}
 .pagos-linea{display:flex;justify-content:space-between;font-size:12.5px;padding:6px 0;border-top:1px solid var(--border)}
 .pagos-linea:first-child{border-top:none}
+.hub-jugador-header{display:flex;gap:12px;align-items:center;margin-bottom:2px}
+.hub-avatar{width:52px;height:52px;border-radius:50%;object-fit:cover;background:var(--blue-lt);flex-shrink:0}
+.hub-avatar-ph{width:52px;height:52px;border-radius:50%;background:var(--blue-lt);color:var(--blue-dk);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.hub-roster-chip{display:inline-flex;flex-direction:column;background:var(--blue-lt);color:var(--blue-dk);font-size:11px;font-weight:700;padding:6px 10px;border-radius:9px;margin:4px 6px 0 0}
+.hub-roster-chip small{font-weight:600;color:var(--blue-dk);opacity:.8}
+.hub-doc-links{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.hub-doc-links a{font-size:12px;color:var(--blue-dk);text-decoration:none;font-weight:700;background:var(--blue-lt);padding:6px 10px;border-radius:8px}
+.hub-partido-mini{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12.5px;padding:8px 0;border-top:1px solid var(--border)}
+.hub-partido-mini:first-child{border-top:none}
+.hub-partido-mini b{display:block;font-size:13px}
+.hub-partido-mini span{color:var(--gray);font-size:11.5px}
+.hub-logout{display:block;text-align:center;font-size:12px;color:var(--gray);margin-top:16px;cursor:pointer;text-decoration:underline}
 </style>
 </head>
 <body>
@@ -688,11 +700,16 @@ loadJugadores();
 cargarStock();
 
 // ── HUB TABS ──
+let sesionIntentada = false;
 function switchHubTab(tab) {
   document.getElementById('hub-tab-pedido').classList.toggle('active', tab === 'pedido');
   document.getElementById('hub-tab-pagos').classList.toggle('active', tab === 'pagos');
   document.getElementById('hub-pedido-section').style.display = tab === 'pedido' ? 'block' : 'none';
   document.getElementById('hub-pagos-section').style.display = tab === 'pagos' ? 'block' : 'none';
+  if (tab === 'pagos' && !sesionIntentada) {
+    sesionIntentada = true;
+    intentarSesionGuardada();
+  }
 }
 
 // ── CONSULTAR MIS PAGOS ──
@@ -725,6 +742,8 @@ async function solicitarCodigoPagos() {
   }
 }
 
+const WOLVE_SESSION_KEY = 'wolve_hub_session_token';
+
 async function verificarCodigoPagos() {
   const email = document.getElementById('pagos-email').value.trim();
   const codigo = document.getElementById('pagos-codigo').value.trim();
@@ -736,8 +755,11 @@ async function verificarCodigoPagos() {
   try {
     const { data, error } = await sb.rpc('public_verificar_codigo_pagos', { p_email: email, p_codigo: codigo });
     if (error) throw error;
+    if (data && data.session_token) {
+      try { localStorage.setItem(WOLVE_SESSION_KEY, data.session_token); } catch(e) {}
+    }
     document.getElementById('pagos-paso-codigo').style.display = 'none';
-    renderResumenPagos(data || []);
+    renderResumenPagos((data && data.jugadores) || []);
   } catch(e) {
     alertEl.textContent = '❌ ' + e.message;
     alertEl.classList.add('show');
@@ -746,7 +768,23 @@ async function verificarCodigoPagos() {
   }
 }
 
+async function intentarSesionGuardada() {
+  let token;
+  try { token = localStorage.getItem(WOLVE_SESSION_KEY); } catch(e) { return; }
+  if (!token) return;
+  try {
+    const { data, error } = await sb.rpc('public_reautenticar_sesion', { p_token: token });
+    if (error) throw error;
+    document.getElementById('pagos-paso-email').style.display = 'none';
+    document.getElementById('pagos-paso-codigo').style.display = 'none';
+    renderResumenPagos((data && data.jugadores) || []);
+  } catch(e) {
+    try { localStorage.removeItem(WOLVE_SESSION_KEY); } catch(e2) {}
+  }
+}
+
 function reiniciarConsultaPagos() {
+  try { localStorage.removeItem(WOLVE_SESSION_KEY); } catch(e) {}
   document.getElementById('pagos-paso-codigo').style.display = 'none';
   document.getElementById('pagos-paso-email').style.display = 'block';
   document.getElementById('pagos-resultado').innerHTML = '';
@@ -754,13 +792,30 @@ function reiniciarConsultaPagos() {
   document.getElementById('pagos-email').value = '';
 }
 
-function renderResumenPagos(jugadoresData) {
+async function renderProximosPartidosHtml() {
+  try {
+    const { data, error } = await sb.rpc('public_list_juegos');
+    if (error) throw error;
+    const juegos = (data || []).filter(j => !j.pospuesto);
+    if (!juegos.length) return '';
+    const filas = juegos.map(j => `<div class="hub-partido-mini">
+      <div><b>${j.partido}</b><span>${j.categoria || ''}${j.campo ? ' · ' + j.campo : ''}${j.sede ? ' · ' + j.sede : ''}</span></div>
+      <span>${j.dia}${j.hora ? ' ' + j.hora : ''}</span>
+    </div>`).join('');
+    return `<div class="pagos-jugador-card"><div class="section-label" style="margin-top:0">🏈 Próximos partidos</div>${filas}</div>`;
+  } catch(e) { return ''; }
+}
+
+async function renderResumenPagos(jugadoresData) {
   const cont = document.getElementById('pagos-resultado');
   if (!jugadoresData.length) {
     cont.innerHTML = '<div class="card"><div class="sub" style="margin:0">No encontramos jugadores registrados con ese correo.</div></div>';
     return;
   }
-  cont.innerHTML = jugadoresData.map(j => {
+
+  const proximosHtml = await renderProximosPartidosHtml();
+
+  const tarjetasHtml = jugadoresData.map(j => {
     const mesesHtml = MESES_ORDEN.map(mes => {
       const p = (j.pagos || []).find(x => x.periodo === mes) || { estado: 'pendiente' };
       const label = p.estado === 'abono' && p.monto_abono ? 'Abono $' + Number(p.monto_abono).toLocaleString() : (p.estado || 'pendiente');
@@ -785,15 +840,46 @@ function renderResumenPagos(jugadoresData) {
       </div>`;
     }).join('');
 
+    const avatarHtml = j.foto_url
+      ? `<img src="${j.foto_url}" class="hub-avatar">`
+      : '<div class="hub-avatar-ph">🏈</div>';
+
+    const rosterHtml = (j.rosters || []).map(r => {
+      const coachesTxt = (r.coaches || []).map(c => c.rol + ': ' + c.nombre).join(' · ');
+      return `<span class="hub-roster-chip">${r.nombre}${coachesTxt ? '<small>' + coachesTxt + '</small>' : ''}</span>`;
+    }).join('');
+
+    const docs = [
+      j.acta_nacimiento_url ? `<a href="${j.acta_nacimiento_url}" target="_blank">📄 Acta/ID</a>` : '',
+      j.curp_documento_url ? `<a href="${j.curp_documento_url}" target="_blank">📋 CURP</a>` : '',
+      j.seguro_medico_url ? `<a href="${j.seguro_medico_url}" target="_blank">🏥 Seguro</a>` : '',
+    ].filter(Boolean).join('');
+
     return `<div class="pagos-jugador-card">
-      <h3>${j.nombre_completo}</h3>
-      <div class="pagos-jugador-sub">${j.categoria || ''}${j.numero_jugador ? ' · #' + j.numero_jugador : ''}</div>
-      <div class="section-label" style="margin-top:0">Mensualidades</div>
+      <div class="hub-jugador-header">
+        ${avatarHtml}
+        <div>
+          <h3>${j.nombre_completo}</h3>
+          <div class="pagos-jugador-sub" style="margin-bottom:0">${j.categoria || ''}${j.numero_jugador ? ' · #' + j.numero_jugador : ''}</div>
+        </div>
+      </div>
+      <div class="pagos-jugador-sub">Tutor: ${j.tutor || '—'}</div>
+      ${rosterHtml ? '<div>' + rosterHtml + '</div>' : ''}
+      ${docs ? '<div class="hub-doc-links">' + docs + '</div>' : ''}
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+        <a href="credencial.html?id=${j.id}" target="_blank" class="stripe-btn" style="width:auto;flex:1;text-align:center;text-decoration:none;font-size:12.5px;padding:10px 14px">🎫 Ver credencial</a>
+        <button class="stripe-btn" style="width:auto;flex:1;font-size:12.5px;padding:10px 14px" onclick="switchHubTab('pedido')">🛍️ Pedir uniforme</button>
+      </div>
+      <div class="section-label">Mensualidades</div>
       <div class="pagos-mes-grid">${mesesHtml}</div>
       ${uniHtml ? '<div class="section-label">Uniforme</div>' + uniHtml : ''}
       ${pedidosHtml ? '<div class="section-label">Pedidos de tienda</div>' + pedidosHtml : ''}
     </div>`;
   }).join('');
+
+  cont.innerHTML = proximosHtml + tarjetasHtml +
+    `<a href="https://wa.me/528713957332?text=${encodeURIComponent('Hola, tengo una duda sobre mi cuenta de Wolve Hub.')}" target="_blank" class="wa-btn" style="display:block;text-align:center;margin-top:8px">📲 Escribir a Wolverines por WhatsApp</a>` +
+    `<div class="hub-logout" onclick="reiniciarConsultaPagos()">Cerrar sesión / usar otro correo</div>`;
 }
 </script>
 </body>
