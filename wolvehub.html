@@ -129,6 +129,18 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
 .hub-partido-mini b{display:block;font-size:13px}
 .hub-partido-mini span{color:var(--gray);font-size:11.5px}
 .hub-logout{display:block;text-align:center;font-size:12px;color:var(--gray);margin-top:16px;cursor:pointer;text-decoration:underline}
+.hub-preview-banner{background:#fef3e0;color:#b45309;font-size:12.5px;font-weight:700;text-align:center;padding:10px;border-radius:10px;margin-bottom:16px}
+
+.dia-titulo{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:800;letter-spacing:0.6px;text-transform:uppercase;color:var(--navy);margin:20px 0 12px}
+.dia-titulo:first-child{margin-top:0}
+.dia-titulo::after{content:'';flex:1;height:1px;background:var(--border)}
+.juego-card{background:var(--card);border:1px solid var(--border);border-left:4px solid var(--blue);border-radius:12px;box-shadow:var(--shadow);padding:14px 16px;margin-bottom:10px;display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px}
+.juego-card.pospuesto{border-left-color:#f59e0b}
+.juego-badges{display:flex;flex-wrap:wrap;gap:6px;width:100%}
+.badge-juego{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;padding:4px 10px;border-radius:20px;white-space:nowrap;background:var(--blue-lt);color:var(--blue-dk)}
+.badge-juego.pospuesto{background:#fef3e0;color:#b45309}
+.juego-partido{font-size:15px;font-weight:800;color:var(--navy);width:100%}
+.juego-detalles{display:flex;flex-wrap:wrap;gap:4px 16px;width:100%;font-size:12.5px;color:var(--gray)}
 </style>
 </head>
 <body>
@@ -144,6 +156,7 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
 <div class="hub-tabs">
   <button class="hub-tab active" id="hub-tab-pedido" onclick="switchHubTab('pedido')">🛍️ Hacer un pedido</button>
   <button class="hub-tab" id="hub-tab-pagos" onclick="switchHubTab('pagos')">💰 Consultar mis pagos</button>
+  <button class="hub-tab" id="hub-tab-rol" onclick="switchHubTab('rol')">📅 Rol de juegos</button>
 </div>
 
 <div id="hub-pedido-section">
@@ -269,6 +282,22 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
       </div>
 
       <div id="pagos-resultado"></div>
+    </div>
+  </div>
+</div>
+
+<div id="hub-rol-section" style="display:none">
+  <div class="wrap" style="grid-template-columns:1fr;max-width:640px">
+    <div>
+      <div class="card">
+        <h2>📅 Rol de juegos</h2>
+        <div class="sub">Filtra por categoría para encontrar más rápido el juego que buscas</div>
+        <div class="field" style="margin-bottom:0">
+          <label>Categoría</label>
+          <select id="rol-categoria-filtro" onchange="renderRolJuegos()"><option value="">Todas las categorías</option></select>
+        </div>
+      </div>
+      <div id="rol-juegos-contenido"></div>
     </div>
   </div>
 </div>
@@ -701,14 +730,21 @@ cargarStock();
 
 // ── HUB TABS ──
 let sesionIntentada = false;
+let rolCargado = false;
 function switchHubTab(tab) {
   document.getElementById('hub-tab-pedido').classList.toggle('active', tab === 'pedido');
   document.getElementById('hub-tab-pagos').classList.toggle('active', tab === 'pagos');
+  document.getElementById('hub-tab-rol').classList.toggle('active', tab === 'rol');
   document.getElementById('hub-pedido-section').style.display = tab === 'pedido' ? 'block' : 'none';
   document.getElementById('hub-pagos-section').style.display = tab === 'pagos' ? 'block' : 'none';
+  document.getElementById('hub-rol-section').style.display = tab === 'rol' ? 'block' : 'none';
   if (tab === 'pagos' && !sesionIntentada) {
     sesionIntentada = true;
     intentarSesionGuardada();
+  }
+  if (tab === 'rol' && !rolCargado) {
+    rolCargado = true;
+    cargarRolJuegos();
   }
 }
 
@@ -881,6 +917,90 @@ async function renderResumenPagos(jugadoresData) {
     `<a href="https://wa.me/528713957332?text=${encodeURIComponent('Hola, tengo una duda sobre mi cuenta de Wolve Hub.')}" target="_blank" class="wa-btn" style="display:block;text-align:center;margin-top:8px">📲 Escribir a Wolverines por WhatsApp</a>` +
     `<div class="hub-logout" onclick="reiniciarConsultaPagos()">Cerrar sesión / usar otro correo</div>`;
 }
+
+// ── ROL DE JUEGOS ──
+let JUEGOS_ROL = [];
+const DIAS_ORDEN_ROL = ['Viernes', 'Sábado'];
+
+async function cargarRolJuegos() {
+  const cont = document.getElementById('rol-juegos-contenido');
+  cont.innerHTML = '<div class="card"><div class="sub" style="margin:0">Cargando…</div></div>';
+  try {
+    const { data, error } = await sb.rpc('public_list_juegos');
+    if (error) throw error;
+    JUEGOS_ROL = data || [];
+    const select = document.getElementById('rol-categoria-filtro');
+    const categorias = [...new Set(JUEGOS_ROL.map(j => j.categoria).filter(Boolean))].sort();
+    select.innerHTML = '<option value="">Todas las categorías</option>' + categorias.map(c => `<option value="${c}">${c}</option>`).join('');
+    renderRolJuegos();
+  } catch(e) {
+    cont.innerHTML = '<div class="card"><div class="sub" style="margin:0">No se pudo cargar el rol. Intenta de nuevo más tarde.</div></div>';
+  }
+}
+
+function renderRolJuegos() {
+  const cont = document.getElementById('rol-juegos-contenido');
+  const catFiltro = document.getElementById('rol-categoria-filtro').value;
+  const juegos = catFiltro ? JUEGOS_ROL.filter(j => j.categoria === catFiltro) : JUEGOS_ROL;
+
+  if (!juegos.length) {
+    cont.innerHTML = '<div class="card"><div class="sub" style="margin:0">No hay juegos para mostrar.</div></div>';
+    return;
+  }
+
+  let html = '';
+  DIAS_ORDEN_ROL.forEach(dia => {
+    const juegosDia = juegos.filter(j => j.dia === dia)
+      .sort((a, b) => {
+        if (!!a.pospuesto !== !!b.pospuesto) return a.pospuesto ? 1 : -1;
+        return (a.hora || '').localeCompare(b.hora || '');
+      });
+    if (!juegosDia.length) return;
+
+    html += `<div class="dia-titulo">📅 ${dia}</div>`;
+    juegosDia.forEach(j => {
+      const badges = (j.liga ? `<span class="badge-juego">${j.liga}</span>` : '') +
+        (j.categoria ? `<span class="badge-juego">${j.categoria}</span>` : '') +
+        (j.pospuesto ? '<span class="badge-juego pospuesto">⏸ Pospuesto</span>' : '');
+      const detalles = j.pospuesto
+        ? '<span>Se reprogramó — todavía sin nueva fecha/hora confirmada</span>'
+        : `<span>🕐 <b>${j.hora || '—'}</b></span><span>🏟️ ${j.campo || '—'}</span><span>📍 ${j.sede || '—'}</span>`;
+      html += `<div class="juego-card${j.pospuesto ? ' pospuesto' : ''}">
+        <div class="juego-badges">${badges}</div>
+        <div class="juego-partido">${j.partido || ''}</div>
+        <div class="juego-detalles">${detalles}</div>
+      </div>`;
+    });
+  });
+
+  cont.innerHTML = html;
+}
+
+// ── VISTA PREVIA ADMIN (sin OTP) ──
+(function initVistaPreviaAdmin() {
+  const params = new URLSearchParams(window.location.search);
+  const adminPwd = params.get('admin_pwd');
+  const adminEmail = params.get('admin_email');
+  if (!adminPwd || !adminEmail) return;
+
+  sesionIntentada = true; // evita que intentarSesionGuardada pise esta vista
+  switchHubTab('pagos');
+  document.getElementById('pagos-paso-email').style.display = 'none';
+  document.getElementById('pagos-paso-codigo').style.display = 'none';
+  document.getElementById('pagos-resultado').innerHTML = '<div class="hub-preview-banner">👁 Modo vista previa (admin) — esto no guarda sesión</div>';
+
+  sb.rpc('admin_ver_cuenta_por_email', { p_pwd: adminPwd, p_email: adminEmail }).then(({ data, error }) => {
+    if (error) {
+      document.getElementById('pagos-resultado').innerHTML += `<div class="card"><div class="sub" style="margin:0">❌ ${error.message}</div></div>`;
+      return;
+    }
+    renderResumenPagos(data || []).then(() => {
+      document.getElementById('pagos-resultado').innerHTML =
+        '<div class="hub-preview-banner">👁 Modo vista previa (admin) — esto no guarda sesión</div>' +
+        document.getElementById('pagos-resultado').innerHTML;
+    });
+  });
+})();
 </script>
 </body>
 </html>
