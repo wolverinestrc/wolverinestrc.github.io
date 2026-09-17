@@ -289,6 +289,7 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
 <div id="hub-rol-section" style="display:none">
   <div class="wrap" style="grid-template-columns:1fr;max-width:640px">
     <div>
+      <div id="rol-mis-partidos"></div>
       <div class="card">
         <h2>📅 Rol de juegos</h2>
         <div class="sub">Filtra por categoría para encontrar más rápido el juego que buscas</div>
@@ -731,6 +732,7 @@ cargarStock();
 // ── HUB TABS ──
 let sesionIntentada = false;
 let rolCargado = false;
+let jugadoresActuales = [];
 function switchHubTab(tab) {
   document.getElementById('hub-tab-pedido').classList.toggle('active', tab === 'pedido');
   document.getElementById('hub-tab-pagos').classList.toggle('active', tab === 'pagos');
@@ -738,7 +740,7 @@ function switchHubTab(tab) {
   document.getElementById('hub-pedido-section').style.display = tab === 'pedido' ? 'block' : 'none';
   document.getElementById('hub-pagos-section').style.display = tab === 'pagos' ? 'block' : 'none';
   document.getElementById('hub-rol-section').style.display = tab === 'rol' ? 'block' : 'none';
-  if (tab === 'pagos' && !sesionIntentada) {
+  if ((tab === 'pagos' || tab === 'rol') && !sesionIntentada) {
     sesionIntentada = true;
     intentarSesionGuardada();
   }
@@ -795,7 +797,8 @@ async function verificarCodigoPagos() {
       try { localStorage.setItem(WOLVE_SESSION_KEY, data.session_token); } catch(e) {}
     }
     document.getElementById('pagos-paso-codigo').style.display = 'none';
-    renderResumenPagos((data && data.jugadores) || []);
+    await renderResumenPagos((data && data.jugadores) || []);
+    renderMisPartidosRol();
   } catch(e) {
     alertEl.textContent = '❌ ' + e.message;
     alertEl.classList.add('show');
@@ -813,7 +816,8 @@ async function intentarSesionGuardada() {
     if (error) throw error;
     document.getElementById('pagos-paso-email').style.display = 'none';
     document.getElementById('pagos-paso-codigo').style.display = 'none';
-    renderResumenPagos((data && data.jugadores) || []);
+    await renderResumenPagos((data && data.jugadores) || []);
+    renderMisPartidosRol();
   } catch(e) {
     try { localStorage.removeItem(WOLVE_SESSION_KEY); } catch(e2) {}
   }
@@ -821,11 +825,13 @@ async function intentarSesionGuardada() {
 
 function reiniciarConsultaPagos() {
   try { localStorage.removeItem(WOLVE_SESSION_KEY); } catch(e) {}
+  jugadoresActuales = [];
   document.getElementById('pagos-paso-codigo').style.display = 'none';
   document.getElementById('pagos-paso-email').style.display = 'block';
   document.getElementById('pagos-resultado').innerHTML = '';
   document.getElementById('pagos-codigo').value = '';
   document.getElementById('pagos-email').value = '';
+  renderMisPartidosRol();
 }
 
 function extraerInfoCategoria(texto) {
@@ -872,17 +878,11 @@ function partidosDeJugadorHtml(j, todosJuegos) {
 
 async function renderResumenPagos(jugadoresData) {
   const cont = document.getElementById('pagos-resultado');
+  jugadoresActuales = jugadoresData || [];
   if (!jugadoresData.length) {
     cont.innerHTML = '<div class="card"><div class="sub" style="margin:0">No encontramos jugadores registrados con ese correo.</div></div>';
     return;
   }
-
-  let todosJuegos = [];
-  try {
-    const { data, error } = await sb.rpc('public_list_juegos');
-    if (error) throw error;
-    todosJuegos = data || [];
-  } catch(e) {}
 
   const tarjetasHtml = jugadoresData.map(j => {
     const mesesHtml = MESES_ORDEN.map(mes => {
@@ -913,10 +913,7 @@ async function renderResumenPagos(jugadoresData) {
       ? `<img src="${j.foto_url}" class="hub-avatar">`
       : '<div class="hub-avatar-ph">🏈</div>';
 
-    const rosterHtml = (j.rosters || []).map(r => {
-      const coachesTxt = (r.coaches || []).map(c => c.rol + ': ' + c.nombre).join(' · ');
-      return `<span class="hub-roster-chip">${r.nombre}${coachesTxt ? '<small>' + coachesTxt + '</small>' : ''}</span>`;
-    }).join('');
+    const rosterHtml = (j.rosters || []).map(r => `<span class="hub-roster-chip">${r.nombre}</span>`).join('');
 
     const docs = [
       j.acta_nacimiento_url ? `<a href="${j.acta_nacimiento_url}" target="_blank">📄 Acta/ID</a>` : '',
@@ -939,7 +936,6 @@ async function renderResumenPagos(jugadoresData) {
         <a href="credencial.html?id=${j.id}" target="_blank" class="stripe-btn" style="width:auto;flex:1;text-align:center;text-decoration:none;font-size:12.5px;padding:10px 14px">🎫 Ver credencial</a>
         <button class="stripe-btn" style="width:auto;flex:1;font-size:12.5px;padding:10px 14px" onclick="switchHubTab('pedido')">🛍️ Pedir uniforme</button>
       </div>
-      ${partidosDeJugadorHtml(j, todosJuegos)}
       <div class="section-label">Mensualidades</div>
       <div class="pagos-mes-grid">${mesesHtml}</div>
       ${uniHtml ? '<div class="section-label">Uniforme</div>' + uniHtml : ''}
@@ -967,9 +963,29 @@ async function cargarRolJuegos() {
     const categorias = [...new Set(JUEGOS_ROL.map(j => j.categoria).filter(Boolean))].sort();
     select.innerHTML = '<option value="">Todas las categorías</option>' + categorias.map(c => `<option value="${c}">${c}</option>`).join('');
     renderRolJuegos();
+    renderMisPartidosRol();
   } catch(e) {
     cont.innerHTML = '<div class="card"><div class="sub" style="margin:0">No se pudo cargar el rol. Intenta de nuevo más tarde.</div></div>';
   }
+}
+
+async function renderMisPartidosRol() {
+  const cont = document.getElementById('rol-mis-partidos');
+  if (!cont) return;
+  if (!jugadoresActuales.length) { cont.innerHTML = ''; return; }
+  let juegos = JUEGOS_ROL;
+  if (!juegos.length) {
+    try {
+      const { data, error } = await sb.rpc('public_list_juegos');
+      if (error) throw error;
+      juegos = data || [];
+    } catch(e) { juegos = []; }
+  }
+  const html = jugadoresActuales.map(j => `<div class="pagos-jugador-card">
+    <h3 style="margin-bottom:8px">${j.nombre_completo}</h3>
+    ${partidosDeJugadorHtml(j, juegos)}
+  </div>`).join('');
+  cont.innerHTML = `<div class="section-label" style="margin:0 0 8px">🏈 Los partidos de tus jugadores</div>${html}`;
 }
 
 function renderRolJuegos() {
@@ -1032,6 +1048,7 @@ function renderRolJuegos() {
       document.getElementById('pagos-resultado').innerHTML =
         '<div class="hub-preview-banner">👁 Modo vista previa (admin) — esto no guarda sesión</div>' +
         document.getElementById('pagos-resultado').innerHTML;
+      renderMisPartidosRol();
     });
   });
 })();
