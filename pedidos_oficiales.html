@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Pedidos · Productos oficiales</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:#f1f4f9; --card:#fff; --border:#e5e9f2; --navy:#101f3d; --blue:#2563eb; --blue-dk:#1d4ed8; --blue-lt:#eaf1ff;
+    --text:#182338; --gray:#67728c; --gray-lt:#a4adc2; --gold:#FFCB05;
+    --green:#16a34a; --green-lt:#e7f7ed; --orange:#d97706; --orange-lt:#fef3e0; --red:#e11d48; --red-lt:#fde8ed;
+    --shadow:0 1px 2px rgba(16,31,61,0.04), 0 1px 6px rgba(16,31,61,0.05);
+  }
+  body { background: var(--bg); font-family: 'Montserrat', sans-serif; color: var(--text); min-height: 100vh; padding-bottom: 60px; }
+  header { background: var(--navy); padding: 16px 24px; display: flex; align-items: center; gap: 14px; border-bottom: 3px solid var(--gold); }
+  header img { width: 42px; height: 42px; border-radius: 50%; background: #fff; object-fit: contain; padding: 4px; }
+  header h1 { font-size: 16px; font-weight: 800; color: #fff; }
+  header p { font-size: 12px; color: #8ea0c4; margin-top: 1px; }
+  header .spacer { flex: 1; }
+  .link-btn { background: none; border: none; color: #8ea0c4; font-family: inherit; font-size: 12px; cursor: pointer; text-decoration: underline; }
+
+  .wrap { max-width: 980px; margin: 0 auto; padding: 20px 16px 0; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); padding: 20px; }
+
+  #login { max-width: 380px; margin: 60px auto 0; }
+  #login h2 { font-size: 18px; font-weight: 900; color: var(--navy); margin-bottom: 6px; }
+  #login p { font-size: 13px; color: var(--gray); margin-bottom: 16px; line-height: 1.5; }
+  input, select, textarea { width: 100%; font-family: inherit; font-size: 14px; padding: 11px 13px; border: 1.5px solid var(--border); border-radius: 10px; background: #fff; color: var(--text); outline: none; }
+  input:focus, select:focus { border-color: var(--blue); }
+  .btn { background: var(--blue); color: #fff; border: none; border-radius: 10px; padding: 11px 18px; font-family: inherit; font-size: 13px; font-weight: 800; cursor: pointer; }
+  .btn:hover { background: var(--blue-dk); }
+  .btn:disabled { background: var(--gray-lt); cursor: not-allowed; }
+  .btn-ghost { background: #fff; color: var(--blue-dk); border: 1.5px solid var(--border); }
+  .btn-ghost:hover { background: var(--blue-lt); }
+  .btn-sm { padding: 7px 12px; font-size: 12px; }
+  .err { color: var(--red); font-size: 12.5px; font-weight: 700; margin-top: 10px; min-height: 16px; }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .stat { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; box-shadow: var(--shadow); }
+  .stat .lbl { font-size: 10.5px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; color: var(--gray); }
+  .stat .val { font-size: 21px; font-weight: 900; margin-top: 4px; color: var(--navy); }
+  .stat .val.green { color: var(--green); } .stat .val.red { color: var(--red); }
+
+  .tabs { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+  .tab { background: #fff; border: 1.5px solid var(--border); color: var(--gray); border-radius: 10px; padding: 9px 16px; font-family: inherit; font-size: 13px; font-weight: 800; cursor: pointer; }
+  .tab.active { background: var(--navy); border-color: var(--navy); color: #fff; }
+
+  .toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; align-items: center; }
+  .toolbar input { flex: 1; min-width: 200px; }
+  .toolbar select { width: auto; min-width: 150px; }
+
+  .pedido { background: var(--card); border: 1px solid var(--border); border-left: 4px solid var(--blue); border-radius: 12px; box-shadow: var(--shadow); padding: 16px 18px; margin-bottom: 12px; }
+  .pedido.pagado { border-left-color: var(--green); } .pedido.abono { border-left-color: var(--orange); } .pedido.pendiente { border-left-color: var(--red); }
+  .p-top { display: flex; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+  .p-name { font-size: 15px; font-weight: 800; color: var(--navy); }
+  .p-sub { font-size: 12px; color: var(--gray); margin-top: 2px; }
+  .p-items { margin: 10px 0; font-size: 13px; }
+  .p-items div { padding: 3px 0; display: flex; justify-content: space-between; gap: 10px; border-bottom: 1px dashed var(--border); }
+  .p-items div:last-child { border-bottom: none; }
+  .p-money { text-align: right; }
+  .p-money .tot { font-size: 18px; font-weight: 900; color: var(--navy); }
+  .p-money .sub { font-size: 12px; color: var(--gray); }
+  .p-money .saldo { font-weight: 800; }
+  .badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; justify-content: flex-end; }
+  .badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 800; padding: 5px 11px; border-radius: 20px; white-space: nowrap; border: none; font-family: inherit; }
+  .b-ok { background: var(--green-lt); color: var(--green); } .b-warn { background: var(--orange-lt); color: var(--orange); }
+  .b-bad { background: var(--red-lt); color: var(--red); } .b-info { background: var(--blue-lt); color: var(--blue-dk); }
+  button.badge { cursor: pointer; }
+
+  .pagos-list { margin-top: 8px; border-top: 1px solid var(--border); padding-top: 8px; }
+  .pago-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 12.5px; padding: 4px 0; }
+  .pago-row .m { font-weight: 800; color: var(--green); }
+  .pago-row .meta { color: var(--gray); flex: 1; }
+  .icon-btn { background: none; border: none; cursor: pointer; font-size: 14px; padding: 2px 6px; opacity: .6; } .icon-btn:hover { opacity: 1; }
+  .pago-form { background: var(--bg); border-radius: 10px; padding: 12px; margin-top: 10px; display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; align-items: end; }
+  .pago-form label { font-size: 10.5px; font-weight: 800; letter-spacing: .4px; text-transform: uppercase; color: var(--gray); display: block; margin-bottom: 4px; }
+  .pago-form .acts { display: flex; gap: 8px; }
+  .nota-abono { font-size: 11.5px; color: var(--orange); margin-top: 6px; font-weight: 700; }
+
+  table.t { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.t th { text-align: left; font-size: 10.5px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; color: var(--gray); padding: 8px 10px; border-bottom: 2px solid var(--border); }
+  table.t td { padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  table.t td.r, table.t th.r { text-align: right; }
+  .t-wrap { overflow-x: auto; }
+  .empty { text-align: center; color: var(--gray); font-size: 13px; padding: 40px 20px; background: var(--card); border: 1px dashed var(--border); border-radius: 12px; }
+  .hint { font-size: 12px; color: var(--gray); margin-bottom: 10px; }
+  @media (max-width: 560px) { .p-money { text-align: left; } .badges { justify-content: flex-start; } }
+</style>
+</head>
+<body>
+
+<header>
+  <img src="https://wolverines.mx/IMG_0019_transparent.png" alt="W" onerror="this.style.display='none'">
+  <div>
+    <h1>Productos oficiales · Pedidos</h1>
+    <p>Wolverines TRC</p>
+  </div>
+  <div class="spacer"></div>
+  <button class="link-btn" id="btn-salir" style="display:none" onclick="salir()">Salir</button>
+</header>
+
+<div class="wrap">
+
+  <div id="login" class="card">
+    <h2>🔐 Acceso</h2>
+    <p>Ingresa la contraseña para ver y administrar los pedidos de productos oficiales.</p>
+    <input type="password" id="pwd" placeholder="Contraseña" autocomplete="current-password" onkeydown="if(event.key==='Enter')entrar()">
+    <button class="btn" style="width:100%;margin-top:12px" id="btn-entrar" onclick="entrar()">Entrar</button>
+    <div class="err" id="login-err"></div>
+  </div>
+
+  <div id="app" style="display:none">
+    <div class="stats" id="stats"></div>
+
+    <div class="tabs">
+      <button class="tab active" id="tab-pedidos" onclick="cambiarTab('pedidos')">📦 Pedidos</button>
+      <button class="tab" id="tab-pagos" onclick="cambiarTab('pagos')">💰 Registro de pagos</button>
+      <button class="tab" id="tab-piezas" onclick="cambiarTab('piezas')">🧾 Piezas por pedir</button>
+    </div>
+
+    <div id="view-pedidos">
+      <div class="toolbar">
+        <input type="text" id="q" placeholder="Buscar jugador, tutor, teléfono o producto…" oninput="renderPedidos()">
+        <select id="f-pago" onchange="renderPedidos()">
+          <option value="">Pago: todos</option><option value="pendiente">Pendiente</option><option value="abono">Abono</option><option value="pagado">Pagado</option>
+        </select>
+        <select id="f-surtido" onchange="renderPedidos()">
+          <option value="">Surtido: todos</option><option value="sin_ordenar">Sin ordenar</option><option value="ordenado">Ordenado</option><option value="entregado">Entregado</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" onclick="cargar()">🔄 Actualizar</button>
+        <button class="btn btn-ghost btn-sm" onclick="exportar()">📥 Excel</button>
+      </div>
+      <div id="lista"></div>
+    </div>
+
+    <div id="view-pagos" style="display:none"></div>
+    <div id="view-piezas" style="display:none"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+const SUPABASE_URL = 'https://xaawoqyjavqcybafirri.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhYXdvcXlqYXZxY3liYWZpcnJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1Mzg4MjcsImV4cCI6MjEwMTExNDgyN30.TdLuimBVQIILaaW0UtZDHDSoDpDomwmL6RbG-K-GDZ0';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const SESSION_KEY = 'ofi_pwd';
+let PWD = '';
+let PEDIDOS = [];
+let tabActual = 'pedidos';
+let formAbierto = null;
+
+const SURTIDO_LABEL = { sin_ordenar: 'Sin ordenar', ordenado: 'Ordenado', entregado: 'Entregado' };
+const SURTIDO_NEXT = { sin_ordenar: 'ordenado', ordenado: 'entregado', entregado: 'sin_ordenar' };
+const PAGO_LABEL = { pendiente: 'Pendiente', abono: 'Abono', pagado: 'Pagado' };
+
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function money(n) { return '$' + Number(n || 0).toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 2 }); }
+function fechaCorta(iso) { if (!iso) return '—'; const d = String(iso).slice(0, 10).split('-'); return d.length === 3 ? d[2] + '/' + d[1] + '/' + d[0] : iso; }
+function hoyISO() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function saldoDe(p) { return Math.max(0, Number(p.total) - Number(p.pagado_monto || 0)); }
+
+async function entrar(auto) {
+  const pwd = auto || document.getElementById('pwd').value;
+  const err = document.getElementById('login-err');
+  err.textContent = '';
+  if (!pwd) { err.textContent = 'Escribe la contraseña.'; return; }
+  const btn = document.getElementById('btn-entrar'); btn.disabled = true;
+  try {
+    const { data, error } = await sb.rpc('oficiales_list_pedidos', { p_pwd: pwd });
+    if (error) throw error;
+    PWD = pwd; PEDIDOS = data || [];
+    try { sessionStorage.setItem(SESSION_KEY, pwd); } catch (e) {}
+    document.getElementById('login').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('btn-salir').style.display = 'inline';
+    renderTodo();
+  } catch (e) {
+    try { sessionStorage.removeItem(SESSION_KEY); } catch (e2) {}
+    err.textContent = 'Contraseña incorrecta.';
+  } finally { btn.disabled = false; }
+}
+
+function salir() {
+  try { sessionStorage.removeItem(SESSION_KEY); } catch (e) {}
+  PWD = ''; PEDIDOS = [];
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login').style.display = 'block';
+  document.getElementById('btn-salir').style.display = 'none';
+  document.getElementById('pwd').value = '';
+}
+
+async function cargar() {
+  try {
+    const { data, error } = await sb.rpc('oficiales_list_pedidos', { p_pwd: PWD });
+    if (error) throw error;
+    PEDIDOS = data || [];
+    renderTodo();
+  } catch (e) { alert('❌ No se pudo actualizar: ' + e.message); }
+}
+
+function cambiarTab(t) {
+  tabActual = t;
+  ['pedidos', 'pagos', 'piezas'].forEach(x => {
+    document.getElementById('tab-' + x).classList.toggle('active', x === t);
+    document.getElementById('view-' + x).style.display = x === t ? 'block' : 'none';
+  });
+  renderTodo();
+}
+
+function renderTodo() {
+  renderStats();
+  if (tabActual === 'pedidos') renderPedidos();
+  else if (tabActual === 'pagos') renderPagos();
+  else renderPiezas();
+}
+
+function renderStats() {
+  const vendido = PEDIDOS.reduce((s, p) => s + Number(p.total), 0);
+  const cobrado = PEDIDOS.reduce((s, p) => s + Number(p.pagado_monto || 0), 0);
+  const porCobrar = PEDIDOS.reduce((s, p) => s + (p.estado === 'pagado' ? 0 : saldoDe(p)), 0);
+  const sinSurtir = PEDIDOS.filter(p => (p.estado_surtido || 'sin_ordenar') !== 'entregado').length;
+  document.getElementById('stats').innerHTML =
+    '<div class="stat"><div class="lbl">Pedidos</div><div class="val">' + PEDIDOS.length + '</div></div>' +
+    '<div class="stat"><div class="lbl">Total vendido</div><div class="val">' + money(vendido) + '</div></div>' +
+    '<div class="stat"><div class="lbl">Cobrado</div><div class="val green">' + money(cobrado) + '</div></div>' +
+    '<div class="stat"><div class="lbl">Por cobrar</div><div class="val red">' + money(porCobrar) + '</div></div>' +
+    '<div class="stat"><div class="lbl">Por entregar</div><div class="val">' + sinSurtir + '</div></div>';
+}
+
+function renderPedidos() {
+  const q = (document.getElementById('q').value || '').toLowerCase().trim();
+  const fp = document.getElementById('f-pago').value;
+  const fs = document.getElementById('f-surtido').value;
+  const lista = PEDIDOS.filter(p => {
+    if (fp && (p.estado || 'pendiente') !== fp) return false;
+    if (fs && (p.estado_surtido || 'sin_ordenar') !== fs) return false;
+    if (q) {
+      const hay = [p.jugador_nombre, p.tutor_nombre, p.tutor_telefono, p.categoria].concat((p.items || []).map(i => i.producto)).join(' ').toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+  const cont = document.getElementById('lista');
+  if (!lista.length) { cont.innerHTML = '<div class="empty">No hay pedidos con esos filtros.</div>'; return; }
+
+  cont.innerHTML = lista.map(p => {
+    const estado = p.estado || 'pendiente';
+    const surt = p.estado_surtido || 'sin_ordenar';
+    const saldo = saldoDe(p);
+    const itemsHtml = (p.items || []).map(i =>
+      '<div><span>' + esc(i.cantidad) + '× ' + esc(i.producto) + (i.talla && i.talla !== 'Única' ? ' · Talla ' + esc(i.talla) : '') + (i.numero ? ' · #' + esc(i.numero) : '') + '</span><span>' + money(i.subtotal) + '</span></div>'
+    ).join('');
+    const pagos = p.pagos || [];
+    const pagosHtml = pagos.length
+      ? '<div class="pagos-list">' + pagos.map(g =>
+          '<div class="pago-row"><span class="m">' + money(g.monto) + '</span><span class="meta">' + fechaCorta(g.fecha) + ' · ' + esc(g.metodo) + (g.nota ? ' · ' + esc(g.nota) : '') + '</span>' +
+          '<button class="icon-btn" title="Eliminar pago" onclick="eliminarPago(\'' + g.id + '\')">🗑</button></div>').join('') + '</div>'
+      : '';
+    const notaAbono = (estado === 'abono' && !pagos.length) ? '<div class="nota-abono">⚠️ Abono previo sin monto registrado. Registra los pagos para llevar el saldo exacto.</div>' : '';
+    const badgePago = estado === 'pagado' ? 'b-ok' : estado === 'abono' ? 'b-warn' : 'b-bad';
+    const badgeSurt = surt === 'entregado' ? 'b-ok' : surt === 'ordenado' ? 'b-info' : 'b-warn';
+    const form = formAbierto === p.id ? formPago(p, saldo) : '';
+    const puedePagar = estado !== 'pagado' && saldo > 0;
+
+    return '<div class="pedido ' + estado + '">' +
+      '<div class="p-top">' +
+        '<div><div class="p-name">' + esc(p.jugador_nombre || '—') + (p.categoria ? ' <span style="font-weight:600;color:var(--gray);font-size:12px">· ' + esc(p.categoria) + '</span>' : '') + '</div>' +
+        '<div class="p-sub">' + esc(p.tutor_nombre || '—') + ' · ' + esc(p.tutor_telefono || '—') + ' · ' + new Date(p.created_at).toLocaleDateString('es-MX') + '</div></div>' +
+        '<div class="p-money"><div class="tot">' + money(p.total) + '</div>' +
+          '<div class="sub">Pagado ' + money(p.pagado_monto) + ' · <span class="saldo" style="color:' + (saldo > 0 ? 'var(--red)' : 'var(--green)') + '">Saldo ' + money(estado === 'pagado' ? 0 : saldo) + '</span></div>' +
+          '<div class="badges"><span class="badge ' + badgePago + '">💰 ' + PAGO_LABEL[estado] + '</span>' +
+          '<button class="badge ' + badgeSurt + '" title="Clic para cambiar" onclick="cambiarSurtido(\'' + p.id + '\')">📦 ' + SURTIDO_LABEL[surt] + '</button></div></div>' +
+      '</div>' +
+      '<div class="p-items">' + itemsHtml + '</div>' +
+      pagosHtml + notaAbono +
+      (puedePagar && formAbierto !== p.id ? '<div style="margin-top:10px"><button class="btn btn-sm" onclick="abrirForm(\'' + p.id + '\')">＋ Registrar pago</button></div>' : '') +
+      form +
+    '</div>';
+  }).join('');
+}
+
+function formPago(p, saldo) {
+  return '<div class="pago-form">' +
+    '<div><label>Monto</label><input type="number" id="pf-monto" min="1" step="0.01" value="' + saldo + '"></div>' +
+    '<div><label>Método</label><select id="pf-metodo"><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option><option>Otro</option></select></div>' +
+    '<div><label>Fecha</label><input type="date" id="pf-fecha" value="' + hoyISO() + '"></div>' +
+    '<div><label>Nota (opcional)</label><input type="text" id="pf-nota" placeholder="Ej. anticipo"></div>' +
+    '<div class="acts"><button class="btn btn-sm" onclick="guardarPago(\'' + p.id + '\')">Guardar</button><button class="btn btn-ghost btn-sm" onclick="cerrarForm()">Cancelar</button></div>' +
+  '</div>';
+}
+
+function abrirForm(id) { formAbierto = id; renderPedidos(); const el = document.getElementById('pf-monto'); if (el) el.focus(); }
+function cerrarForm() { formAbierto = null; renderPedidos(); }
+
+async function guardarPago(id) {
+  const monto = parseFloat(document.getElementById('pf-monto').value);
+  if (!monto || monto <= 0) { alert('Escribe un monto mayor a 0.'); return; }
+  try {
+    const { error } = await sb.rpc('oficiales_registrar_pago', {
+      p_pwd: PWD, p_pedido_id: id, p_monto: monto,
+      p_metodo: document.getElementById('pf-metodo').value,
+      p_nota: document.getElementById('pf-nota').value.trim(),
+      p_fecha: document.getElementById('pf-fecha').value || null,
+    });
+    if (error) throw error;
+    formAbierto = null;
+    await cargar();
+  } catch (e) { alert('❌ ' + e.message); }
+}
+
+async function eliminarPago(pagoId) {
+  if (!confirm('¿Eliminar este pago registrado?')) return;
+  try {
+    const { error } = await sb.rpc('oficiales_eliminar_pago', { p_pwd: PWD, p_pago_id: pagoId });
+    if (error) throw error;
+    await cargar();
+  } catch (e) { alert('❌ ' + e.message); }
+}
+
+async function cambiarSurtido(id) {
+  const p = PEDIDOS.find(x => x.id === id); if (!p) return;
+  const sig = SURTIDO_NEXT[p.estado_surtido || 'sin_ordenar'];
+  try {
+    const { error } = await sb.rpc('oficiales_update_surtido', { p_pwd: PWD, p_id: id, p_estado: sig });
+    if (error) throw error;
+    p.estado_surtido = sig;
+    renderStats(); renderPedidos();
+  } catch (e) { alert('❌ ' + e.message); }
+}
+
+function todosLosPagos() {
+  const out = [];
+  PEDIDOS.forEach(p => (p.pagos || []).forEach(g => out.push({ g, p })));
+  out.sort((a, b) => (b.g.fecha + b.g.created_at).localeCompare(a.g.fecha + a.g.created_at));
+  return out;
+}
+
+function renderPagos() {
+  const cont = document.getElementById('view-pagos');
+  const pagos = todosLosPagos();
+  if (!pagos.length) { cont.innerHTML = '<div class="empty">Aún no hay pagos registrados.</div>'; return; }
+  const total = pagos.reduce((s, x) => s + Number(x.g.monto), 0);
+  const porMetodo = {};
+  pagos.forEach(x => { porMetodo[x.g.metodo] = (porMetodo[x.g.metodo] || 0) + Number(x.g.monto); });
+  const resumen = Object.keys(porMetodo).map(m => '<span class="badge b-info">' + esc(m) + ': ' + money(porMetodo[m]) + '</span>').join(' ');
+  cont.innerHTML = '<div class="card"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px"><b style="font-size:15px">Total cobrado: ' + money(total) + '</b>' + resumen + '</div>' +
+    '<div class="t-wrap"><table class="t"><thead><tr><th>Fecha</th><th>Jugador</th><th>Método</th><th>Nota</th><th class="r">Monto</th></tr></thead><tbody>' +
+    pagos.map(x => '<tr><td>' + fechaCorta(x.g.fecha) + '</td><td>' + esc(x.p.jugador_nombre) + '<div class="p-sub">' + esc(x.p.tutor_nombre || '') + '</div></td><td>' + esc(x.g.metodo) + '</td><td>' + esc(x.g.nota || '') + '</td><td class="r"><b>' + money(x.g.monto) + '</b></td></tr>').join('') +
+    '</tbody></table></div></div>';
+}
+
+function piezasPorPedir(soloPagados) {
+  const map = {};
+  PEDIDOS.forEach(p => {
+    if ((p.estado_surtido || 'sin_ordenar') !== 'sin_ordenar') return;
+    if (soloPagados && p.estado !== 'pagado') return;
+    (p.items || []).forEach(i => {
+      const k = [i.producto, i.talla || '', i.numero || ''].join('|');
+      if (!map[k]) map[k] = { producto: i.producto, talla: i.talla || '', numero: i.numero || '', cant: 0 };
+      map[k].cant += Number(i.cantidad) || 0;
+    });
+  });
+  return Object.values(map).sort((a, b) => a.producto.localeCompare(b.producto) || a.talla.localeCompare(b.talla));
+}
+
+function renderPiezas() {
+  const cont = document.getElementById('view-piezas');
+  const solo = document.getElementById('solo-pagados') ? document.getElementById('solo-pagados').checked : false;
+  const filas = piezasPorPedir(solo);
+  cont.innerHTML = '<div class="card"><div class="hint">Suma de las piezas de los pedidos que aún están en “Sin ordenar”. Al marcar un pedido como “Ordenado” sale de esta lista.</div>' +
+    '<label style="display:flex;gap:8px;align-items:center;font-size:13px;font-weight:700;margin-bottom:12px;cursor:pointer"><input type="checkbox" id="solo-pagados" style="width:auto" ' + (solo ? 'checked' : '') + ' onchange="renderPiezas()"> Solo pedidos ya pagados</label>' +
+    (filas.length
+      ? '<div class="t-wrap"><table class="t"><thead><tr><th>Producto</th><th>Talla</th><th>Número</th><th class="r">Cantidad</th></tr></thead><tbody>' +
+        filas.map(f => '<tr><td>' + esc(f.producto) + '</td><td>' + esc(f.talla) + '</td><td>' + esc(f.numero) + '</td><td class="r"><b>' + f.cant + '</b></td></tr>').join('') +
+        '</tbody></table></div><div style="text-align:right;margin-top:10px;font-weight:800">Total piezas: ' + filas.reduce((s, f) => s + f.cant, 0) + '</div>'
+      : '<div class="empty" style="border:none">No hay piezas por pedir.</div>') + '</div>';
+}
+
+function exportar() {
+  if (!PEDIDOS.length) { alert('No hay pedidos para exportar.'); return; }
+  const filasPed = [];
+  PEDIDOS.forEach(p => (p.items || []).forEach(i => filasPed.push({
+    Fecha: new Date(p.created_at).toLocaleDateString('es-MX'), Jugador: p.jugador_nombre, Categoría: p.categoria || '',
+    Tutor: p.tutor_nombre, Teléfono: p.tutor_telefono, Producto: i.producto, Talla: i.talla, Número: i.numero || '',
+    Cantidad: i.cantidad, Subtotal: i.subtotal, Pago: PAGO_LABEL[p.estado || 'pendiente'], Surtido: SURTIDO_LABEL[p.estado_surtido || 'sin_ordenar'],
+  })));
+  const filasPag = todosLosPagos().map(x => ({ Fecha: fechaCorta(x.g.fecha), Jugador: x.p.jugador_nombre, Tutor: x.p.tutor_nombre, Método: x.g.metodo, Nota: x.g.nota || '', Monto: Number(x.g.monto) }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(filasPed), 'Pedidos');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(filasPag), 'Pagos');
+  XLSX.writeFile(wb, 'pedidos_productos_oficiales.xlsx');
+}
+
+try { const saved = sessionStorage.getItem(SESSION_KEY); if (saved) entrar(saved); } catch (e) {}
+</script>
+</body>
+</html>

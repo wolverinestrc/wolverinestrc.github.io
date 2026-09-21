@@ -389,6 +389,11 @@ table.lt td{padding:12px 14px;font-size:13px;color:var(--text);border-top:1px so
             <div class="mor-sub">Pedidos de productos enviados por los papás desde wolvehub.html y tienda.html</div>
           </div>
           <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <select id="filtro-responsable" onchange="renderPedidos()" style="padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:13px;font-weight:700">
+              <option value="">Todos los pedidos</option>
+              <option value="uniformes">Uniformes (Viky)</option>
+              <option value="oficiales">Productos oficiales</option>
+            </select>
             <button class="btn-action" id="btn-sync-pedidos" onclick="sincronizarPedidos()">🔄 Sincronizar</button>
             <button class="btn-action btn-ghost" onclick="exportPedidosUniforme()">📥 Pedido de uniformes</button>
             <button class="btn-action btn-ghost" onclick="exportPedidosTienda()">📥 Artículos de tienda</button>
@@ -1588,8 +1593,12 @@ function renderPedidos() {
   var container = document.getElementById('tienda-content');
   if (!pedidosRecords.length) { container.innerHTML = '<div class="empty">Aún no hay pedidos de Wolve Store.</div>'; return; }
 
+  var filtroResp = (document.getElementById('filtro-responsable') || {}).value || '';
+  var lista = pedidosRecords.filter(function(r) { return !filtroResp || r.responsable === filtroResp; });
+  if (!lista.length) { container.innerHTML = '<div class="empty">No hay pedidos con ese filtro.</div>'; return; }
+
   var html = '';
-  pedidosRecords.forEach(function(r) {
+  lista.forEach(function(r) {
     var itemsHtml = (r.items || []).map(function(it) {
       return '<div style="font-size:12px;color:var(--gray)">' + it.cantidad + '× ' + it.producto + ' · Talla ' + it.talla + (it.numero ? ' · #' + it.numero : '') + '</div>';
     }).join('');
@@ -1598,10 +1607,13 @@ function renderPedidos() {
     var estadoSurtido = r.estado_surtido || 'sin_ordenar';
     var badgeSurtidoClass = estadoSurtido === 'entregado' ? 'badge-ok' : estadoSurtido === 'ordenado' ? 'badge-cat' : 'badge-warn';
     var fecha = r.created_at ? new Date(r.created_at).toLocaleDateString('es-MX') : '—';
+    var respBadge = r.responsable === 'oficiales'
+      ? '<span class="badge badge-cat" style="margin-left:6px">🛍️ Productos oficiales</span>'
+      : r.responsable === 'uniformes' ? '<span class="badge badge-warn" style="margin-left:6px">👕 Uniformes (Viky)</span>' : '';
 
     html += '<div class="p-row" style="cursor:default">' +
       '<div class="p-info">' +
-        '<div class="p-name">' + (r.jugador_nombre || '—') + '</div>' +
+        '<div class="p-name">' + (r.jugador_nombre || '—') + respBadge + '</div>' +
         '<div class="p-sub">' + (r.tutor_nombre || '—') + ' · ' + (r.tutor_telefono || '—') + ' · ' + fecha + '</div>' +
         '<div style="margin-top:6px">' + itemsHtml + '</div>' +
       '</div>' +
