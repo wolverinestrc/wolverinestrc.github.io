@@ -874,9 +874,9 @@ function extraerInfoCategoria(texto) {
     return null;
   }
   let genero = null;
-  if (/varonil/i.test(texto)) genero = 'VARONIL';
-  else if (/femenil/i.test(texto)) genero = 'FEMENIL';
-  else if (/mixto/i.test(texto)) genero = 'MIXTO';
+  if (/varonil|\bvar\.?\b/i.test(texto)) genero = 'VARONIL';
+  else if (/femenil|\bfem\.?\b/i.test(texto)) genero = 'FEMENIL';
+  else if (/mixto|\bmix\.?\b/i.test(texto)) genero = 'MIXTO';
   return { numero: m[1], genero, color: extraerColorEquipo(texto) };
 }
 
