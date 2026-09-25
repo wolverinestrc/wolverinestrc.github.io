@@ -2432,7 +2432,7 @@ function fechaCortaJuego(f) {
 }
 
 function juegoRowHtml(j) {
-  var estado = j.publicado ? '<span class="badge badge-ok">Publicado</span>' : '<span class="badge badge-num">Borrador</span>';
+  var estado = j.archivado ? '<span class="badge badge-cat">Archivado</span>' : j.publicado ? '<span class="badge badge-ok">Publicado</span>' : '<span class="badge badge-num">Borrador</span>';
   var pospuestoBadge = j.pospuesto ? ' <span class="badge badge-warn">Pospuesto</span>' : '';
   var fechaTxt = fechaCortaJuego(j.fecha);
   return '<div class="p-row" style="cursor:default">' +
@@ -2461,6 +2461,10 @@ function renderJuegos() {
   var borradores = juegosRecords.filter(function(j) { return !j.publicado; }).sort(function(a, b) {
     return dias.indexOf(a.dia) - dias.indexOf(b.dia) || porHora(a, b);
   });
+  var activos = juegosRecords.filter(function(j) { return j.publicado && !j.archivado; }).sort(function(a, b) {
+    return dias.indexOf(a.dia) - dias.indexOf(b.dia) || porHora(a, b);
+  });
+  var archivados = juegosRecords.filter(function(j) { return j.publicado && j.archivado; });
 
   var html = '';
   if (borradores.length) {
@@ -2471,28 +2475,32 @@ function renderJuegos() {
       '<div class="list-wrap">' + borradores.map(juegoRowHtml).join('') + '</div>';
   }
 
-  // Agrupa los publicados por fecha exacta cuando la hay; si no, por día (Viernes/Sábado)
-  var grupos = {}; // clave -> { orden, label, items }
-  juegosRecords.filter(function(j) { return j.publicado; }).forEach(function(j) {
-    var clave = j.fecha || j.dia;
-    if (!grupos[clave]) {
-      grupos[clave] = {
-        orden: j.fecha || ('9999-' + (dias.indexOf(j.dia) === 0 ? '1' : '2')),
-        label: j.fecha ? (j.dia + ' · ' + fechaCortaJuego(j.fecha)) : j.dia,
-        items: [],
-      };
-    }
-    grupos[clave].items.push(j);
-  });
-  Object.keys(grupos).sort(function(a, b) { return grupos[a].orden.localeCompare(grupos[b].orden); }).forEach(function(clave) {
-    var g = grupos[clave];
-    g.items.sort(porHora);
-    var abierto = !!juegosGrupoAbierto[clave];
-    html += '<div class="juegos-grupo-header juegos-grupo-clic" onclick="toggleGrupoJuegos(\'' + clave + '\')">' +
-      '<span>' + (abierto ? '▾' : '▸') + ' 📅 ' + g.label + ' · Publicados (' + g.items.length + ')</span>' +
-    '</div>';
-    if (abierto) html += '<div class="list-wrap">' + g.items.map(juegoRowHtml).join('') + '</div>';
-  });
+  if (activos.length) {
+    var semanaActiva = activos[0].semana;
+    html += '<div class="juegos-grupo-header">' +
+      '<span>✅ Publicados' + (semanaActiva ? ' · ' + esc(semanaActiva) : '') + ' (' + activos.length + ')</span>' +
+    '</div>' +
+      '<div class="list-wrap">' + activos.map(juegoRowHtml).join('') + '</div>';
+  }
+
+  if (archivados.length) {
+    var porSemana = {};
+    archivados.forEach(function(j) {
+      var clave = j.semana || 'Sin semana';
+      (porSemana[clave] = porSemana[clave] || []).push(j);
+    });
+    html += '<div class="juegos-grupo-header"><span>🗄️ Archivo</span></div>';
+    Object.keys(porSemana).forEach(function(clave) {
+      var items = porSemana[clave].sort(function(a, b) {
+        return dias.indexOf(a.dia) - dias.indexOf(b.dia) || porHora(a, b);
+      });
+      var abierto = !!juegosGrupoAbierto['archivo-' + clave];
+      html += '<div class="juegos-grupo-header juegos-grupo-clic" style="background:var(--gray-lt)" onclick="toggleGrupoJuegos(\'archivo-' + clave + '\')">' +
+        '<span>' + (abierto ? '▾' : '▸') + ' ' + esc(clave) + ' (' + items.length + ')</span>' +
+      '</div>';
+      if (abierto) html += '<div class="list-wrap">' + items.map(juegoRowHtml).join('') + '</div>';
+    });
+  }
 
   cont.innerHTML = html;
 }
@@ -2577,13 +2585,19 @@ async function eliminarJuego(id) {
 }
 
 async function publicarJuegos() {
-  if (!confirm('¿Publicar todos los juegos en borrador? Se van a ver de inmediato en wolverines.mx/games.html')) return;
+  var semana = prompt('¿Qué semana/jornada es? (ej. "Semana 3" o "Jornada 5")\n\nLo publicado hasta ahora pasa al archivo y deja de verse en el sitio.');
+  if (semana === null) return;
+  if (!semana.trim()) { alert('Escribe la semana/jornada.'); return; }
+  if (!confirm('¿Publicar el rol como "' + semana.trim() + '"? Lo publicado actualmente se archiva, y estos borradores se ven de inmediato en wolverines.mx/games.html')) return;
   try {
-    var { data, error } = await sb.rpc('admin_publicar_juegos', { p_pwd: PWD });
+    var { data, error } = await sb.rpc('admin_publicar_juegos', { p_pwd: PWD, p_semana: semana.trim() });
     if (error) throw error;
-    juegosRecords.forEach(function(j) { j.publicado = true; });
+    juegosRecords.forEach(function(j) {
+      if (j.publicado && !j.archivado) j.archivado = true;
+      else if (!j.publicado) { j.publicado = true; j.semana = semana.trim(); }
+    });
     renderJuegos();
-    alert('✅ Se publicaron ' + data + ' juego(s) nuevo(s).');
+    alert('✅ Se publicaron ' + data + ' juego(s) como "' + semana.trim() + '".');
   } catch(e) { alert('❌ Error: ' + e.message); }
 }
 
