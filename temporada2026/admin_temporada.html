@@ -92,6 +92,7 @@ header{background:var(--navy);padding:18px 28px;display:flex;align-items:center;
 .import-row .im-sede{width:110px}
 .import-row .im-cat{width:120px}
 .import-row .im-liga{width:100px}
+.import-row .im-fecha{width:140px}
 .import-footer{display:flex;align-items:center;gap:12px;padding:10px 24px 20px}
 
 /* PLAYER LIST */
@@ -523,6 +524,7 @@ table.lt td{padding:12px 14px;font-size:13px;color:var(--text);border-top:1px so
         </div>
         <div class="controls" style="padding:0 24px;flex-wrap:wrap">
           <select class="filter-select" id="juego-dia"><option>Viernes</option><option>Sábado</option></select>
+          <input class="search-box" type="date" id="juego-fecha" title="Fecha exacta (opcional)" style="max-width:150px">
           <input class="search-box" type="text" id="juego-liga" placeholder="Liga (opcional)" style="max-width:140px">
           <input class="search-box" type="text" id="juego-categoria" placeholder="Categoría" style="max-width:150px">
           <input class="search-box" type="text" id="juego-partido" placeholder="Equipo A vs Equipo B" style="flex:1;min-width:200px">
@@ -2420,13 +2422,22 @@ function closeModal(id) { document.getElementById(id).classList.remove('open'); 
 var juegoEditandoId = null;
 
 var juegosGrupoAbierto = {};
+var MESES_CORTOS = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+
+function fechaCortaJuego(f) {
+  if (!f) return '';
+  var d = new Date(f + 'T00:00:00Z');
+  if (isNaN(d.getTime())) return '';
+  return d.getUTCDate() + ' ' + MESES_CORTOS[d.getUTCMonth()];
+}
 
 function juegoRowHtml(j) {
   var estado = j.publicado ? '<span class="badge badge-ok">Publicado</span>' : '<span class="badge badge-num">Borrador</span>';
   var pospuestoBadge = j.pospuesto ? ' <span class="badge badge-warn">Pospuesto</span>' : '';
+  var fechaTxt = fechaCortaJuego(j.fecha);
   return '<div class="p-row" style="cursor:default">' +
     '<div class="p-avatar-ph">🏈</div>' +
-    '<div class="p-info"><div class="p-name">' + j.dia + ' ' + (j.hora || 'sin hora') + ' · ' + j.partido + '</div>' +
+    '<div class="p-info"><div class="p-name">' + j.dia + (fechaTxt ? ' ' + fechaTxt : '') + ' ' + (j.hora || 'sin hora') + ' · ' + j.partido + '</div>' +
     '<div class="p-sub">' + (j.liga ? j.liga + ' · ' : '') + (j.categoria || '') + (j.campo ? ' · ' + j.campo : '') + (j.sede ? ' · ' + j.sede : '') + '</div></div>' +
     '<div class="p-badges">' + estado + pospuestoBadge + '</div>' +
     '<div class="p-actions">' +
@@ -2436,8 +2447,8 @@ function juegoRowHtml(j) {
   '</div>';
 }
 
-function toggleGrupoJuegos(dia) {
-  juegosGrupoAbierto[dia] = !juegosGrupoAbierto[dia];
+function toggleGrupoJuegos(clave) {
+  juegosGrupoAbierto[clave] = !juegosGrupoAbierto[clave];
   renderJuegos();
 }
 
@@ -2453,18 +2464,34 @@ function renderJuegos() {
 
   var html = '';
   if (borradores.length) {
-    html += '<div class="juegos-grupo-header">📝 Borradores sin publicar (' + borradores.length + ')</div>' +
+    html += '<div class="juegos-grupo-header">' +
+      '<span>📝 Borradores sin publicar (' + borradores.length + ')</span>' +
+      '<button class="btn-action" style="padding:6px 14px;font-size:11.5px" onclick="publicarJuegos()">📢 Publicar rol</button>' +
+    '</div>' +
       '<div class="list-wrap">' + borradores.map(juegoRowHtml).join('') + '</div>';
   }
 
-  dias.forEach(function(dia) {
-    var publicados = juegosRecords.filter(function(j) { return j.publicado && j.dia === dia; }).sort(porHora);
-    if (!publicados.length) return;
-    var abierto = !!juegosGrupoAbierto[dia];
-    html += '<div class="juegos-grupo-header juegos-grupo-clic" onclick="toggleGrupoJuegos(\'' + dia + '\')">' +
-      '<span>' + (abierto ? '▾' : '▸') + ' 📅 ' + dia + ' · Publicados (' + publicados.length + ')</span>' +
+  // Agrupa los publicados por fecha exacta cuando la hay; si no, por día (Viernes/Sábado)
+  var grupos = {}; // clave -> { orden, label, items }
+  juegosRecords.filter(function(j) { return j.publicado; }).forEach(function(j) {
+    var clave = j.fecha || j.dia;
+    if (!grupos[clave]) {
+      grupos[clave] = {
+        orden: j.fecha || ('9999-' + (dias.indexOf(j.dia) === 0 ? '1' : '2')),
+        label: j.fecha ? (j.dia + ' · ' + fechaCortaJuego(j.fecha)) : j.dia,
+        items: [],
+      };
+    }
+    grupos[clave].items.push(j);
+  });
+  Object.keys(grupos).sort(function(a, b) { return grupos[a].orden.localeCompare(grupos[b].orden); }).forEach(function(clave) {
+    var g = grupos[clave];
+    g.items.sort(porHora);
+    var abierto = !!juegosGrupoAbierto[clave];
+    html += '<div class="juegos-grupo-header juegos-grupo-clic" onclick="toggleGrupoJuegos(\'' + clave + '\')">' +
+      '<span>' + (abierto ? '▾' : '▸') + ' 📅 ' + g.label + ' · Publicados (' + g.items.length + ')</span>' +
     '</div>';
-    if (abierto) html += '<div class="list-wrap">' + publicados.map(juegoRowHtml).join('') + '</div>';
+    if (abierto) html += '<div class="list-wrap">' + g.items.map(juegoRowHtml).join('') + '</div>';
   });
 
   cont.innerHTML = html;
@@ -2472,6 +2499,7 @@ function renderJuegos() {
 
 function limpiarFormJuego() {
   document.getElementById('juego-dia').value = 'Viernes';
+  document.getElementById('juego-fecha').value = '';
   document.getElementById('juego-liga').value = '';
   document.getElementById('juego-categoria').value = '';
   document.getElementById('juego-partido').value = '';
@@ -2487,6 +2515,7 @@ function editarJuego(id) {
   var j = juegosRecords.find(function(x) { return x.id === id; });
   if (!j) return;
   document.getElementById('juego-dia').value = j.dia;
+  document.getElementById('juego-fecha').value = j.fecha || '';
   document.getElementById('juego-liga').value = j.liga || '';
   document.getElementById('juego-categoria').value = j.categoria || '';
   document.getElementById('juego-partido').value = j.partido || '';
@@ -2504,6 +2533,7 @@ async function crearJuego() {
   if (!partido) { alert('Falta el partido (Equipo A vs Equipo B).'); return; }
   var datos = {
     dia: document.getElementById('juego-dia').value,
+    fecha: document.getElementById('juego-fecha').value || null,
     liga: document.getElementById('juego-liga').value.trim() || null,
     categoria: document.getElementById('juego-categoria').value.trim() || null,
     partido: partido,
@@ -2516,7 +2546,8 @@ async function crearJuego() {
     if (juegoEditandoId) {
       var { error } = await sb.rpc('admin_update_juego', {
         p_pwd: PWD, p_id: juegoEditandoId, p_dia: datos.dia, p_liga: datos.liga, p_categoria: datos.categoria,
-        p_partido: datos.partido, p_hora: datos.hora, p_campo: datos.campo, p_sede: datos.sede, p_pospuesto: datos.pospuesto
+        p_partido: datos.partido, p_hora: datos.hora, p_campo: datos.campo, p_sede: datos.sede, p_pospuesto: datos.pospuesto,
+        p_fecha: datos.fecha
       });
       if (error) throw error;
       var j = juegosRecords.find(function(x) { return x.id === juegoEditandoId; });
@@ -2524,7 +2555,7 @@ async function crearJuego() {
     } else {
       var { data, error } = await sb.rpc('admin_create_juego', {
         p_pwd: PWD, p_dia: datos.dia, p_liga: datos.liga, p_categoria: datos.categoria, p_partido: datos.partido,
-        p_hora: datos.hora, p_campo: datos.campo, p_sede: datos.sede, p_pospuesto: datos.pospuesto
+        p_hora: datos.hora, p_campo: datos.campo, p_sede: datos.sede, p_pospuesto: datos.pospuesto, p_fecha: datos.fecha
       });
       if (error) throw error;
       juegosRecords.push(data);
@@ -2630,6 +2661,7 @@ function cargarImportados(juegos) {
     return {
       sel: /wolverines/i.test(j.partido || ''),
       dia: (j.dia === 'Sábado' ? 'Sábado' : 'Viernes'),
+      fecha: j.fecha || '',
       liga: j.liga || '', categoria: j.categoria || '', partido: j.partido || '',
       hora: j.hora || '', campo: j.campo || '', sede: j.sede || '', pospuesto: !!j.pospuesto,
     };
@@ -2655,6 +2687,7 @@ function renderImportados() {
     return '<div class="import-row ' + clase + '">' +
       '<input type="checkbox" ' + (j.sel ? 'checked' : '') + ' onchange="actualizarImportado(' + i + ',\'sel\',this.checked)" title="Incluir al agregar">' +
       '<select onchange="actualizarImportado(' + i + ',\'dia\',this.value)"><option ' + (j.dia === 'Viernes' ? 'selected' : '') + '>Viernes</option><option ' + (j.dia === 'Sábado' ? 'selected' : '') + '>Sábado</option></select>' +
+      '<input type="date" class="im-fecha" title="Fecha exacta (opcional)" value="' + esc(j.fecha) + '" onchange="actualizarImportado(' + i + ',\'fecha\',this.value)">' +
       '<input type="text" class="im-liga" placeholder="Liga" value="' + esc(j.liga) + '" oninput="actualizarImportado(' + i + ',\'liga\',this.value)">' +
       '<input type="text" class="im-cat" placeholder="Categoría" value="' + esc(j.categoria) + '" oninput="actualizarImportado(' + i + ',\'categoria\',this.value)">' +
       '<input type="text" class="im-partido" placeholder="Equipo A vs Equipo B" value="' + esc(j.partido) + '" oninput="actualizarImportado(' + i + ',\'partido\',this.value)">' +
@@ -2689,7 +2722,7 @@ async function guardarImportados() {
       var { data, error } = await sb.rpc('admin_create_juego', {
         p_pwd: PWD, p_dia: j.dia, p_liga: j.liga.trim() || null, p_categoria: j.categoria.trim() || null,
         p_partido: j.partido.trim(), p_hora: j.hora.trim() || null, p_campo: j.campo.trim() || null,
-        p_sede: j.sede.trim() || null, p_pospuesto: j.pospuesto,
+        p_sede: j.sede.trim() || null, p_pospuesto: j.pospuesto, p_fecha: j.fecha || null,
       });
       if (error) throw error;
       juegosRecords.push(data);
