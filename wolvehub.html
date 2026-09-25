@@ -895,15 +895,12 @@ function tokensDeJugador(j) {
   const fuentes = (j.rosters && j.rosters.length)
     ? j.rosters.map(r => r.nombre)
     : [j.categoria, j.categoria_secundaria];
-  return fuentes.map(extraerInfoCategoria).filter(Boolean).map(info => {
-    // un roster "Mixto" (equipo coed que juega en la rama Varonil o Femenil del torneo según el jugador)
-    // hereda el género real del jugador en vez de ser comodín contra ambas ramas
-    if (info.genero === 'MIXTO') {
-      const generoJugador = j.genero === 'Masculino' ? 'VARONIL' : j.genero === 'Femenino' ? 'FEMENIL' : null;
-      return { ...info, genero: generoJugador };
-    }
-    return info;
-  });
+  // el género SIEMPRE se toma del campo real del jugador, nunca del texto del roster/categoría:
+  // un roster puede no mencionar "Varonil"/"Femenil" (ej. "U14 Blanco LTL Kids") sin por eso ser
+  // mixto de verdad, así que dejar el género "sin especificar" ahí abría la puerta a que un juego
+  // Varonil le apareciera a un roster 100% femenil (o viceversa) por puro comodín.
+  const generoJugador = j.genero === 'Masculino' ? 'VARONIL' : j.genero === 'Femenino' ? 'FEMENIL' : null;
+  return fuentes.map(extraerInfoCategoria).filter(Boolean).map(info => ({ ...info, genero: generoJugador }));
 }
 
 async function renderResumenPagos(jugadoresData) {
