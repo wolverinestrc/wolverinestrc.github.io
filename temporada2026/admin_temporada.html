@@ -80,6 +80,19 @@ header{background:var(--navy);padding:18px 28px;display:flex;align-items:center;
 .btn-ghost:hover{border-color:var(--blue);color:var(--blue)}
 .btn-red{background:var(--red)}
 .btn-red:hover{background:#c11440}
+.btn-action:disabled{opacity:0.55;cursor:not-allowed}
+
+/* IMPORTAR ROL CON IA */
+.import-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin:8px 24px}
+.import-row.no-wolverines{opacity:0.6}
+.import-row input[type=text],.import-row select{background:var(--card);border:1.5px solid var(--border);border-radius:7px;color:var(--text);padding:7px 9px;font-family:'Montserrat',sans-serif;font-size:12px;outline:none}
+.import-row .im-partido{flex:1;min-width:180px}
+.import-row .im-hora{width:70px}
+.import-row .im-campo{width:90px}
+.import-row .im-sede{width:110px}
+.import-row .im-cat{width:120px}
+.import-row .im-liga{width:100px}
+.import-footer{display:flex;align-items:center;gap:12px;padding:10px 24px 20px}
 
 /* PLAYER LIST */
 .list-wrap{padding:6px 16px 20px}
@@ -520,6 +533,25 @@ table.lt td{padding:12px 14px;font-size:13px;color:var(--text);border-top:1px so
           <button class="btn-action btn-ghost" onclick="limpiarFormJuego()">✕ Cancelar</button>
         </div>
       </div>
+
+      <div class="content-card" style="margin-top:16px">
+        <div class="mor-header">
+          <div>
+            <div class="mor-title">📥 Importar rol con IA</div>
+            <div class="mor-sub">Pega el link de la página del torneo, o sube una foto/captura del rol. Se cargan como borrador para que los revises antes de publicar.</div>
+          </div>
+        </div>
+        <div class="controls" style="padding:0 24px 16px;flex-wrap:wrap;gap:10px">
+          <input class="search-box" type="text" id="import-url" placeholder="https://sitio-del-torneo.com/rol" style="flex:1;min-width:240px">
+          <button class="btn-action" id="btn-import-url" onclick="importarDesdeLink()">🔗 Leer link</button>
+          <span style="color:var(--gray-lt)">|</span>
+          <input type="file" id="import-imagen" accept="image/*" style="max-width:220px">
+          <button class="btn-action" id="btn-import-imagen" onclick="importarDesdeImagen()">🖼️ Leer imagen</button>
+        </div>
+        <div id="import-error" style="display:none;padding:0 24px 16px;color:var(--red);font-size:13px;font-weight:700"></div>
+        <div id="import-preview"></div>
+      </div>
+
       <div id="juegos-content"></div>
     </div>
   </div>
@@ -562,6 +594,7 @@ const SUPABASE_URL = 'https://xaawoqyjavqcybafirri.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhYXdvcXlqYXZxY3liYWZpcnJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1Mzg4MjcsImV4cCI6MjEwMTExNDgyN30.TdLuimBVQIILaaW0UtZDHDSoDpDomwmL6RbG-K-GDZ0';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const PWD        = 'Wolverines2026';
+const PAYMENTS_API = 'https://wolverines-payments.wolverinestrc.workers.dev';
 
 const ITEM_KEY_TO_DB = { 'Jersey': 'jersey', 'Banderas': 'banderas', 'Jersey Blanco': 'playera_blanca' };
 const ESTADO_UNI_TO_DB = { 'No comprado': 'no_comprado', 'Pendiente': 'pendiente', 'Pagado': 'pagado' };
@@ -2492,6 +2525,152 @@ async function publicarJuegos() {
     renderJuegos();
     alert('✅ Se publicaron ' + data + ' juego(s) nuevo(s).');
   } catch(e) { alert('❌ Error: ' + e.message); }
+}
+
+// ── IMPORTAR ROL CON IA (link o imagen) ──
+var importados = [];
+
+function mostrarErrorImport(msg) {
+  var el = document.getElementById('import-error');
+  if (!msg) { el.style.display = 'none'; el.textContent = ''; return; }
+  el.textContent = '❌ ' + msg;
+  el.style.display = 'block';
+}
+
+function ponerBotonesImportCargando(cargando, texto) {
+  var bUrl = document.getElementById('btn-import-url');
+  var bImg = document.getElementById('btn-import-imagen');
+  bUrl.disabled = cargando; bImg.disabled = cargando;
+  bUrl.textContent = cargando && texto === 'url' ? '⏳ Leyendo…' : '🔗 Leer link';
+  bImg.textContent = cargando && texto === 'imagen' ? '⏳ Leyendo…' : '🖼️ Leer imagen';
+}
+
+async function importarDesdeLink() {
+  var url = document.getElementById('import-url').value.trim();
+  if (!url) { mostrarErrorImport('Pega el link de la página del torneo.'); return; }
+  mostrarErrorImport(null);
+  ponerBotonesImportCargando(true, 'url');
+  try {
+    var res = await fetch(PAYMENTS_API + '/import-juegos-url', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_pwd: PWD, url: url }),
+    });
+    var data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || 'Error al leer el link.');
+    if (!data.juegos.length) { mostrarErrorImport('No se encontraron partidos en esa página. Prueba con la imagen del rol.'); return; }
+    cargarImportados(data.juegos);
+  } catch(e) {
+    mostrarErrorImport(e.message);
+  } finally {
+    ponerBotonesImportCargando(false);
+  }
+}
+
+async function importarDesdeImagen() {
+  var input = document.getElementById('import-imagen');
+  var file = input.files[0];
+  if (!file) { mostrarErrorImport('Elige una imagen del rol primero.'); return; }
+  if (file.size > 6 * 1024 * 1024) { mostrarErrorImport('La imagen pesa demasiado (máximo 6 MB).'); return; }
+  mostrarErrorImport(null);
+  ponerBotonesImportCargando(true, 'imagen');
+  try {
+    var b64 = await new Promise(function(resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function() { resolve(reader.result); };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+    var res = await fetch(PAYMENTS_API + '/import-juegos-imagen', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_pwd: PWD, image_base64: b64 }),
+    });
+    var data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || 'Error al leer la imagen.');
+    if (!data.juegos.length) { mostrarErrorImport('No se reconocieron partidos en esa imagen. Intenta con una foto más clara o recortada.'); return; }
+    cargarImportados(data.juegos);
+    input.value = '';
+  } catch(e) {
+    mostrarErrorImport(e.message);
+  } finally {
+    ponerBotonesImportCargando(false);
+  }
+}
+
+function cargarImportados(juegos) {
+  importados = juegos.map(function(j) {
+    return {
+      sel: /wolverines/i.test(j.partido || ''),
+      dia: (j.dia === 'Sábado' ? 'Sábado' : 'Viernes'),
+      liga: j.liga || '', categoria: j.categoria || '', partido: j.partido || '',
+      hora: j.hora || '', campo: j.campo || '', sede: j.sede || '', pospuesto: !!j.pospuesto,
+    };
+  });
+  renderImportados();
+}
+
+function actualizarImportado(i, campo, valor) {
+  importados[i][campo] = valor;
+}
+
+function quitarImportado(i) {
+  importados.splice(i, 1);
+  renderImportados();
+}
+
+function renderImportados() {
+  var cont = document.getElementById('import-preview');
+  if (!importados.length) { cont.innerHTML = ''; return; }
+
+  var filas = importados.map(function(j, i) {
+    var clase = j.sel ? '' : 'no-wolverines';
+    return '<div class="import-row ' + clase + '">' +
+      '<input type="checkbox" ' + (j.sel ? 'checked' : '') + ' onchange="actualizarImportado(' + i + ',\'sel\',this.checked)" title="Incluir al agregar">' +
+      '<select onchange="actualizarImportado(' + i + ',\'dia\',this.value)"><option ' + (j.dia === 'Viernes' ? 'selected' : '') + '>Viernes</option><option ' + (j.dia === 'Sábado' ? 'selected' : '') + '>Sábado</option></select>' +
+      '<input type="text" class="im-liga" placeholder="Liga" value="' + esc(j.liga) + '" oninput="actualizarImportado(' + i + ',\'liga\',this.value)">' +
+      '<input type="text" class="im-cat" placeholder="Categoría" value="' + esc(j.categoria) + '" oninput="actualizarImportado(' + i + ',\'categoria\',this.value)">' +
+      '<input type="text" class="im-partido" placeholder="Equipo A vs Equipo B" value="' + esc(j.partido) + '" oninput="actualizarImportado(' + i + ',\'partido\',this.value)">' +
+      '<input type="text" class="im-hora" placeholder="HH:MM" value="' + esc(j.hora) + '" oninput="actualizarImportado(' + i + ',\'hora\',this.value)">' +
+      '<input type="text" class="im-campo" placeholder="Campo" value="' + esc(j.campo) + '" oninput="actualizarImportado(' + i + ',\'campo\',this.value)">' +
+      '<input type="text" class="im-sede" placeholder="Sede" value="' + esc(j.sede) + '" oninput="actualizarImportado(' + i + ',\'sede\',this.value)">' +
+      '<label style="display:flex;align-items:center;gap:4px;font-size:11px;white-space:nowrap"><input type="checkbox" ' + (j.pospuesto ? 'checked' : '') + ' onchange="actualizarImportado(' + i + ',\'pospuesto\',this.checked)">Pospuesto</label>' +
+      '<button class="icon-btn icon-del" title="Quitar" onclick="quitarImportado(' + i + ')">🗑</button>' +
+    '</div>';
+  }).join('');
+
+  var nSel = importados.filter(function(j) { return j.sel; }).length;
+  cont.innerHTML = filas +
+    '<div class="import-footer">' +
+      '<button class="btn-action" onclick="guardarImportados()">➕ Agregar ' + nSel + ' seleccionado(s) como borrador</button>' +
+      '<button class="btn-action btn-ghost" onclick="importados=[];renderImportados()">✕ Descartar todo</button>' +
+      '<span style="font-size:12px;color:var(--gray)">Quedan como borrador — revísalos en la lista de abajo y usa "Publicar rol" cuando estén listos.</span>' +
+    '</div>';
+}
+
+function esc(s) { return String(s || '').replace(/"/g, '&quot;'); }
+
+async function guardarImportados() {
+  var seleccionados = importados.filter(function(j) { return j.sel; });
+  if (!seleccionados.length) { alert('No hay ningún partido seleccionado.'); return; }
+  if (!seleccionados.every(function(j) { return j.partido.trim(); })) { alert('Hay un partido sin equipos capturados (Equipo A vs Equipo B).'); return; }
+
+  var ok = 0, fallos = [];
+  for (var i = 0; i < seleccionados.length; i++) {
+    var j = seleccionados[i];
+    try {
+      var { data, error } = await sb.rpc('admin_create_juego', {
+        p_pwd: PWD, p_dia: j.dia, p_liga: j.liga.trim() || null, p_categoria: j.categoria.trim() || null,
+        p_partido: j.partido.trim(), p_hora: j.hora.trim() || null, p_campo: j.campo.trim() || null,
+        p_sede: j.sede.trim() || null, p_pospuesto: j.pospuesto,
+      });
+      if (error) throw error;
+      juegosRecords.push(data);
+      ok++;
+    } catch(e) { fallos.push(j.partido + ': ' + e.message); }
+  }
+  importados = importados.filter(function(j) { return !j.sel; });
+  renderImportados();
+  renderJuegos();
+  alert('✅ Se agregaron ' + ok + ' juego(s) como borrador.' + (fallos.length ? '\n\n❌ Fallaron:\n' + fallos.join('\n') : ''));
 }
 </script>
 </body>
