@@ -96,6 +96,9 @@ header{background:var(--navy);padding:18px 28px;display:flex;align-items:center;
 
 /* PLAYER LIST */
 .list-wrap{padding:6px 16px 20px}
+.juegos-grupo-header{display:flex;align-items:center;justify-content:space-between;background:var(--navy);color:#fff;font-weight:800;font-size:13px;padding:12px 20px;margin:16px 16px 0;border-radius:10px}
+.juegos-grupo-clic{cursor:pointer}
+.juegos-grupo-clic:hover{background:var(--navy2)}
 .p-row{display:flex;align-items:center;gap:16px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin:10px 8px;cursor:pointer;transition:box-shadow .15s}
 .p-row:hover{box-shadow:0 4px 16px rgba(16,31,61,0.08)}
 .p-avatar{width:46px;height:46px;border-radius:50%;object-fit:cover;flex-shrink:0;background:var(--blue-lt)}
@@ -2416,29 +2419,55 @@ function closeModal(id) { document.getElementById(id).classList.remove('open'); 
 // ── JUEGOS ──
 var juegoEditandoId = null;
 
+var juegosGrupoAbierto = {};
+
+function juegoRowHtml(j) {
+  var estado = j.publicado ? '<span class="badge badge-ok">Publicado</span>' : '<span class="badge badge-num">Borrador</span>';
+  var pospuestoBadge = j.pospuesto ? ' <span class="badge badge-warn">Pospuesto</span>' : '';
+  return '<div class="p-row" style="cursor:default">' +
+    '<div class="p-avatar-ph">🏈</div>' +
+    '<div class="p-info"><div class="p-name">' + j.dia + ' ' + (j.hora || 'sin hora') + ' · ' + j.partido + '</div>' +
+    '<div class="p-sub">' + (j.liga ? j.liga + ' · ' : '') + (j.categoria || '') + (j.campo ? ' · ' + j.campo : '') + (j.sede ? ' · ' + j.sede : '') + '</div></div>' +
+    '<div class="p-badges">' + estado + pospuestoBadge + '</div>' +
+    '<div class="p-actions">' +
+      '<button class="icon-btn icon-edit" title="Editar" onclick="editarJuego(\'' + j.id + '\')">✏️</button>' +
+      '<button class="icon-btn icon-del" title="Eliminar" onclick="eliminarJuego(\'' + j.id + '\')">🗑</button>' +
+    '</div>' +
+  '</div>';
+}
+
+function toggleGrupoJuegos(dia) {
+  juegosGrupoAbierto[dia] = !juegosGrupoAbierto[dia];
+  renderJuegos();
+}
+
 function renderJuegos() {
   var cont = document.getElementById('juegos-content');
   if (!juegosRecords.length) { cont.innerHTML = '<div class="empty">Aún no hay juegos cargados.</div>'; return; }
-  var orden = { 'Viernes': 0, 'Sábado': 1 };
-  var recs = juegosRecords.slice().sort(function(a, b) {
-    if (orden[a.dia] !== orden[b.dia]) return orden[a.dia] - orden[b.dia];
-    return (a.hora || '').localeCompare(b.hora || '');
+
+  var porHora = function(a, b) { return (a.hora || '').localeCompare(b.hora || ''); };
+  var dias = ['Viernes', 'Sábado'];
+  var borradores = juegosRecords.filter(function(j) { return !j.publicado; }).sort(function(a, b) {
+    return dias.indexOf(a.dia) - dias.indexOf(b.dia) || porHora(a, b);
   });
-  var html = recs.map(function(j) {
-    var estado = j.publicado ? '<span class="badge badge-ok">Publicado</span>' : '<span class="badge badge-num">Borrador</span>';
-    var pospuestoBadge = j.pospuesto ? ' <span class="badge badge-warn">Pospuesto</span>' : '';
-    return '<div class="p-row" style="cursor:default">' +
-      '<div class="p-avatar-ph">🏈</div>' +
-      '<div class="p-info"><div class="p-name">' + j.dia + ' ' + (j.hora || 'sin hora') + ' · ' + j.partido + '</div>' +
-      '<div class="p-sub">' + (j.liga ? j.liga + ' · ' : '') + (j.categoria || '') + (j.campo ? ' · ' + j.campo : '') + (j.sede ? ' · ' + j.sede : '') + '</div></div>' +
-      '<div class="p-badges">' + estado + pospuestoBadge + '</div>' +
-      '<div class="p-actions">' +
-        '<button class="icon-btn icon-edit" title="Editar" onclick="editarJuego(\'' + j.id + '\')">✏️</button>' +
-        '<button class="icon-btn icon-del" title="Eliminar" onclick="eliminarJuego(\'' + j.id + '\')">🗑</button>' +
-      '</div>' +
+
+  var html = '';
+  if (borradores.length) {
+    html += '<div class="juegos-grupo-header">📝 Borradores sin publicar (' + borradores.length + ')</div>' +
+      '<div class="list-wrap">' + borradores.map(juegoRowHtml).join('') + '</div>';
+  }
+
+  dias.forEach(function(dia) {
+    var publicados = juegosRecords.filter(function(j) { return j.publicado && j.dia === dia; }).sort(porHora);
+    if (!publicados.length) return;
+    var abierto = !!juegosGrupoAbierto[dia];
+    html += '<div class="juegos-grupo-header juegos-grupo-clic" onclick="toggleGrupoJuegos(\'' + dia + '\')">' +
+      '<span>' + (abierto ? '▾' : '▸') + ' 📅 ' + dia + ' · Publicados (' + publicados.length + ')</span>' +
     '</div>';
-  }).join('');
-  cont.innerHTML = '<div class="list-wrap">' + html + '</div>';
+    if (abierto) html += '<div class="list-wrap">' + publicados.map(juegoRowHtml).join('') + '</div>';
+  });
+
+  cont.innerHTML = html;
 }
 
 function limpiarFormJuego() {
