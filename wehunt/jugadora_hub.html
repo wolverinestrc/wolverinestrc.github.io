@@ -10,7 +10,7 @@
 :root{
   --bg:#f1f4f9; --card:#fff; --border:#e5e9f2;
   --navy:#101f3d; --navy2:#16294f; --gold:#FFCB05; --blue:#2563eb; --blue-dk:#1d4ed8; --blue-lt:#eaf1ff;
-  --text:#182338; --gray:#67728c; --gray-lt:#a4adc2; --red:#e11d48;
+  --text:#182338; --gray:#67728c; --gray-lt:#a4adc2; --red:#e11d48; --green:#16a34a;
   --shadow:0 1px 2px rgba(16,31,61,0.04), 0 1px 6px rgba(16,31,61,0.05);
 }
 body{background:var(--bg);font-family:'Montserrat',sans-serif;color:var(--text)}
@@ -19,11 +19,23 @@ header img{width:44px;height:44px;border-radius:50%;background:white;object-fit:
 header h1{font-size:17px;font-weight:800;color:white}
 header p{font-size:12px;color:#8ea0c4;margin-top:1px}
 
-.wrap{max-width:640px;margin:0 auto;padding:20px 20px 60px}
+.wrap{max-width:760px;margin:0 auto;padding:20px 20px 60px}
 .card{background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:20px}
 .card + .card{margin-top:14px}
 .card h2{font-size:15px;font-weight:800;margin-bottom:2px}
 .card .sub{font-size:12.5px;color:var(--gray);margin-bottom:14px}
+
+.field{margin-bottom:14px}
+.field label{display:block;font-size:11px;font-weight:700;letter-spacing:0.3px;color:var(--gray);text-transform:uppercase;margin-bottom:6px}
+.field input,.field select,.field textarea{width:100%;border:1.5px solid var(--border);border-radius:9px;padding:11px 13px;font-family:'Montserrat',sans-serif;font-size:13.5px;color:var(--text);outline:none;background:var(--bg)}
+.field textarea{resize:vertical;min-height:60px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+@media(max-width:520px){.form-grid{grid-template-columns:1fr}}
+
+.submit-btn{width:100%;background:var(--blue);border:none;color:white;font-family:'Montserrat',sans-serif;font-size:14px;font-weight:800;padding:14px;border-radius:11px;cursor:pointer}
+.submit-btn:hover{background:var(--blue-dk)}
+.btn-sm{background:var(--blue);color:#fff;border:none;font-size:12px;font-weight:800;padding:8px 14px;border-radius:8px;cursor:pointer}
+.btn-sm.danger{background:#fde8ee;color:var(--red)}
 
 .esq-row{display:flex;gap:12px;align-items:center;padding:14px 0;border-top:1px solid var(--border)}
 .esq-row:first-child{border-top:none}
@@ -33,15 +45,13 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
 .esq-meta{font-size:11.5px;color:var(--gray);margin-top:1px}
 .esq-desc{font-size:12px;color:var(--gray);margin-top:3px;line-height:1.4}
 .esq-ver{background:var(--blue);color:#fff;text-decoration:none;font-size:12px;font-weight:800;padding:9px 14px;border-radius:9px;flex-shrink:0}
-.esq-ver:hover{background:var(--blue-dk)}
 
 .empty-msg{font-size:13px;color:var(--gray-lt);text-align:center;padding:24px 0}
-
-.hub-logout{display:block;text-align:center;font-size:12px;color:var(--gray);margin-top:16px;cursor:pointer;text-decoration:underline}
 .loading-msg{font-size:13px;color:var(--gray);text-align:center;padding:40px 0}
+.hub-logout{display:block;text-align:center;font-size:12px;color:var(--gray);margin-top:16px;cursor:pointer;text-decoration:underline}
 
-.hub-tabs{max-width:640px;margin:16px auto 0;padding:0 20px;display:flex;gap:10px}
-.hub-tab{flex:1;background:var(--card);border:1.5px solid var(--border);color:var(--gray);font-family:'Montserrat',sans-serif;font-size:13px;font-weight:800;padding:13px;border-radius:11px;cursor:pointer}
+.hub-tabs{max-width:760px;margin:16px auto 0;padding:0 20px 4px;display:flex;gap:8px;overflow-x:auto}
+.hub-tab{flex:0 0 auto;background:var(--card);border:1.5px solid var(--border);color:var(--gray);font-family:'Montserrat',sans-serif;font-size:12.5px;font-weight:800;padding:11px 16px;border-radius:11px;cursor:pointer;white-space:nowrap}
 .hub-tab.active{background:var(--navy);border-color:var(--navy);color:white}
 
 .asist-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--border);font-size:13px}
@@ -50,10 +60,38 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
 .asist-hora{color:var(--gray);font-size:11.5px}
 .tag-retardo{background:#fef3e0;color:#b45309;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:7px}
 .tag-ok{background:#dcfce7;color:#15803d;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:7px}
+.tag-falta{background:#fde8ee;color:var(--red);font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:7px}
 .motivo-form{display:flex;gap:8px;margin-top:8px}
 .motivo-form input{flex:1;border:1.5px solid var(--border);border-radius:8px;padding:8px 10px;font-family:'Montserrat',sans-serif;font-size:12.5px;outline:none;background:var(--bg)}
 .motivo-form button{background:var(--blue);color:#fff;border:none;font-size:12px;font-weight:800;padding:8px 12px;border-radius:8px;cursor:pointer}
 .motivo-txt{font-size:11.5px;color:var(--gray);font-style:italic;margin-top:4px}
+
+.roster-cat-title{font-size:12px;font-weight:800;color:var(--blue-dk);text-transform:uppercase;letter-spacing:0.4px;margin:16px 0 6px}
+.roster-cat-title:first-child{margin-top:0}
+.roster-row{display:flex;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--border);font-size:13px}
+.roster-row:first-child{border-top:none}
+.roster-num{width:26px;height:26px;border-radius:50%;background:var(--blue-lt);color:var(--blue-dk);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0}
+
+.dc-pos-title{font-size:12.5px;font-weight:800;margin:14px 0 6px}
+.dc-pos-title:first-child{margin-top:0}
+.dc-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--border);font-size:13px}
+.dc-row:first-child{border-top:none}
+.dc-orden{width:22px;height:22px;border-radius:6px;background:var(--blue-lt);color:var(--blue-dk);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0}
+.dc-yo{background:var(--gold);color:var(--navy)}
+
+.anuncio-card{padding:14px 0;border-top:1px solid var(--border)}
+.anuncio-card:first-child{border-top:none}
+.anuncio-titulo{font-size:13.5px;font-weight:800}
+.anuncio-fecha{font-size:11px;color:var(--gray-lt);margin-top:1px}
+.anuncio-msg{font-size:12.5px;color:var(--text);margin-top:6px;line-height:1.5;white-space:pre-wrap}
+
+.tabla-simple{width:100%;border-collapse:collapse;font-size:12.5px}
+.tabla-simple th{text-align:left;font-size:10.5px;text-transform:uppercase;color:var(--gray);padding:6px 8px;border-bottom:2px solid var(--border)}
+.tabla-simple td{padding:8px;border-bottom:1px solid var(--border)}
+
+.dash-stat{display:inline-flex;flex-direction:column;background:var(--blue-lt);border-radius:12px;padding:14px 18px;margin:4px 8px 4px 0}
+.dash-stat b{font-size:22px;color:var(--blue-dk)}
+.dash-stat span{font-size:11px;color:var(--gray);font-weight:700;text-transform:uppercase}
 </style>
 </head>
 <body>
@@ -67,11 +105,29 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
 </header>
 
 <div class="hub-tabs">
-  <button class="hub-tab active" id="tab-esquemas" onclick="switchTab('esquemas')">📋 Esquemas</button>
-  <button class="hub-tab" id="tab-asistencia" onclick="switchTab('asistencia')">✅ Asistencia</button>
+  <button class="hub-tab active" data-tab="dashboard" onclick="switchTab('dashboard')">🏠 Inicio</button>
+  <button class="hub-tab" data-tab="esquemas" onclick="switchTab('esquemas')">📋 Esquemas</button>
+  <button class="hub-tab" data-tab="asistencia" onclick="switchTab('asistencia')">✅ Asistencia</button>
+  <button class="hub-tab" data-tab="partidos" onclick="switchTab('partidos')">🏈 Partidos</button>
+  <button class="hub-tab" data-tab="depth" onclick="switchTab('depth')">📊 Depth Chart</button>
+  <button class="hub-tab" data-tab="faltas" onclick="switchTab('faltas')">📉 Faltas</button>
+  <button class="hub-tab" data-tab="polizas" onclick="switchTab('polizas')">🩹 Pólizas</button>
+  <button class="hub-tab" data-tab="anuncios" onclick="switchTab('anuncios')">📣 Anuncios</button>
+  <button class="hub-tab" data-tab="fisicas" onclick="switchTab('fisicas')">💪 Evaluaciones</button>
+  <button class="hub-tab" data-tab="jugadoras" onclick="switchTab('jugadoras')">👥 Mi equipo</button>
 </div>
 
-<div class="wrap" id="section-esquemas">
+<!-- ============ DASHBOARD ============ -->
+<div class="wrap" id="section-dashboard">
+  <div class="card">
+    <h2>👋 Hola</h2>
+    <div class="sub" id="dash-sub">Bienvenida a tu hub</div>
+    <div id="dash-stats"><div class="loading-msg">Cargando...</div></div>
+  </div>
+</div>
+
+<!-- ============ ESQUEMAS ============ -->
+<div class="wrap" id="section-esquemas" style="display:none">
   <div class="card">
     <h2>📋 Esquemas</h2>
     <div class="sub">Jugadas, scouting y video de tu equipo</div>
@@ -79,11 +135,94 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
   </div>
 </div>
 
+<!-- ============ ASISTENCIA ============ -->
 <div class="wrap" id="section-asistencia" style="display:none">
   <div class="card">
     <h2>✅ Mi asistencia</h2>
     <div class="sub">Tu historial de check-ins a entrenos y partidos</div>
     <div id="asistencia-content"><div class="loading-msg">Cargando...</div></div>
+  </div>
+</div>
+
+<!-- ============ PARTIDOS ============ -->
+<div class="wrap" id="section-partidos" style="display:none">
+  <div class="card">
+    <h2>🏈 Calendario de partidos</h2>
+    <div class="sub">Próximos juegos y resultados</div>
+    <div id="partidos-content"><div class="loading-msg">Cargando...</div></div>
+  </div>
+</div>
+
+<!-- ============ DEPTH CHART ============ -->
+<div class="wrap" id="section-depth" style="display:none">
+  <div class="card">
+    <h2>📊 Depth Chart</h2>
+    <div class="sub">Orden de tu categoría por posición</div>
+    <div id="depth-content"><div class="loading-msg">Cargando...</div></div>
+  </div>
+</div>
+
+<!-- ============ FALTAS ============ -->
+<div class="wrap" id="section-faltas" style="display:none">
+  <div class="card">
+    <h2>📉 Mis faltas y retardos</h2>
+    <div class="sub">Sesiones que se te pasaron sin registrar asistencia</div>
+    <div id="faltas-content"><div class="loading-msg">Cargando...</div></div>
+  </div>
+</div>
+
+<!-- ============ POLIZAS ============ -->
+<div class="wrap" id="section-polizas" style="display:none">
+  <div class="card">
+    <h2>➕ Reportar lesión</h2>
+    <div class="form-grid">
+      <div class="field"><label>Fecha de inicio</label><input type="date" id="ls-inicio"></div>
+      <div class="field"><label>Fecha de fin (si ya sanó)</label><input type="date" id="ls-fin"></div>
+    </div>
+    <div class="field"><label>Descripción</label><textarea id="ls-descripcion" placeholder="¿Qué pasó?"></textarea></div>
+    <div class="field"><label>Receta médica (opcional)</label><input type="file" id="ls-receta" accept="application/pdf,image/*"></div>
+    <div class="alert error" id="ls-error" style="display:none;background:#fde8ee;color:var(--red);padding:10px;border-radius:8px;font-size:12.5px;margin-bottom:10px"></div>
+    <button class="submit-btn" onclick="crearLesion()">Guardar</button>
+  </div>
+  <div class="card">
+    <h2>🩹 Mis lesiones</h2>
+    <div id="polizas-content"><div class="loading-msg">Cargando...</div></div>
+  </div>
+</div>
+
+<!-- ============ ANUNCIOS ============ -->
+<div class="wrap" id="section-anuncios" style="display:none">
+  <div class="card">
+    <h2>📣 Anuncios</h2>
+    <div class="sub">Lo último de tu coach</div>
+    <div id="anuncios-content"><div class="loading-msg">Cargando...</div></div>
+  </div>
+</div>
+
+<!-- ============ EVALUACIONES FISICAS ============ -->
+<div class="wrap" id="section-fisicas" style="display:none">
+  <div class="card">
+    <h2>➕ Registrar resultado</h2>
+    <div class="form-grid">
+      <div class="field"><label>Prueba</label><select id="fi-prueba"><option value="">Cargando...</option></select></div>
+      <div class="field"><label>Fecha</label><input type="date" id="fi-fecha"></div>
+    </div>
+    <div class="field"><label>Valor</label><input type="number" step="0.01" id="fi-valor"></div>
+    <div class="alert error" id="fi-error" style="display:none;background:#fde8ee;color:var(--red);padding:10px;border-radius:8px;font-size:12.5px;margin-bottom:10px"></div>
+    <button class="submit-btn" onclick="crearEvaluacion()">Guardar</button>
+  </div>
+  <div class="card">
+    <h2>💪 Mi historial</h2>
+    <div id="fisicas-content"><div class="loading-msg">Cargando...</div></div>
+  </div>
+</div>
+
+<!-- ============ MI EQUIPO ============ -->
+<div class="wrap" id="section-jugadoras" style="display:none">
+  <div class="card">
+    <h2>👥 Mi equipo</h2>
+    <div class="sub">Jugadoras de tu categoría</div>
+    <div id="jugadoras-content"><div class="loading-msg">Cargando...</div></div>
   </div>
 </div>
 
@@ -98,13 +237,50 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const sbAuth = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { storageKey: 'wolverines-jugadora-auth' } });
 
 const ICONO_TIPO = { Jugada: '📄', Scout: '📊', Video: '▶️' };
+let miJugadorId = null;
+let miCategoria = null;
+
+const TABS = ['dashboard','esquemas','asistencia','partidos','depth','faltas','polizas','anuncios','fisicas','jugadoras'];
+function switchTab(tab) {
+  TABS.forEach(function(t) {
+    document.querySelector('.hub-tab[data-tab="' + t + '"]').classList.toggle('active', t === tab);
+    document.getElementById('section-' + t).style.display = t === tab ? '' : 'none';
+  });
+  if (tab === 'asistencia') cargarAsistencia();
+  if (tab === 'partidos') cargarPartidos();
+  if (tab === 'depth') cargarDepthChart();
+  if (tab === 'faltas') cargarFaltas();
+  if (tab === 'polizas') cargarPolizas();
+  if (tab === 'anuncios') cargarAnuncios();
+  if (tab === 'fisicas') cargarFisicas();
+  if (tab === 'jugadoras') cargarJugadoras();
+}
 
 function fmtFecha(f) {
   if (!f) return '';
   var p = f.split('-');
   return p[2] + '/' + p[1] + '/' + p[0];
 }
+function fmtFechaLarga(f) {
+  var p = f.split('-');
+  var dias = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  var d = new Date(p[0] + '-' + p[1] + '-' + p[2] + 'T12:00:00');
+  return dias[d.getDay()] + ' ' + p[2] + '/' + p[1] + '/' + p[0];
+}
 
+/* ============ DASHBOARD ============ */
+async function cargarDashboard() {
+  var { data: esq } = await sbAuth.from('esquemas').select('id', { count: 'exact', head: true });
+  var { count: totalEsq } = await sbAuth.from('esquemas').select('id', { count: 'exact', head: true });
+  var { count: totalAsist } = await sbAuth.from('asistencia').select('id', { count: 'exact', head: true });
+  var { count: totalAnuncios } = await sbAuth.from('anuncios').select('id', { count: 'exact', head: true });
+  document.getElementById('dash-stats').innerHTML =
+    '<div class="dash-stat"><b>' + (totalEsq || 0) + '</b><span>Esquemas</span></div>' +
+    '<div class="dash-stat"><b>' + (totalAsist || 0) + '</b><span>Check-ins</span></div>' +
+    '<div class="dash-stat"><b>' + (totalAnuncios || 0) + '</b><span>Anuncios</span></div>';
+}
+
+/* ============ ESQUEMAS ============ */
 function renderEsquemas(rows) {
   var wrap = document.getElementById('esquemas-content');
   if (!rows || !rows.length) {
@@ -134,25 +310,7 @@ async function cargarEsquemas() {
   renderEsquemas(data);
 }
 
-function salir() {
-  sbAuth.auth.signOut().then(function() { window.location.href = 'jugadora_login.html'; });
-}
-
-function switchTab(tab) {
-  document.getElementById('tab-esquemas').classList.toggle('active', tab === 'esquemas');
-  document.getElementById('tab-asistencia').classList.toggle('active', tab === 'asistencia');
-  document.getElementById('section-esquemas').style.display = tab === 'esquemas' ? '' : 'none';
-  document.getElementById('section-asistencia').style.display = tab === 'asistencia' ? '' : 'none';
-  if (tab === 'asistencia') cargarAsistencia();
-}
-
-function fmtFechaLarga(f) {
-  var p = f.split('-');
-  var dias = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-  var d = new Date(p[0] + '-' + p[1] + '-' + p[2] + 'T12:00:00');
-  return dias[d.getDay()] + ' ' + p[2] + '/' + p[1] + '/' + p[0];
-}
-
+/* ============ ASISTENCIA ============ */
 async function enviarMotivoRetardo(fecha, tipoEvento, btnId) {
   var input = document.getElementById('motivo-' + btnId);
   var motivo = input.value.trim();
@@ -190,11 +348,208 @@ async function cargarAsistencia() {
   }).join('');
 }
 
+/* ============ PARTIDOS ============ */
+async function cargarPartidos() {
+  var { data, error } = await sbAuth.from('partidos').select('*').order('fecha', { ascending: true });
+  var wrap = document.getElementById('partidos-content');
+  if (error) { wrap.innerHTML = '<div class="empty-msg">No se pudieron cargar los partidos.</div>'; return; }
+  if (!data.length) { wrap.innerHTML = '<div class="empty-msg">Sin partidos agendados.</div>'; return; }
+  wrap.innerHTML = data.map(function(p) {
+    var resultado = (p.marcador_propio !== null && p.marcador_rival !== null) ? (p.marcador_propio + ' - ' + p.marcador_rival) : 'Próximo';
+    return '<div class="asist-row">' +
+      '<div><b>vs ' + p.rival + '</b> <span style="color:var(--gray);font-size:11.5px">(' + p.categoria.split(' ')[0] + ')</span>' +
+      '<div class="asist-hora">' + fmtFecha(p.fecha) + (p.hora ? ' · ' + p.hora : '') + (p.sede ? ' · ' + p.sede : '') + '</div></div>' +
+      '<b>' + resultado + '</b>' +
+    '</div>';
+  }).join('');
+}
+
+/* ============ DEPTH CHART ============ */
+async function cargarDepthChart() {
+  if (!miCategoria) await cargarMiPerfil();
+  var { data, error } = await sbAuth.from('depth_chart').select('id, posicion, orden, jugador_id, jugadores(nombre, apellidos)').eq('categoria', miCategoria).order('posicion').order('orden');
+  var wrap = document.getElementById('depth-content');
+  if (error) { wrap.innerHTML = '<div class="empty-msg">No se pudo cargar.</div>'; return; }
+  if (!data.length) { wrap.innerHTML = '<div class="empty-msg">Tu coach aún no ha armado el depth chart.</div>'; return; }
+  var porPos = {};
+  data.forEach(function(d) { (porPos[d.posicion] = porPos[d.posicion] || []).push(d); });
+  var html = '';
+  Object.keys(porPos).forEach(function(pos) {
+    html += '<div class="dc-pos-title">' + pos + '</div>';
+    porPos[pos].forEach(function(f, i) {
+      var j = f.jugadores || {};
+      var esYo = f.jugador_id === miJugadorId;
+      html += '<div class="dc-row">' +
+        '<div class="dc-orden' + (esYo ? ' dc-yo' : '') + '">' + (i + 1) + '</div>' +
+        '<div>' + j.nombre + ' ' + j.apellidos + (esYo ? ' (tú)' : '') + '</div>' +
+      '</div>';
+    });
+  });
+  wrap.innerHTML = html;
+}
+
+/* ============ FALTAS ============ */
+async function reportarMotivoFalta(fecha, tipoEvento, inputId) {
+  var motivo = document.getElementById(inputId).value.trim();
+  if (!motivo) return;
+  try {
+    var { error } = await sbAuth.from('faltas_motivo').insert({ jugador_id: miJugadorId, fecha: fecha, tipo_evento: tipoEvento, motivo: motivo });
+    if (error) throw error;
+    cargarFaltas();
+  } catch (e) { alert('❌ Error: ' + e.message); }
+}
+
+async function cargarFaltas() {
+  if (!miJugadorId) await cargarMiPerfil();
+  var wrap = document.getElementById('faltas-content');
+  var { data: eventos, error: e1 } = await sbAuth.rpc('eventos_ocurridos');
+  var { data: misAsist, error: e2 } = await sbAuth.from('asistencia').select('fecha, tipo_evento');
+  var { data: misMotivos } = await sbAuth.from('faltas_motivo').select('*');
+  if (e1 || e2) { wrap.innerHTML = '<div class="empty-msg">No se pudo cargar.</div>'; return; }
+  var presentesSet = new Set((misAsist || []).map(function(a) { return a.fecha + '|' + a.tipo_evento; }));
+  var faltas = (eventos || []).filter(function(ev) { return !presentesSet.has(ev.fecha + '|' + ev.tipo_evento); });
+  if (!faltas.length) { wrap.innerHTML = '<div class="empty-msg">¡Sin faltas registradas! 🎉</div>'; return; }
+  wrap.innerHTML = faltas.map(function(f, i) {
+    var motivo = (misMotivos || []).find(function(m) { return m.fecha === f.fecha && m.tipo_evento === f.tipo_evento; });
+    var inputId = 'falta-motivo-' + i;
+    return '<div class="asist-row" style="flex-direction:column;align-items:stretch">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center">' +
+        '<span class="asist-fecha">' + fmtFechaLarga(f.fecha) + ' · ' + f.tipo_evento + '</span>' +
+        '<span class="tag-falta">Falta</span>' +
+      '</div>' +
+      (motivo
+        ? '<div class="motivo-txt">Motivo: ' + motivo.motivo + '</div>'
+        : '<div class="motivo-form"><input type="text" id="' + inputId + '" placeholder="¿Por qué faltaste?"><button onclick="reportarMotivoFalta(\'' + f.fecha + '\',\'' + f.tipo_evento + '\',\'' + inputId + '\')">Enviar</button></div>') +
+    '</div>';
+  }).join('');
+}
+
+/* ============ POLIZAS ============ */
+async function crearLesion() {
+  var errEl = document.getElementById('ls-error');
+  errEl.style.display = 'none';
+  var inicio = document.getElementById('ls-inicio').value;
+  var descripcion = document.getElementById('ls-descripcion').value.trim();
+  if (!inicio || !descripcion) { errEl.textContent = 'Falta la fecha de inicio o la descripción.'; errEl.style.display = 'block'; return; }
+  try {
+    var recetaUrl = null;
+    var archivo = document.getElementById('ls-receta').files[0];
+    if (archivo) {
+      var path = 'lesiones/' + Date.now() + '-' + archivo.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+      var { error: upErr } = await sbAuth.storage.from('jugador-documentos').upload(path, archivo);
+      if (upErr) throw upErr;
+      recetaUrl = sbAuth.storage.from('jugador-documentos').getPublicUrl(path).data.publicUrl;
+    }
+    var { error } = await sbAuth.from('lesiones').insert({
+      jugador_id: miJugadorId, fecha_inicio: inicio,
+      fecha_fin: document.getElementById('ls-fin').value || null,
+      descripcion: descripcion, receta_url: recetaUrl
+    });
+    if (error) throw error;
+    document.getElementById('ls-inicio').value = ''; document.getElementById('ls-fin').value = '';
+    document.getElementById('ls-descripcion').value = ''; document.getElementById('ls-receta').value = '';
+    cargarPolizas();
+  } catch (e) {
+    errEl.textContent = 'Error: ' + e.message; errEl.style.display = 'block';
+  }
+}
+
+async function cargarPolizas() {
+  var { data, error } = await sbAuth.from('lesiones').select('*').order('fecha_inicio', { ascending: false });
+  var wrap = document.getElementById('polizas-content');
+  if (error) { wrap.innerHTML = '<div class="empty-msg">No se pudo cargar.</div>'; return; }
+  if (!data.length) { wrap.innerHTML = '<div class="empty-msg">Sin lesiones registradas.</div>'; return; }
+  wrap.innerHTML = data.map(function(l) {
+    return '<div class="anuncio-card">' +
+      '<div class="anuncio-fecha">' + fmtFecha(l.fecha_inicio) + (l.fecha_fin ? ' → ' + fmtFecha(l.fecha_fin) : ' (en curso)') + '</div>' +
+      '<div class="anuncio-msg">' + (l.descripcion || '') + '</div>' +
+      (l.receta_url ? '<a href="' + l.receta_url + '" target="_blank" class="btn-sm" style="display:inline-block;margin-top:6px;text-decoration:none">Ver receta</a>' : '') +
+    '</div>';
+  }).join('');
+}
+
+/* ============ ANUNCIOS ============ */
+async function cargarAnuncios() {
+  var { data, error } = await sbAuth.from('anuncios').select('*').order('created_at', { ascending: false });
+  var wrap = document.getElementById('anuncios-content');
+  if (error) { wrap.innerHTML = '<div class="empty-msg">No se pudo cargar.</div>'; return; }
+  if (!data.length) { wrap.innerHTML = '<div class="empty-msg">Sin anuncios todavía.</div>'; return; }
+  wrap.innerHTML = data.map(function(a) {
+    return '<div class="anuncio-card">' +
+      '<div class="anuncio-titulo">' + a.titulo + '</div>' +
+      '<div class="anuncio-fecha">' + new Date(a.created_at).toLocaleDateString('es-MX') + '</div>' +
+      '<div class="anuncio-msg">' + a.mensaje + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+/* ============ EVALUACIONES FISICAS ============ */
+async function llenarSelectPruebas() {
+  var { data } = await sbAuth.from('pruebas_fisicas').select('*').order('orden');
+  var sel = document.getElementById('fi-prueba');
+  sel.innerHTML = (data || []).map(function(p) { return '<option value="' + p.id + '">' + p.nombre + ' (' + p.unidad + ')</option>'; }).join('') || '<option value="">Sin pruebas en el catálogo</option>';
+}
+
+async function crearEvaluacion() {
+  var errEl = document.getElementById('fi-error');
+  errEl.style.display = 'none';
+  var pruebaId = document.getElementById('fi-prueba').value;
+  var valor = document.getElementById('fi-valor').value;
+  var fecha = document.getElementById('fi-fecha').value || new Date().toISOString().slice(0, 10);
+  if (!pruebaId || !valor) { errEl.textContent = 'Falta la prueba o el valor.'; errEl.style.display = 'block'; return; }
+  var { error } = await sbAuth.from('evaluaciones_fisicas').insert({ jugador_id: miJugadorId, prueba_id: pruebaId, valor: parseFloat(valor), fecha: fecha });
+  if (error) { errEl.textContent = 'Error: ' + error.message; errEl.style.display = 'block'; return; }
+  document.getElementById('fi-valor').value = '';
+  cargarFisicas();
+}
+
+async function cargarFisicas() {
+  await llenarSelectPruebas();
+  var { data, error } = await sbAuth.from('evaluaciones_fisicas').select('*, pruebas_fisicas(nombre, unidad)').order('fecha', { ascending: false });
+  var wrap = document.getElementById('fisicas-content');
+  if (error) { wrap.innerHTML = '<div class="empty-msg">No se pudo cargar.</div>'; return; }
+  if (!data.length) { wrap.innerHTML = '<div class="empty-msg">Aún no tienes resultados.</div>'; return; }
+  var html = '<table class="tabla-simple"><tr><th>Prueba</th><th>Valor</th><th>Fecha</th></tr>';
+  data.forEach(function(e) {
+    var p = e.pruebas_fisicas || {};
+    html += '<tr><td>' + (p.nombre || '') + '</td><td>' + e.valor + ' ' + (p.unidad || '') + '</td><td>' + fmtFecha(e.fecha) + '</td></tr>';
+  });
+  html += '</table>';
+  wrap.innerHTML = html;
+}
+
+/* ============ MI EQUIPO ============ */
+async function cargarJugadoras() {
+  var { data, error } = await sbAuth.rpc('portal_roster');
+  var wrap = document.getElementById('jugadoras-content');
+  if (error) { wrap.innerHTML = '<div class="empty-msg">No se pudo cargar.</div>'; return; }
+  if (!data.length) { wrap.innerHTML = '<div class="empty-msg">Sin compañeras registradas.</div>'; return; }
+  wrap.innerHTML = data.map(function(j) {
+    return '<div class="roster-row">' +
+      '<div class="roster-num">' + (j.numero_jugador || '—') + '</div>' +
+      '<div>' + j.nombre + ' ' + j.apellidos + (j.id === miJugadorId ? ' (tú)' : '') + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+/* ============ PERFIL ============ */
+async function cargarMiPerfil() {
+  var { data } = await sbAuth.from('jugadores').select('id, categoria').limit(1).single();
+  if (data) { miJugadorId = data.id; miCategoria = data.categoria; }
+}
+
+function salir() {
+  sbAuth.auth.signOut().then(function() { window.location.href = 'jugadora_login.html'; });
+}
+
 (async function init() {
   var { data } = await sbAuth.auth.getSession();
   if (!data || !data.session) { window.location.href = 'jugadora_login.html'; return; }
   var meta = data.session.user.user_metadata || {};
   if (meta.id_jugadora) document.getElementById('hdr-nombre').textContent = meta.id_jugadora + ' 🏈';
+  document.getElementById('fi-fecha').value = new Date().toISOString().slice(0, 10);
+  await cargarMiPerfil();
+  cargarDashboard();
   cargarEsquemas();
 })();
 </script>

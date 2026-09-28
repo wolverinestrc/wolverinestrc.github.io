@@ -19,7 +19,7 @@ header img{width:44px;height:44px;border-radius:50%;background:white;object-fit:
 header h1{font-size:17px;font-weight:800;color:white}
 header p{font-size:12px;color:#8ea0c4;margin-top:1px}
 
-.wrap{max-width:640px;margin:0 auto;padding:20px 20px 60px}
+.wrap{max-width:760px;margin:0 auto;padding:20px 20px 60px}
 .card{background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:20px}
 .card + .card{margin-top:14px}
 .card h2{font-size:15px;font-weight:800;margin-bottom:2px}
@@ -30,34 +30,27 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
 .field input,.field select,.field textarea{width:100%;border:1.5px solid var(--border);border-radius:9px;padding:11px 13px;font-family:'Montserrat',sans-serif;font-size:13.5px;color:var(--text);outline:none;background:var(--bg)}
 .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--blue)}
 .field textarea{resize:vertical;min-height:60px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+@media(max-width:520px){.form-grid{grid-template-columns:1fr}}
 
 .submit-btn{width:100%;background:var(--blue);border:none;color:white;font-family:'Montserrat',sans-serif;font-size:14px;font-weight:800;padding:14px;border-radius:11px;cursor:pointer}
 .submit-btn:hover{background:var(--blue-dk)}
 .submit-btn:disabled{background:var(--gray-lt);cursor:not-allowed}
+.btn-sm{background:var(--blue);color:#fff;border:none;font-size:12px;font-weight:800;padding:8px 14px;border-radius:8px;cursor:pointer}
+.btn-sm.ghost{background:var(--bg);color:var(--text);border:1.5px solid var(--border)}
+.btn-sm.danger{background:#fde8ee;color:var(--red)}
 
 .alert{border-radius:9px;padding:13px 16px;font-size:12.5px;font-weight:600;margin-top:12px;display:none}
 .alert.show{display:block}
 .alert.error{background:#fde8ee;color:var(--red)}
-
-.esq-row{display:flex;gap:12px;align-items:center;padding:14px 0;border-top:1px solid var(--border)}
-.esq-row:first-child{border-top:none}
-.esq-icon{width:42px;height:42px;border-radius:10px;background:var(--blue-lt);display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0}
-.esq-info{flex:1;min-width:0}
-.esq-titulo{font-size:13.5px;font-weight:700}
-.esq-meta{font-size:11.5px;color:var(--gray);margin-top:1px}
-.esq-desc{font-size:12px;color:var(--gray);margin-top:3px;line-height:1.4}
-.esq-acciones{display:flex;gap:6px;flex-shrink:0}
-.esq-ver{background:var(--blue);color:#fff;text-decoration:none;font-size:12px;font-weight:800;padding:9px 12px;border-radius:9px}
-.esq-ver:hover{background:var(--blue-dk)}
-.esq-del{background:#fde8ee;color:var(--red);border:none;font-size:12px;font-weight:800;padding:9px 12px;border-radius:9px;cursor:pointer}
-.esq-del:hover{background:#fbd0dd}
+.alert.ok{background:#dcfce7;color:#15803d}
 
 .empty-msg{font-size:13px;color:var(--gray-lt);text-align:center;padding:24px 0}
 .loading-msg{font-size:13px;color:var(--gray);text-align:center;padding:40px 0}
 .hub-logout{display:block;text-align:center;font-size:12px;color:var(--gray);margin-top:16px;cursor:pointer;text-decoration:underline}
 
-.hub-tabs{max-width:640px;margin:16px auto 0;padding:0 20px;display:flex;gap:10px}
-.hub-tab{flex:1;background:var(--card);border:1.5px solid var(--border);color:var(--gray);font-family:'Montserrat',sans-serif;font-size:13px;font-weight:800;padding:13px;border-radius:11px;cursor:pointer}
+.hub-tabs{max-width:760px;margin:16px auto 0;padding:0 20px 4px;display:flex;gap:8px;overflow-x:auto}
+.hub-tab{flex:0 0 auto;background:var(--card);border:1.5px solid var(--border);color:var(--gray);font-family:'Montserrat',sans-serif;font-size:12.5px;font-weight:800;padding:11px 16px;border-radius:11px;cursor:pointer;white-space:nowrap}
 .hub-tab.active{background:var(--navy);border-color:var(--navy);color:white}
 
 .qr-wrap{display:flex;flex-direction:column;align-items:center;padding:10px 0}
@@ -69,6 +62,46 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
 .asist-hora{color:var(--gray);font-size:11.5px}
 .tag-retardo{background:#fef3e0;color:#b45309;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:7px}
 .tag-ok{background:#dcfce7;color:#15803d;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:7px}
+.tag-falta{background:#fde8ee;color:var(--red);font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:7px}
+
+.esq-page-title{font-size:22px;font-weight:900;margin-bottom:14px}
+.esq-filtros{display:flex;gap:8px;margin:16px 0;flex-wrap:wrap}
+.filtro-pill{background:var(--card);border:1.5px solid var(--border);color:var(--gray);font-weight:800;font-size:12.5px;padding:9px 16px;border-radius:30px;cursor:pointer}
+.filtro-pill.active{background:var(--navy);border-color:var(--navy);color:#fff}
+.esq-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:14px}
+.esq-card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;position:relative;text-decoration:none;color:var(--text);display:block}
+.esq-card-thumb{aspect-ratio:1;background:var(--blue-lt);display:flex;align-items:center;justify-content:center;font-size:36px}
+.esq-card-body{padding:10px}
+.esq-card-titulo{font-size:12.5px;font-weight:700;line-height:1.3;max-height:2.6em;overflow:hidden}
+.esq-card-tag{display:inline-block;margin-top:6px;background:var(--blue-lt);color:var(--blue-dk);font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:20px}
+.esq-card-del{position:absolute;top:8px;right:8px;width:24px;height:24px;border-radius:50%;background:rgba(0,0,0,0.55);color:#fff;border:none;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2}
+
+.roster-cat-title{font-size:12px;font-weight:800;color:var(--blue-dk);text-transform:uppercase;letter-spacing:0.4px;margin:16px 0 6px}
+.roster-cat-title:first-child{margin-top:0}
+.roster-row{display:flex;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--border);font-size:13px}
+.roster-row:first-child{border-top:none}
+.roster-num{width:26px;height:26px;border-radius:50%;background:var(--blue-lt);color:var(--blue-dk);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0}
+.roster-info{flex:1;min-width:0}
+.roster-sub{font-size:11px;color:var(--gray)}
+
+.dc-pos-title{font-size:12.5px;font-weight:800;margin:14px 0 6px}
+.dc-pos-title:first-child{margin-top:0}
+.dc-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--border);font-size:13px}
+.dc-row:first-child{border-top:none}
+.dc-orden{width:22px;height:22px;border-radius:6px;background:var(--blue-lt);color:var(--blue-dk);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0}
+.dc-nombre{flex:1}
+.dc-btns{display:flex;gap:4px}
+.dc-btn{width:26px;height:26px;border-radius:6px;border:1.5px solid var(--border);background:var(--card);cursor:pointer;font-size:12px}
+
+.tabla-simple{width:100%;border-collapse:collapse;font-size:12.5px}
+.tabla-simple th{text-align:left;font-size:10.5px;text-transform:uppercase;color:var(--gray);padding:6px 8px;border-bottom:2px solid var(--border)}
+.tabla-simple td{padding:8px;border-bottom:1px solid var(--border)}
+
+.anuncio-card{padding:14px 0;border-top:1px solid var(--border)}
+.anuncio-card:first-child{border-top:none}
+.anuncio-titulo{font-size:13.5px;font-weight:800}
+.anuncio-fecha{font-size:11px;color:var(--gray-lt);margin-top:1px}
+.anuncio-msg{font-size:12.5px;color:var(--text);margin-top:6px;line-height:1.5;white-space:pre-wrap}
 </style>
 </head>
 <body>
@@ -82,10 +115,18 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
 </header>
 
 <div class="hub-tabs">
-  <button class="hub-tab active" id="tab-asistencia" onclick="switchTab('asistencia')">✅ Asistencia</button>
-  <button class="hub-tab" id="tab-esquemas" onclick="switchTab('esquemas')">📋 Esquemas</button>
+  <button class="hub-tab active" data-tab="asistencia" onclick="switchTab('asistencia')">✅ Asistencia</button>
+  <button class="hub-tab" data-tab="esquemas" onclick="switchTab('esquemas')">📋 Esquemas</button>
+  <button class="hub-tab" data-tab="jugadoras" onclick="switchTab('jugadoras')">👥 Jugadoras</button>
+  <button class="hub-tab" data-tab="partidos" onclick="switchTab('partidos')">🏈 Partidos</button>
+  <button class="hub-tab" data-tab="depth" onclick="switchTab('depth')">📊 Depth Chart</button>
+  <button class="hub-tab" data-tab="faltas" onclick="switchTab('faltas')">📉 Faltas</button>
+  <button class="hub-tab" data-tab="polizas" onclick="switchTab('polizas')">🩹 Pólizas</button>
+  <button class="hub-tab" data-tab="anuncios" onclick="switchTab('anuncios')">📣 Anuncios</button>
+  <button class="hub-tab" data-tab="fisicas" onclick="switchTab('fisicas')">💪 Evaluaciones</button>
 </div>
 
+<!-- ============ ASISTENCIA ============ -->
 <div class="wrap" id="section-asistencia">
   <div class="card">
     <h2>✅ Tomar asistencia</h2>
@@ -103,54 +144,176 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
       <div class="qr-timer" id="qr-timer"></div>
     </div>
   </div>
-
   <div class="card">
     <h2>📝 Asistencia de hoy</h2>
-    <div class="sub" id="asist-hoy-sub">Jugadoras que ya registraron su llegada</div>
+    <div class="sub">Jugadoras que ya registraron su llegada</div>
     <div id="asistencia-hoy-content"><div class="loading-msg">Cargando...</div></div>
   </div>
 </div>
 
+<!-- ============ ESQUEMAS ============ -->
 <div class="wrap" id="section-esquemas" style="display:none">
+  <div class="esq-page-title">Esquemas</div>
   <div class="card">
-    <h2>➕ Nuevo esquema</h2>
-    <div class="sub">Sube una jugada, scout o video para el equipo</div>
-    <div class="field">
-      <label>Título</label>
-      <input type="text" id="esq-titulo" placeholder="Ej. Mesh vs Cover 3">
-    </div>
-    <div class="field">
-      <label>Tipo</label>
-      <select id="esq-tipo" onchange="onCambioTipoEsquema()">
-        <option value="Jugada">📄 Jugada</option>
-        <option value="Scout">📊 Scout</option>
-        <option value="Video">▶️ Video</option>
-      </select>
-    </div>
-    <div class="field">
-      <label>Fecha</label>
-      <input type="date" id="esq-fecha">
-    </div>
-    <div class="field" id="esq-archivo-wrap">
-      <label>Archivo (PDF o imagen)</label>
-      <input type="file" id="esq-archivo" accept="application/pdf,image/*">
-    </div>
-    <div class="field" id="esq-link-wrap" style="display:none">
-      <label>Link del video</label>
-      <input type="text" id="esq-link" placeholder="https://youtube.com/...">
-    </div>
-    <div class="field">
-      <label>Descripción (opcional)</label>
-      <textarea id="esq-descripcion" placeholder="Notas para las jugadoras..."></textarea>
+    <div class="form-grid">
+      <div class="field">
+        <label>Título</label>
+        <input type="text" id="esq-titulo" placeholder="Ej. Mesh vs Cover 3">
+      </div>
+      <div class="field">
+        <label>Tipo</label>
+        <select id="esq-tipo" onchange="onCambioTipoEsquema()">
+          <option value="Jugada">Jugada</option>
+          <option value="Scout">Scout</option>
+          <option value="Video">Video</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Fecha</label>
+        <input type="date" id="esq-fecha">
+      </div>
+      <div class="field">
+        <label>Descripción (opcional)</label>
+        <input type="text" id="esq-descripcion" placeholder="Notas para las jugadoras...">
+      </div>
+      <div class="field" id="esq-archivo-wrap">
+        <label>Archivo PDF</label>
+        <input type="file" id="esq-archivo" accept="application/pdf">
+      </div>
+      <div class="field" id="esq-link-wrap" style="display:none">
+        <label>Link del video</label>
+        <input type="text" id="esq-link" placeholder="https://youtube.com/...">
+      </div>
+      <div class="field">
+        <label>Notificar por correo a</label>
+        <select id="esq-notificar">
+          <option value="nadie">Nadie</option>
+          <option value="todas">Todas las jugadoras</option>
+        </select>
+      </div>
     </div>
     <div class="alert error" id="esquema-error"></div>
-    <button class="submit-btn" id="btn-subir-esquema" onclick="crearEsquema()">💾 Subir esquema</button>
+    <button class="submit-btn" id="btn-subir-esquema" onclick="crearEsquema()">Guardar</button>
   </div>
 
+  <div class="esq-filtros" id="esq-filtros">
+    <button class="filtro-pill active" data-tipo="Todos" onclick="filtrarEsquemas('Todos')">Todos</button>
+    <button class="filtro-pill" data-tipo="Jugada" onclick="filtrarEsquemas('Jugada')">Jugadas</button>
+    <button class="filtro-pill" data-tipo="Scout" onclick="filtrarEsquemas('Scout')">Scouts</button>
+    <button class="filtro-pill" data-tipo="Video" onclick="filtrarEsquemas('Video')">Videos</button>
+  </div>
+
+  <div class="esq-grid" id="esquemas-content"><div class="loading-msg">Cargando...</div></div>
+</div>
+
+<!-- ============ JUGADORAS ============ -->
+<div class="wrap" id="section-jugadoras" style="display:none">
   <div class="card">
-    <h2>📋 Esquemas existentes</h2>
-    <div class="sub">Jugadas, scouting y video ya publicados</div>
-    <div id="esquemas-content"><div class="loading-msg">Cargando...</div></div>
+    <h2>👥 Jugadoras</h2>
+    <div class="sub">Roster de las categorías juvenil</div>
+    <div id="jugadoras-content"><div class="loading-msg">Cargando...</div></div>
+  </div>
+</div>
+
+<!-- ============ PARTIDOS ============ -->
+<div class="wrap" id="section-partidos" style="display:none">
+  <div class="card">
+    <h2>➕ Nuevo partido</h2>
+    <div class="form-grid">
+      <div class="field"><label>Categoría</label>
+        <select id="pt-categoria">
+          <option>U14 (2012-2013)</option><option>U16 (2010-2011)</option><option>U18 (2008-2009)</option><option>Libre</option>
+        </select>
+      </div>
+      <div class="field"><label>Torneo (opcional)</label><input type="text" id="pt-torneo"></div>
+      <div class="field"><label>Fecha</label><input type="date" id="pt-fecha"></div>
+      <div class="field"><label>Hora (opcional)</label><input type="time" id="pt-hora"></div>
+      <div class="field"><label>Rival</label><input type="text" id="pt-rival"></div>
+      <div class="field"><label>Sede (opcional)</label><input type="text" id="pt-sede"></div>
+    </div>
+    <div class="alert error" id="pt-error"></div>
+    <button class="submit-btn" onclick="crearPartido()">Guardar partido</button>
+  </div>
+  <div class="card">
+    <h2>🏈 Calendario</h2>
+    <div id="partidos-content"><div class="loading-msg">Cargando...</div></div>
+  </div>
+</div>
+
+<!-- ============ DEPTH CHART ============ -->
+<div class="wrap" id="section-depth" style="display:none">
+  <div class="card">
+    <h2>📊 Depth Chart</h2>
+    <div class="sub">Selecciona categoría y agrega jugadoras a cada posición</div>
+    <div class="field">
+      <label>Categoría</label>
+      <select id="dc-categoria" onchange="cargarDepthChart()">
+        <option>U14 (2012-2013)</option><option>U16 (2010-2011)</option><option>U18 (2008-2009)</option><option>Libre</option>
+      </select>
+    </div>
+    <div class="form-grid">
+      <div class="field"><label>Posición</label><input type="text" id="dc-posicion" placeholder="Ej. QB, WR, CB..."></div>
+      <div class="field"><label>Jugadora</label><select id="dc-jugador"><option value="">Cargando...</option></select></div>
+    </div>
+    <button class="submit-btn" onclick="agregarDepthChart()">Agregar a la posición</button>
+    <div class="alert error" id="dc-error"></div>
+  </div>
+  <div class="card">
+    <h2>📋 Orden actual</h2>
+    <div id="depth-content"><div class="loading-msg">Cargando...</div></div>
+  </div>
+</div>
+
+<!-- ============ FALTAS ============ -->
+<div class="wrap" id="section-faltas" style="display:none">
+  <div class="card">
+    <h2>📉 Faltas y retardos</h2>
+    <div class="sub">Resumen de asistencia por jugadora (sesiones ya ocurridas)</div>
+    <div id="faltas-content"><div class="loading-msg">Cargando...</div></div>
+  </div>
+</div>
+
+<!-- ============ POLIZAS ============ -->
+<div class="wrap" id="section-polizas" style="display:none">
+  <div class="card">
+    <h2>🩹 Pólizas / lesiones</h2>
+    <div class="sub">Registro de lesiones y trámites de seguro de todo el equipo</div>
+    <div id="polizas-content"><div class="loading-msg">Cargando...</div></div>
+  </div>
+</div>
+
+<!-- ============ ANUNCIOS ============ -->
+<div class="wrap" id="section-anuncios" style="display:none">
+  <div class="card">
+    <h2>📣 Nuevo anuncio</h2>
+    <div class="field"><label>Título</label><input type="text" id="an-titulo"></div>
+    <div class="field"><label>Mensaje</label><textarea id="an-mensaje"></textarea></div>
+    <div class="alert error" id="an-error"></div>
+    <button class="submit-btn" onclick="crearAnuncio()">Publicar</button>
+  </div>
+  <div class="card">
+    <h2>Anuncios publicados</h2>
+    <div id="anuncios-content"><div class="loading-msg">Cargando...</div></div>
+  </div>
+</div>
+
+<!-- ============ EVALUACIONES FISICAS ============ -->
+<div class="wrap" id="section-fisicas" style="display:none">
+  <div class="card">
+    <h2>➕ Nueva prueba en el catálogo</h2>
+    <div class="form-grid">
+      <div class="field"><label>Nombre</label><input type="text" id="pf-nombre" placeholder="Ej. 40 yardas"></div>
+      <div class="field"><label>Área</label><input type="text" id="pf-area" placeholder="Ej. Velocidad"></div>
+      <div class="field"><label>Unidad</label><input type="text" id="pf-unidad" placeholder="Ej. seg, kg, reps"></div>
+      <div class="field"><label>¿Mejor si sube?</label>
+        <select id="pf-mejor-si-sube"><option value="true">Sí (ej. repeticiones)</option><option value="false">No (ej. tiempo)</option></select>
+      </div>
+    </div>
+    <button class="submit-btn" onclick="crearPrueba()">Agregar prueba</button>
+  </div>
+  <div class="card">
+    <h2>💪 Resultados del equipo</h2>
+    <div id="fisicas-content"><div class="loading-msg">Cargando...</div></div>
   </div>
 </div>
 
@@ -165,18 +328,36 @@ const SUPABASE_URL = 'https://xaawoqyjavqcybafirri.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhYXdvcXlqYXZxY3liYWZpcnJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1Mzg4MjcsImV4cCI6MjEwMTExNDgyN30.TdLuimBVQIILaaW0UtZDHDSoDpDomwmL6RbG-K-GDZ0';
 const sbCoach = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { storageKey: 'wolverines-coach-auth' } });
 
+const CATEGORIAS_JUVENIL = ['U14 (2012-2013)','U16 (2010-2011)','U18 (2008-2009)','Libre'];
 const ICONO_TIPO = { Jugada: '📄', Scout: '📊', Video: '▶️' };
 let esquemasRecords = [];
+let filtroEsquemaActual = 'Todos';
 let qrTimerInterval = null;
 let asistenciaPollInterval = null;
+let rosterCache = [];
 
+const TABS = ['asistencia','esquemas','jugadoras','partidos','depth','faltas','polizas','anuncios','fisicas'];
 function switchTab(tab) {
-  document.getElementById('tab-asistencia').classList.toggle('active', tab === 'asistencia');
-  document.getElementById('tab-esquemas').classList.toggle('active', tab === 'esquemas');
-  document.getElementById('section-asistencia').style.display = tab === 'asistencia' ? '' : 'none';
-  document.getElementById('section-esquemas').style.display = tab === 'esquemas' ? '' : 'none';
+  TABS.forEach(function(t) {
+    document.querySelector('.hub-tab[data-tab="' + t + '"]').classList.toggle('active', t === tab);
+    document.getElementById('section-' + t).style.display = t === tab ? '' : 'none';
+  });
+  if (tab === 'jugadoras' && !rosterCache.length) cargarJugadoras();
+  if (tab === 'partidos') cargarPartidos();
+  if (tab === 'depth') cargarDepthChart();
+  if (tab === 'faltas') cargarFaltas();
+  if (tab === 'polizas') cargarPolizas();
+  if (tab === 'anuncios') cargarAnuncios();
+  if (tab === 'fisicas') cargarFisicas();
 }
 
+function fmtFecha(f) {
+  if (!f) return '';
+  var p = f.split('-');
+  return p[2] + '/' + p[1] + '/' + p[0];
+}
+
+/* ============ ASISTENCIA ============ */
 async function generarQR() {
   var tipo = document.getElementById('asist-tipo').value;
   var btn = document.getElementById('btn-generar-qr');
@@ -234,12 +415,7 @@ async function cargarAsistenciaHoy() {
   }).join('');
 }
 
-function fmtFecha(f) {
-  if (!f) return '';
-  var p = f.split('-');
-  return p[2] + '/' + p[1] + '/' + p[0];
-}
-
+/* ============ ESQUEMAS ============ */
 function onCambioTipoEsquema() {
   var esVideo = document.getElementById('esq-tipo').value === 'Video';
   document.getElementById('esq-archivo-wrap').style.display = esVideo ? 'none' : '';
@@ -253,6 +429,16 @@ function mostrarErrorEsquema(msg) {
   el.classList.add('show');
 }
 
+async function notificarEsquemaPorCorreo(esquema) {
+  var { data: jugs } = await sbCoach.from('jugadores').select('email').in('categoria', CATEGORIAS_JUVENIL).not('email', 'is', null);
+  var emails = Array.from(new Set((jugs || []).map(function(j) { return j.email; }).filter(Boolean)));
+  for (var i = 0; i < emails.length; i++) {
+    try {
+      await sbCoach.functions.invoke('send-email', { body: { tipo: 'esquema', to: emails[i], data: { titulo: esquema.titulo, tipo: esquema.tipo, descripcion: esquema.descripcion } } });
+    } catch (e) { /* seguimos con los demás aunque uno falle */ }
+  }
+}
+
 async function crearEsquema() {
   mostrarErrorEsquema('');
   var titulo = document.getElementById('esq-titulo').value.trim();
@@ -261,10 +447,11 @@ async function crearEsquema() {
   var descripcion = document.getElementById('esq-descripcion').value.trim() || null;
   var archivo = document.getElementById('esq-archivo').files[0];
   var link = document.getElementById('esq-link').value.trim();
+  var notificar = document.getElementById('esq-notificar').value;
 
   if (!titulo) { mostrarErrorEsquema('Escribe un título.'); return; }
   if (tipo === 'Video' && !link) { mostrarErrorEsquema('Escribe el link del video.'); return; }
-  if (tipo !== 'Video' && !archivo) { mostrarErrorEsquema('Sube un archivo (PDF o imagen).'); return; }
+  if (tipo !== 'Video' && !archivo) { mostrarErrorEsquema('Sube un archivo PDF.'); return; }
 
   var btn = document.getElementById('btn-subir-esquema');
   btn.disabled = true; btn.textContent = '⏳ Subiendo...';
@@ -292,10 +479,12 @@ async function crearEsquema() {
     document.getElementById('esq-descripcion').value = '';
     document.getElementById('esq-archivo').value = '';
     document.getElementById('esq-link').value = '';
+
+    if (notificar === 'todas') notificarEsquemaPorCorreo(data);
   } catch (e) {
     mostrarErrorEsquema('Error: ' + e.message);
   } finally {
-    btn.disabled = false; btn.textContent = '💾 Subir esquema';
+    btn.disabled = false; btn.textContent = 'Guardar';
   }
 }
 
@@ -316,26 +505,31 @@ async function eliminarEsquema(id) {
   }
 }
 
+function filtrarEsquemas(tipo) {
+  filtroEsquemaActual = tipo;
+  document.querySelectorAll('#esq-filtros .filtro-pill').forEach(function(el) {
+    el.classList.toggle('active', el.dataset.tipo === tipo);
+  });
+  renderEsquemas();
+}
+
 function renderEsquemas() {
   var wrap = document.getElementById('esquemas-content');
-  if (!esquemasRecords.length) {
+  var rows = filtroEsquemaActual === 'Todos' ? esquemasRecords : esquemasRecords.filter(function(e) { return e.tipo === filtroEsquemaActual; });
+  if (!rows.length) {
     wrap.innerHTML = '<div class="empty-msg">Aún no hay esquemas cargados.</div>';
     return;
   }
-  wrap.innerHTML = esquemasRecords.map(function(e) {
+  wrap.innerHTML = rows.map(function(e) {
     var link = e.tipo === 'Video' ? e.link_externo : e.archivo_url;
-    return '<div class="esq-row">' +
-      '<div class="esq-icon">' + (ICONO_TIPO[e.tipo] || '📄') + '</div>' +
-      '<div class="esq-info">' +
-        '<div class="esq-titulo">' + e.titulo + '</div>' +
-        '<div class="esq-meta">' + e.tipo + ' · ' + fmtFecha(e.fecha) + '</div>' +
-        (e.descripcion ? '<div class="esq-desc">' + e.descripcion + '</div>' : '') +
+    return '<a class="esq-card" href="' + link + '" target="_blank" rel="noopener">' +
+      '<button class="esq-card-del" onclick="event.preventDefault();event.stopPropagation();eliminarEsquema(\'' + e.id + '\')">✕</button>' +
+      '<div class="esq-card-thumb">' + (ICONO_TIPO[e.tipo] || '📄') + '</div>' +
+      '<div class="esq-card-body">' +
+        '<div class="esq-card-titulo">' + e.titulo + '</div>' +
+        '<span class="esq-card-tag">' + e.tipo + '</span>' +
       '</div>' +
-      '<div class="esq-acciones">' +
-        '<a class="esq-ver" href="' + link + '" target="_blank" rel="noopener">👁</a>' +
-        '<button class="esq-del" onclick="eliminarEsquema(\'' + e.id + '\')">🗑</button>' +
-      '</div>' +
-    '</div>';
+    '</a>';
   }).join('');
 }
 
@@ -347,6 +541,249 @@ async function cargarEsquemas() {
   }
   esquemasRecords = data || [];
   renderEsquemas();
+}
+
+/* ============ JUGADORAS ============ */
+async function cargarJugadoras() {
+  var { data, error } = await sbCoach.rpc('portal_roster');
+  var wrap = document.getElementById('jugadoras-content');
+  if (error) { wrap.innerHTML = '<div class="empty-msg">No se pudo cargar el roster.</div>'; return; }
+  rosterCache = data || [];
+  if (!rosterCache.length) { wrap.innerHTML = '<div class="empty-msg">Sin jugadoras registradas.</div>'; return; }
+  var porCat = {};
+  rosterCache.forEach(function(j) { (porCat[j.categoria] = porCat[j.categoria] || []).push(j); });
+  var html = '';
+  Object.keys(porCat).forEach(function(cat) {
+    html += '<div class="roster-cat-title">' + cat + '</div>';
+    porCat[cat].forEach(function(j) {
+      html += '<div class="roster-row">' +
+        '<div class="roster-num">' + (j.numero_jugador || '—') + '</div>' +
+        '<div class="roster-info"><div>' + j.nombre + ' ' + j.apellidos + '</div>' +
+        '<div class="roster-sub">' + (j.tutor || '') + (j.telefono ? ' · ' + j.telefono : '') + '</div></div>' +
+      '</div>';
+    });
+  });
+  wrap.innerHTML = html;
+  llenarSelectJugadoras();
+}
+
+function llenarSelectJugadoras() {
+  var sel = document.getElementById('dc-jugador');
+  if (!sel) return;
+  var cat = document.getElementById('dc-categoria').value;
+  var opts = rosterCache.filter(function(j) { return j.categoria === cat; });
+  sel.innerHTML = opts.map(function(j) { return '<option value="' + j.id + '">' + j.nombre + ' ' + j.apellidos + '</option>'; }).join('') || '<option value="">Sin jugadoras en esta categoría</option>';
+}
+
+/* ============ PARTIDOS ============ */
+async function crearPartido() {
+  document.getElementById('pt-error').classList.remove('show');
+  var categoria = document.getElementById('pt-categoria').value;
+  var fecha = document.getElementById('pt-fecha').value;
+  var rival = document.getElementById('pt-rival').value.trim();
+  if (!fecha || !rival) { var el = document.getElementById('pt-error'); el.textContent = 'Falta la fecha o el rival.'; el.classList.add('show'); return; }
+  var { error } = await sbCoach.from('partidos').insert({
+    categoria: categoria,
+    torneo: document.getElementById('pt-torneo').value.trim() || null,
+    fecha: fecha,
+    hora: document.getElementById('pt-hora').value || null,
+    rival: rival,
+    sede: document.getElementById('pt-sede').value.trim() || null
+  });
+  if (error) { var el2 = document.getElementById('pt-error'); el2.textContent = 'Error: ' + error.message; el2.classList.add('show'); return; }
+  document.getElementById('pt-torneo').value = ''; document.getElementById('pt-fecha').value = '';
+  document.getElementById('pt-hora').value = ''; document.getElementById('pt-rival').value = ''; document.getElementById('pt-sede').value = '';
+  cargarPartidos();
+}
+
+async function actualizarMarcador(id, propio, rival) {
+  await sbCoach.from('partidos').update({ marcador_propio: propio === '' ? null : parseInt(propio), marcador_rival: rival === '' ? null : parseInt(rival) }).eq('id', id);
+}
+
+async function eliminarPartido(id) {
+  if (!confirm('¿Eliminar este partido?')) return;
+  await sbCoach.from('partidos').delete().eq('id', id);
+  cargarPartidos();
+}
+
+async function cargarPartidos() {
+  var { data, error } = await sbCoach.from('partidos').select('*').order('fecha', { ascending: true });
+  var wrap = document.getElementById('partidos-content');
+  if (error) { wrap.innerHTML = '<div class="empty-msg">No se pudieron cargar los partidos.</div>'; return; }
+  if (!data.length) { wrap.innerHTML = '<div class="empty-msg">Sin partidos agendados.</div>'; return; }
+  wrap.innerHTML = data.map(function(p) {
+    return '<div class="asist-row" style="align-items:flex-start">' +
+      '<div><b>' + p.rival + '</b> <span style="color:var(--gray);font-size:11.5px">(' + p.categoria + ')</span>' +
+      '<div class="asist-hora">' + fmtFecha(p.fecha) + (p.hora ? ' · ' + p.hora : '') + (p.sede ? ' · ' + p.sede : '') + '</div></div>' +
+      '<div style="display:flex;gap:4px;align-items:center">' +
+        '<input type="number" value="' + (p.marcador_propio ?? '') + '" style="width:44px;padding:4px;border:1px solid var(--border);border-radius:6px;text-align:center" onchange="actualizarMarcador(\'' + p.id + '\',this.value,document.getElementById(\'riv-' + p.id + '\').value)">' +
+        '<span>-</span>' +
+        '<input id="riv-' + p.id + '" type="number" value="' + (p.marcador_rival ?? '') + '" style="width:44px;padding:4px;border:1px solid var(--border);border-radius:6px;text-align:center" onchange="actualizarMarcador(\'' + p.id + '\',this.previousElementSibling.previousElementSibling.value,this.value)">' +
+        '<button class="btn-sm danger" onclick="eliminarPartido(\'' + p.id + '\')">🗑</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+/* ============ DEPTH CHART ============ */
+async function agregarDepthChart() {
+  document.getElementById('dc-error').classList.remove('show');
+  var categoria = document.getElementById('dc-categoria').value;
+  var posicion = document.getElementById('dc-posicion').value.trim().toUpperCase();
+  var jugadorId = document.getElementById('dc-jugador').value;
+  if (!posicion || !jugadorId) { var el = document.getElementById('dc-error'); el.textContent = 'Falta la posición o la jugadora.'; el.classList.add('show'); return; }
+  var { data: existentes } = await sbCoach.from('depth_chart').select('orden').eq('categoria', categoria).eq('posicion', posicion).order('orden', { ascending: false }).limit(1);
+  var siguienteOrden = existentes && existentes.length ? existentes[0].orden + 1 : 1;
+  var { error } = await sbCoach.from('depth_chart').insert({ categoria: categoria, posicion: posicion, jugador_id: jugadorId, orden: siguienteOrden });
+  if (error) { var el2 = document.getElementById('dc-error'); el2.textContent = 'Error: ' + error.message; el2.classList.add('show'); return; }
+  document.getElementById('dc-posicion').value = '';
+  cargarDepthChart();
+}
+
+async function moverDC(idA, idB) {
+  await sbCoach.rpc('mover_depth_chart', { id_a: idA, id_b: idB });
+  cargarDepthChart();
+}
+
+async function eliminarDC(id) {
+  if (!confirm('¿Quitar de esta posición?')) return;
+  await sbCoach.from('depth_chart').delete().eq('id', id);
+  cargarDepthChart();
+}
+
+async function cargarDepthChart() {
+  if (!rosterCache.length) await cargarJugadoras();
+  llenarSelectJugadoras();
+  var categoria = document.getElementById('dc-categoria').value;
+  var { data, error } = await sbCoach.from('depth_chart').select('id, posicion, orden, jugador_id, jugadores(nombre, apellidos)').eq('categoria', categoria).order('posicion').order('orden');
+  var wrap = document.getElementById('depth-content');
+  if (error) { wrap.innerHTML = '<div class="empty-msg">No se pudo cargar.</div>'; return; }
+  if (!data.length) { wrap.innerHTML = '<div class="empty-msg">Sin depth chart para esta categoría.</div>'; return; }
+  var porPos = {};
+  data.forEach(function(d) { (porPos[d.posicion] = porPos[d.posicion] || []).push(d); });
+  var html = '';
+  Object.keys(porPos).forEach(function(pos) {
+    var filas = porPos[pos];
+    html += '<div class="dc-pos-title">' + pos + '</div>';
+    filas.forEach(function(f, i) {
+      var j = f.jugadores || {};
+      html += '<div class="dc-row">' +
+        '<div class="dc-orden">' + (i + 1) + '</div>' +
+        '<div class="dc-nombre">' + j.nombre + ' ' + j.apellidos + '</div>' +
+        '<div class="dc-btns">' +
+          (i > 0 ? '<button class="dc-btn" onclick="moverDC(\'' + f.id + '\',\'' + filas[i - 1].id + '\')">↑</button>' : '') +
+          (i < filas.length - 1 ? '<button class="dc-btn" onclick="moverDC(\'' + f.id + '\',\'' + filas[i + 1].id + '\')">↓</button>' : '') +
+          '<button class="dc-btn" onclick="eliminarDC(\'' + f.id + '\')">✕</button>' +
+        '</div>' +
+      '</div>';
+    });
+  });
+  wrap.innerHTML = html;
+}
+
+/* ============ FALTAS Y RETARDOS ============ */
+async function cargarFaltas() {
+  var { data, error } = await sbCoach.rpc('resumen_asistencia_equipo');
+  var wrap = document.getElementById('faltas-content');
+  if (error) { wrap.innerHTML = '<div class="empty-msg">No se pudo cargar.</div>'; return; }
+  if (!data.length) { wrap.innerHTML = '<div class="empty-msg">Todavía no hay sesiones registradas.</div>'; return; }
+  var html = '<table class="tabla-simple"><tr><th>Jugadora</th><th>Cat.</th><th>Sesiones</th><th>Presente</th><th>Retardos</th><th>Faltas</th></tr>';
+  data.forEach(function(r) {
+    html += '<tr><td>' + r.nombre + '</td><td>' + r.categoria.split(' ')[0] + '</td><td>' + r.total_sesiones + '</td>' +
+      '<td>' + r.presentes + '</td><td>' + (r.retardos > 0 ? '<span class="tag-retardo">' + r.retardos + '</span>' : '0') + '</td>' +
+      '<td>' + (r.faltas > 0 ? '<span class="tag-falta">' + r.faltas + '</span>' : '0') + '</td></tr>';
+  });
+  html += '</table>';
+  wrap.innerHTML = html;
+}
+
+/* ============ POLIZAS ============ */
+async function eliminarLesion(id) {
+  if (!confirm('¿Eliminar este registro?')) return;
+  await sbCoach.from('lesiones').delete().eq('id', id);
+  cargarPolizas();
+}
+
+async function cargarPolizas() {
+  var { data, error } = await sbCoach.from('lesiones').select('*, jugadores(nombre, apellidos)').order('fecha_inicio', { ascending: false });
+  var wrap = document.getElementById('polizas-content');
+  if (error) { wrap.innerHTML = '<div class="empty-msg">No se pudo cargar.</div>'; return; }
+  if (!data.length) { wrap.innerHTML = '<div class="empty-msg">Sin lesiones registradas.</div>'; return; }
+  wrap.innerHTML = data.map(function(l) {
+    var j = l.jugadores || {};
+    return '<div class="anuncio-card">' +
+      '<div class="anuncio-titulo">' + j.nombre + ' ' + j.apellidos + '</div>' +
+      '<div class="anuncio-fecha">' + fmtFecha(l.fecha_inicio) + (l.fecha_fin ? ' → ' + fmtFecha(l.fecha_fin) : ' (en curso)') + '</div>' +
+      (l.descripcion ? '<div class="anuncio-msg">' + l.descripcion + '</div>' : '') +
+      (l.receta_url ? '<a href="' + l.receta_url + '" target="_blank" class="btn-sm ghost" style="display:inline-block;margin-top:6px;text-decoration:none">Ver receta</a>' : '') +
+      ' <button class="btn-sm danger" style="margin-top:6px" onclick="eliminarLesion(\'' + l.id + '\')">Eliminar</button>' +
+    '</div>';
+  }).join('');
+}
+
+/* ============ ANUNCIOS ============ */
+async function crearAnuncio() {
+  document.getElementById('an-error').classList.remove('show');
+  var titulo = document.getElementById('an-titulo').value.trim();
+  var mensaje = document.getElementById('an-mensaje').value.trim();
+  if (!titulo || !mensaje) { var el = document.getElementById('an-error'); el.textContent = 'Falta el título o el mensaje.'; el.classList.add('show'); return; }
+  var { data: sessionData } = await sbCoach.auth.getSession();
+  var coachId = (sessionData.session.user.user_metadata || {}).coach_id;
+  var { error } = await sbCoach.from('anuncios').insert({ titulo: titulo, mensaje: mensaje, coach_id: coachId });
+  if (error) { var el2 = document.getElementById('an-error'); el2.textContent = 'Error: ' + error.message; el2.classList.add('show'); return; }
+  document.getElementById('an-titulo').value = ''; document.getElementById('an-mensaje').value = '';
+  cargarAnuncios();
+}
+
+async function eliminarAnuncio(id) {
+  if (!confirm('¿Eliminar este anuncio?')) return;
+  await sbCoach.from('anuncios').delete().eq('id', id);
+  cargarAnuncios();
+}
+
+async function cargarAnuncios() {
+  var { data, error } = await sbCoach.from('anuncios').select('*').order('created_at', { ascending: false });
+  var wrap = document.getElementById('anuncios-content');
+  if (error) { wrap.innerHTML = '<div class="empty-msg">No se pudo cargar.</div>'; return; }
+  if (!data.length) { wrap.innerHTML = '<div class="empty-msg">Sin anuncios publicados.</div>'; return; }
+  wrap.innerHTML = data.map(function(a) {
+    return '<div class="anuncio-card">' +
+      '<div class="anuncio-titulo">' + a.titulo + '</div>' +
+      '<div class="anuncio-fecha">' + new Date(a.created_at).toLocaleDateString('es-MX') + '</div>' +
+      '<div class="anuncio-msg">' + a.mensaje + '</div>' +
+      '<button class="btn-sm danger" style="margin-top:6px" onclick="eliminarAnuncio(\'' + a.id + '\')">Eliminar</button>' +
+    '</div>';
+  }).join('');
+}
+
+/* ============ EVALUACIONES FISICAS ============ */
+async function crearPrueba() {
+  var nombre = document.getElementById('pf-nombre').value.trim();
+  var area = document.getElementById('pf-area').value.trim();
+  var unidad = document.getElementById('pf-unidad').value.trim();
+  if (!nombre || !area || !unidad) { alert('Faltan datos de la prueba.'); return; }
+  var { error } = await sbCoach.from('pruebas_fisicas').insert({ nombre: nombre, area: area, unidad: unidad, mejor_si_sube: document.getElementById('pf-mejor-si-sube').value === 'true' });
+  if (error) { alert('Error: ' + error.message); return; }
+  document.getElementById('pf-nombre').value = ''; document.getElementById('pf-area').value = ''; document.getElementById('pf-unidad').value = '';
+  cargarFisicas();
+}
+
+async function cargarFisicas() {
+  var { data: pruebas } = await sbCoach.from('pruebas_fisicas').select('*').order('orden');
+  var { data: evals, error } = await sbCoach.from('evaluaciones_fisicas').select('*, jugadores(nombre, apellidos), pruebas_fisicas(nombre, unidad)').order('fecha', { ascending: false }).limit(100);
+  var wrap = document.getElementById('fisicas-content');
+  if (error) { wrap.innerHTML = '<div class="empty-msg">No se pudo cargar.</div>'; return; }
+  var catalogoHtml = (pruebas || []).length
+    ? '<div class="sub">Catálogo: ' + pruebas.map(function(p) { return p.nombre + ' (' + p.unidad + ')'; }).join(' · ') + '</div>'
+    : '';
+  if (!evals.length) { wrap.innerHTML = catalogoHtml + '<div class="empty-msg">Sin resultados capturados todavía.</div>'; return; }
+  var html = catalogoHtml + '<table class="tabla-simple"><tr><th>Jugadora</th><th>Prueba</th><th>Valor</th><th>Fecha</th></tr>';
+  evals.forEach(function(e) {
+    var j = e.jugadores || {}, p = e.pruebas_fisicas || {};
+    html += '<tr><td>' + j.nombre + ' ' + j.apellidos + '</td><td>' + (p.nombre || '') + '</td><td>' + e.valor + ' ' + (p.unidad || '') + '</td><td>' + fmtFecha(e.fecha) + '</td></tr>';
+  });
+  html += '</table>';
+  wrap.innerHTML = html;
 }
 
 function salir() {
@@ -362,6 +799,7 @@ function salir() {
   var meta = data.session.user.user_metadata || {};
   if (meta.usuario) document.getElementById('hdr-nombre').textContent = meta.usuario.toUpperCase() + ' 🧑‍🏫';
   document.getElementById('esq-fecha').value = new Date().toISOString().slice(0, 10);
+  document.getElementById('pt-fecha').value = new Date().toISOString().slice(0, 10);
   cargarEsquemas();
   cargarAsistenciaHoy();
   asistenciaPollInterval = setInterval(cargarAsistenciaHoy, 10000);
