@@ -39,6 +39,21 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
 
 .hub-logout{display:block;text-align:center;font-size:12px;color:var(--gray);margin-top:16px;cursor:pointer;text-decoration:underline}
 .loading-msg{font-size:13px;color:var(--gray);text-align:center;padding:40px 0}
+
+.hub-tabs{max-width:640px;margin:16px auto 0;padding:0 20px;display:flex;gap:10px}
+.hub-tab{flex:1;background:var(--card);border:1.5px solid var(--border);color:var(--gray);font-family:'Montserrat',sans-serif;font-size:13px;font-weight:800;padding:13px;border-radius:11px;cursor:pointer}
+.hub-tab.active{background:var(--navy);border-color:var(--navy);color:white}
+
+.asist-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--border);font-size:13px}
+.asist-row:first-child{border-top:none}
+.asist-fecha{font-weight:700}
+.asist-hora{color:var(--gray);font-size:11.5px}
+.tag-retardo{background:#fef3e0;color:#b45309;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:7px}
+.tag-ok{background:#dcfce7;color:#15803d;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:7px}
+.motivo-form{display:flex;gap:8px;margin-top:8px}
+.motivo-form input{flex:1;border:1.5px solid var(--border);border-radius:8px;padding:8px 10px;font-family:'Montserrat',sans-serif;font-size:12.5px;outline:none;background:var(--bg)}
+.motivo-form button{background:var(--blue);color:#fff;border:none;font-size:12px;font-weight:800;padding:8px 12px;border-radius:8px;cursor:pointer}
+.motivo-txt{font-size:11.5px;color:var(--gray);font-style:italic;margin-top:4px}
 </style>
 </head>
 <body>
@@ -47,16 +62,32 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
   <img src="https://wolverines.mx/IMG_0019_transparent.png" alt="Wolverines" onerror="this.style.display='none'">
   <div>
     <h1 id="hdr-nombre">MI HUB 🏈</h1>
-    <p>Esquemas y jugadas · Wolverines TRC</p>
+    <p>Portal de jugadora · Wolverines TRC</p>
   </div>
 </header>
 
-<div class="wrap">
+<div class="hub-tabs">
+  <button class="hub-tab active" id="tab-esquemas" onclick="switchTab('esquemas')">📋 Esquemas</button>
+  <button class="hub-tab" id="tab-asistencia" onclick="switchTab('asistencia')">✅ Asistencia</button>
+</div>
+
+<div class="wrap" id="section-esquemas">
   <div class="card">
     <h2>📋 Esquemas</h2>
     <div class="sub">Jugadas, scouting y video de tu equipo</div>
     <div id="esquemas-content"><div class="loading-msg">Cargando...</div></div>
   </div>
+</div>
+
+<div class="wrap" id="section-asistencia" style="display:none">
+  <div class="card">
+    <h2>✅ Mi asistencia</h2>
+    <div class="sub">Tu historial de check-ins a entrenos y partidos</div>
+    <div id="asistencia-content"><div class="loading-msg">Cargando...</div></div>
+  </div>
+</div>
+
+<div class="wrap" style="padding-top:0">
   <div class="hub-logout" onclick="salir()">Cerrar sesión</div>
 </div>
 
@@ -105,6 +136,58 @@ async function cargarEsquemas() {
 
 function salir() {
   sbAuth.auth.signOut().then(function() { window.location.href = 'jugadora_login.html'; });
+}
+
+function switchTab(tab) {
+  document.getElementById('tab-esquemas').classList.toggle('active', tab === 'esquemas');
+  document.getElementById('tab-asistencia').classList.toggle('active', tab === 'asistencia');
+  document.getElementById('section-esquemas').style.display = tab === 'esquemas' ? '' : 'none';
+  document.getElementById('section-asistencia').style.display = tab === 'asistencia' ? '' : 'none';
+  if (tab === 'asistencia') cargarAsistencia();
+}
+
+function fmtFechaLarga(f) {
+  var p = f.split('-');
+  var dias = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  var d = new Date(p[0] + '-' + p[1] + '-' + p[2] + 'T12:00:00');
+  return dias[d.getDay()] + ' ' + p[2] + '/' + p[1] + '/' + p[0];
+}
+
+async function enviarMotivoRetardo(fecha, tipoEvento, btnId) {
+  var input = document.getElementById('motivo-' + btnId);
+  var motivo = input.value.trim();
+  if (!motivo) return;
+  try {
+    var { error } = await sbAuth.rpc('registrar_motivo_retardo', { p_fecha: fecha, p_tipo_evento: tipoEvento, p_motivo: motivo });
+    if (error) throw error;
+    cargarAsistencia();
+  } catch (e) {
+    alert('❌ Error: ' + e.message);
+  }
+}
+
+async function cargarAsistencia() {
+  var { data, error } = await sbAuth.from('asistencia').select('*').order('fecha', { ascending: false }).limit(20);
+  var wrap = document.getElementById('asistencia-content');
+  if (error) { wrap.innerHTML = '<div class="empty-msg">No se pudo cargar tu asistencia.</div>'; return; }
+  if (!data.length) { wrap.innerHTML = '<div class="empty-msg">Aún no tienes check-ins registrados.</div>'; return; }
+  wrap.innerHTML = data.map(function(a, i) {
+    var hora = new Date(a.hora_checkin).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Monterrey' });
+    var tagHtml = a.retardo ? '<span class="tag-retardo">Retardo</span>' : '<span class="tag-ok">A tiempo</span>';
+    var motivoHtml = '';
+    if (a.retardo) {
+      motivoHtml = a.motivo_retardo
+        ? '<div class="motivo-txt">Motivo: ' + a.motivo_retardo + '</div>'
+        : '<div class="motivo-form"><input type="text" id="motivo-' + i + '" placeholder="¿Por qué llegaste tarde?"><button onclick="enviarMotivoRetardo(\'' + a.fecha + '\',\'' + a.tipo_evento + '\',' + i + ')">Enviar</button></div>';
+    }
+    return '<div class="asist-row" style="flex-direction:column;align-items:stretch">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center">' +
+        '<span class="asist-fecha">' + fmtFechaLarga(a.fecha) + ' · ' + a.tipo_evento + '</span>' +
+        '<span class="asist-hora">' + hora + ' ' + tagHtml + '</span>' +
+      '</div>' +
+      motivoHtml +
+    '</div>';
+  }).join('');
 }
 
 (async function init() {

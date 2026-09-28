@@ -55,6 +55,20 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
 .empty-msg{font-size:13px;color:var(--gray-lt);text-align:center;padding:24px 0}
 .loading-msg{font-size:13px;color:var(--gray);text-align:center;padding:40px 0}
 .hub-logout{display:block;text-align:center;font-size:12px;color:var(--gray);margin-top:16px;cursor:pointer;text-decoration:underline}
+
+.hub-tabs{max-width:640px;margin:16px auto 0;padding:0 20px;display:flex;gap:10px}
+.hub-tab{flex:1;background:var(--card);border:1.5px solid var(--border);color:var(--gray);font-family:'Montserrat',sans-serif;font-size:13px;font-weight:800;padding:13px;border-radius:11px;cursor:pointer}
+.hub-tab.active{background:var(--navy);border-color:var(--navy);color:white}
+
+.qr-wrap{display:flex;flex-direction:column;align-items:center;padding:10px 0}
+.qr-wrap canvas{border-radius:12px;border:1px solid var(--border)}
+.qr-timer{font-size:13px;font-weight:800;color:var(--blue-dk);margin-top:10px}
+.qr-timer.venciendo{color:var(--red)}
+.asist-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--border);font-size:13px}
+.asist-row:first-child{border-top:none}
+.asist-hora{color:var(--gray);font-size:11.5px}
+.tag-retardo{background:#fef3e0;color:#b45309;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:7px}
+.tag-ok{background:#dcfce7;color:#15803d;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:7px}
 </style>
 </head>
 <body>
@@ -63,11 +77,41 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
   <img src="https://wolverines.mx/IMG_0019_transparent.png" alt="Wolverines" onerror="this.style.display='none'">
   <div>
     <h1 id="hdr-nombre">COACH HUB 🧑‍🏫</h1>
-    <p>Subir y administrar esquemas · Wolverines TRC</p>
+    <p>Portal de coach · Wolverines TRC</p>
   </div>
 </header>
 
-<div class="wrap">
+<div class="hub-tabs">
+  <button class="hub-tab active" id="tab-asistencia" onclick="switchTab('asistencia')">✅ Asistencia</button>
+  <button class="hub-tab" id="tab-esquemas" onclick="switchTab('esquemas')">📋 Esquemas</button>
+</div>
+
+<div class="wrap" id="section-asistencia">
+  <div class="card">
+    <h2>✅ Tomar asistencia</h2>
+    <div class="sub">Genera un código y que las jugadoras lo escaneen con su celular</div>
+    <div class="field">
+      <label>Tipo de evento</label>
+      <select id="asist-tipo" onchange="cargarAsistenciaHoy()">
+        <option value="Entreno">🏋️ Entreno</option>
+        <option value="Partido">🏈 Partido</option>
+      </select>
+    </div>
+    <button class="submit-btn" id="btn-generar-qr" onclick="generarQR()">📷 Generar código</button>
+    <div class="qr-wrap" id="qr-wrap" style="display:none">
+      <canvas id="qr-canvas"></canvas>
+      <div class="qr-timer" id="qr-timer"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📝 Asistencia de hoy</h2>
+    <div class="sub" id="asist-hoy-sub">Jugadoras que ya registraron su llegada</div>
+    <div id="asistencia-hoy-content"><div class="loading-msg">Cargando...</div></div>
+  </div>
+</div>
+
+<div class="wrap" id="section-esquemas" style="display:none">
   <div class="card">
     <h2>➕ Nuevo esquema</h2>
     <div class="sub">Sube una jugada, scout o video para el equipo</div>
@@ -108,11 +152,14 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
     <div class="sub">Jugadas, scouting y video ya publicados</div>
     <div id="esquemas-content"><div class="loading-msg">Cargando...</div></div>
   </div>
+</div>
 
+<div class="wrap" style="padding-top:0">
   <div class="hub-logout" onclick="salir()">Cerrar sesión</div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.1/qrcode.js"></script>
 <script>
 const SUPABASE_URL = 'https://xaawoqyjavqcybafirri.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhYXdvcXlqYXZxY3liYWZpcnJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1Mzg4MjcsImV4cCI6MjEwMTExNDgyN30.TdLuimBVQIILaaW0UtZDHDSoDpDomwmL6RbG-K-GDZ0';
@@ -120,6 +167,72 @@ const sbCoach = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { 
 
 const ICONO_TIPO = { Jugada: '📄', Scout: '📊', Video: '▶️' };
 let esquemasRecords = [];
+let qrTimerInterval = null;
+let asistenciaPollInterval = null;
+
+function switchTab(tab) {
+  document.getElementById('tab-asistencia').classList.toggle('active', tab === 'asistencia');
+  document.getElementById('tab-esquemas').classList.toggle('active', tab === 'esquemas');
+  document.getElementById('section-asistencia').style.display = tab === 'asistencia' ? '' : 'none';
+  document.getElementById('section-esquemas').style.display = tab === 'esquemas' ? '' : 'none';
+}
+
+async function generarQR() {
+  var tipo = document.getElementById('asist-tipo').value;
+  var btn = document.getElementById('btn-generar-qr');
+  btn.disabled = true; btn.textContent = '⏳ Generando...';
+  try {
+    var { data, error } = await sbCoach.rpc('generar_token_checkin', { p_tipo_evento: tipo });
+    if (error) throw error;
+    var fila = data[0];
+    var url = 'https://wolverines.mx/wehunt/checkin.html?token=' + fila.token;
+    document.getElementById('qr-wrap').style.display = 'flex';
+    await QRCode.toCanvas(document.getElementById('qr-canvas'), url, { width: 220, margin: 1 });
+    iniciarCuentaRegresiva(new Date(fila.expira_at));
+  } catch (e) {
+    alert('❌ Error: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '📷 Generar código';
+  }
+}
+
+function iniciarCuentaRegresiva(expiraAt) {
+  if (qrTimerInterval) clearInterval(qrTimerInterval);
+  var timerEl = document.getElementById('qr-timer');
+  function tick() {
+    var seg = Math.round((expiraAt - new Date()) / 1000);
+    if (seg <= 0) {
+      timerEl.textContent = 'Código vencido — genera uno nuevo';
+      timerEl.classList.add('venciendo');
+      clearInterval(qrTimerInterval);
+      return;
+    }
+    timerEl.textContent = '⏱ Expira en ' + seg + 's';
+    timerEl.classList.toggle('venciendo', seg <= 30);
+  }
+  tick();
+  qrTimerInterval = setInterval(tick, 1000);
+}
+
+async function cargarAsistenciaHoy() {
+  var tipo = document.getElementById('asist-tipo').value;
+  var hoy = new Date().toISOString().slice(0, 10);
+  var { data, error } = await sbCoach.from('asistencia')
+    .select('hora_checkin, retardo, jugadores(nombre, apellidos, id_jugadora)')
+    .eq('fecha', hoy).eq('tipo_evento', tipo)
+    .order('hora_checkin', { ascending: true });
+  var wrap = document.getElementById('asistencia-hoy-content');
+  if (error) { wrap.innerHTML = '<div class="empty-msg">No se pudo cargar.</div>'; return; }
+  if (!data.length) { wrap.innerHTML = '<div class="empty-msg">Nadie ha registrado asistencia todavía hoy.</div>'; return; }
+  wrap.innerHTML = data.map(function(a) {
+    var hora = new Date(a.hora_checkin).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Monterrey' });
+    var j = a.jugadores || {};
+    return '<div class="asist-row">' +
+      '<span>' + (j.nombre || '') + ' ' + (j.apellidos || '') + '</span>' +
+      '<span class="asist-hora">' + hora + ' ' + (a.retardo ? '<span class="tag-retardo">Retardo</span>' : '<span class="tag-ok">A tiempo</span>') + '</span>' +
+    '</div>';
+  }).join('');
+}
 
 function fmtFecha(f) {
   if (!f) return '';
@@ -250,6 +363,8 @@ function salir() {
   if (meta.usuario) document.getElementById('hdr-nombre').textContent = meta.usuario.toUpperCase() + ' 🧑‍🏫';
   document.getElementById('esq-fecha').value = new Date().toISOString().slice(0, 10);
   cargarEsquemas();
+  cargarAsistenciaHoy();
+  asistenciaPollInterval = setInterval(cargarAsistenciaHoy, 10000);
 })();
 </script>
 </body>

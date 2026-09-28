@@ -100,7 +100,17 @@ async function entrar() {
     return;
   }
 
-  window.location.href = 'jugadora_hub.html';
+  irAlDestino();
+}
+
+function irAlDestino() {
+  var tokenPendiente = sessionStorage.getItem('wehunt_checkin_token');
+  if (tokenPendiente) {
+    sessionStorage.removeItem('wehunt_checkin_token');
+    window.location.href = 'checkin.html?token=' + encodeURIComponent(tokenPendiente);
+  } else {
+    window.location.href = 'jugadora_hub.html';
+  }
 }
 
 document.getElementById('f-pwd').addEventListener('keydown', function(e) { if (e.key === 'Enter') entrar(); });
@@ -108,7 +118,7 @@ document.getElementById('f-id').addEventListener('keydown', function(e) { if (e.
 
 (async function checkSesion() {
   var { data } = await sbAuth.auth.getSession();
-  if (data && data.session) window.location.href = 'jugadora_hub.html';
+  if (data && data.session) irAlDestino();
 })();
 </script>
 </body>
