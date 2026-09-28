@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coach Hub – Wolverines TRC</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f1f4f9; --card:#fff; --border:#e5e9f2;
+  --navy:#101f3d; --navy2:#16294f; --gold:#FFCB05; --blue:#2563eb; --blue-dk:#1d4ed8; --blue-lt:#eaf1ff;
+  --text:#182338; --gray:#67728c; --gray-lt:#a4adc2; --red:#e11d48; --green:#16a34a;
+  --shadow:0 1px 2px rgba(16,31,61,0.04), 0 1px 6px rgba(16,31,61,0.05);
+}
+body{background:var(--bg);font-family:'Montserrat',sans-serif;color:var(--text)}
+header{background:var(--navy);padding:20px 24px;display:flex;align-items:center;gap:14px}
+header img{width:44px;height:44px;border-radius:50%;background:white;object-fit:contain;padding:4px}
+header h1{font-size:17px;font-weight:800;color:white}
+header p{font-size:12px;color:#8ea0c4;margin-top:1px}
+
+.wrap{max-width:640px;margin:0 auto;padding:20px 20px 60px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:20px}
+.card + .card{margin-top:14px}
+.card h2{font-size:15px;font-weight:800;margin-bottom:2px}
+.card .sub{font-size:12.5px;color:var(--gray);margin-bottom:16px}
+
+.field{margin-bottom:14px}
+.field label{display:block;font-size:11px;font-weight:700;letter-spacing:0.3px;color:var(--gray);text-transform:uppercase;margin-bottom:6px}
+.field input,.field select,.field textarea{width:100%;border:1.5px solid var(--border);border-radius:9px;padding:11px 13px;font-family:'Montserrat',sans-serif;font-size:13.5px;color:var(--text);outline:none;background:var(--bg)}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--blue)}
+.field textarea{resize:vertical;min-height:60px}
+
+.submit-btn{width:100%;background:var(--blue);border:none;color:white;font-family:'Montserrat',sans-serif;font-size:14px;font-weight:800;padding:14px;border-radius:11px;cursor:pointer}
+.submit-btn:hover{background:var(--blue-dk)}
+.submit-btn:disabled{background:var(--gray-lt);cursor:not-allowed}
+
+.alert{border-radius:9px;padding:13px 16px;font-size:12.5px;font-weight:600;margin-top:12px;display:none}
+.alert.show{display:block}
+.alert.error{background:#fde8ee;color:var(--red)}
+
+.esq-row{display:flex;gap:12px;align-items:center;padding:14px 0;border-top:1px solid var(--border)}
+.esq-row:first-child{border-top:none}
+.esq-icon{width:42px;height:42px;border-radius:10px;background:var(--blue-lt);display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0}
+.esq-info{flex:1;min-width:0}
+.esq-titulo{font-size:13.5px;font-weight:700}
+.esq-meta{font-size:11.5px;color:var(--gray);margin-top:1px}
+.esq-desc{font-size:12px;color:var(--gray);margin-top:3px;line-height:1.4}
+.esq-acciones{display:flex;gap:6px;flex-shrink:0}
+.esq-ver{background:var(--blue);color:#fff;text-decoration:none;font-size:12px;font-weight:800;padding:9px 12px;border-radius:9px}
+.esq-ver:hover{background:var(--blue-dk)}
+.esq-del{background:#fde8ee;color:var(--red);border:none;font-size:12px;font-weight:800;padding:9px 12px;border-radius:9px;cursor:pointer}
+.esq-del:hover{background:#fbd0dd}
+
+.empty-msg{font-size:13px;color:var(--gray-lt);text-align:center;padding:24px 0}
+.loading-msg{font-size:13px;color:var(--gray);text-align:center;padding:40px 0}
+.hub-logout{display:block;text-align:center;font-size:12px;color:var(--gray);margin-top:16px;cursor:pointer;text-decoration:underline}
+</style>
+</head>
+<body>
+
+<header>
+  <img src="https://wolverines.mx/IMG_0019_transparent.png" alt="Wolverines" onerror="this.style.display='none'">
+  <div>
+    <h1 id="hdr-nombre">COACH HUB 🧑‍🏫</h1>
+    <p>Subir y administrar esquemas · Wolverines TRC</p>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="card">
+    <h2>➕ Nuevo esquema</h2>
+    <div class="sub">Sube una jugada, scout o video para el equipo</div>
+    <div class="field">
+      <label>Título</label>
+      <input type="text" id="esq-titulo" placeholder="Ej. Mesh vs Cover 3">
+    </div>
+    <div class="field">
+      <label>Tipo</label>
+      <select id="esq-tipo" onchange="onCambioTipoEsquema()">
+        <option value="Jugada">📄 Jugada</option>
+        <option value="Scout">📊 Scout</option>
+        <option value="Video">▶️ Video</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Fecha</label>
+      <input type="date" id="esq-fecha">
+    </div>
+    <div class="field" id="esq-archivo-wrap">
+      <label>Archivo (PDF o imagen)</label>
+      <input type="file" id="esq-archivo" accept="application/pdf,image/*">
+    </div>
+    <div class="field" id="esq-link-wrap" style="display:none">
+      <label>Link del video</label>
+      <input type="text" id="esq-link" placeholder="https://youtube.com/...">
+    </div>
+    <div class="field">
+      <label>Descripción (opcional)</label>
+      <textarea id="esq-descripcion" placeholder="Notas para las jugadoras..."></textarea>
+    </div>
+    <div class="alert error" id="esquema-error"></div>
+    <button class="submit-btn" id="btn-subir-esquema" onclick="crearEsquema()">💾 Subir esquema</button>
+  </div>
+
+  <div class="card">
+    <h2>📋 Esquemas existentes</h2>
+    <div class="sub">Jugadas, scouting y video ya publicados</div>
+    <div id="esquemas-content"><div class="loading-msg">Cargando...</div></div>
+  </div>
+
+  <div class="hub-logout" onclick="salir()">Cerrar sesión</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://xaawoqyjavqcybafirri.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhYXdvcXlqYXZxY3liYWZpcnJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1Mzg4MjcsImV4cCI6MjEwMTExNDgyN30.TdLuimBVQIILaaW0UtZDHDSoDpDomwmL6RbG-K-GDZ0';
+const sbCoach = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { storageKey: 'wolverines-coach-auth' } });
+
+const ICONO_TIPO = { Jugada: '📄', Scout: '📊', Video: '▶️' };
+let esquemasRecords = [];
+
+function fmtFecha(f) {
+  if (!f) return '';
+  var p = f.split('-');
+  return p[2] + '/' + p[1] + '/' + p[0];
+}
+
+function onCambioTipoEsquema() {
+  var esVideo = document.getElementById('esq-tipo').value === 'Video';
+  document.getElementById('esq-archivo-wrap').style.display = esVideo ? 'none' : '';
+  document.getElementById('esq-link-wrap').style.display = esVideo ? '' : 'none';
+}
+
+function mostrarErrorEsquema(msg) {
+  var el = document.getElementById('esquema-error');
+  if (!msg) { el.classList.remove('show'); return; }
+  el.textContent = msg;
+  el.classList.add('show');
+}
+
+async function crearEsquema() {
+  mostrarErrorEsquema('');
+  var titulo = document.getElementById('esq-titulo').value.trim();
+  var tipo = document.getElementById('esq-tipo').value;
+  var fecha = document.getElementById('esq-fecha').value || new Date().toISOString().slice(0, 10);
+  var descripcion = document.getElementById('esq-descripcion').value.trim() || null;
+  var archivo = document.getElementById('esq-archivo').files[0];
+  var link = document.getElementById('esq-link').value.trim();
+
+  if (!titulo) { mostrarErrorEsquema('Escribe un título.'); return; }
+  if (tipo === 'Video' && !link) { mostrarErrorEsquema('Escribe el link del video.'); return; }
+  if (tipo !== 'Video' && !archivo) { mostrarErrorEsquema('Sube un archivo (PDF o imagen).'); return; }
+
+  var btn = document.getElementById('btn-subir-esquema');
+  btn.disabled = true; btn.textContent = '⏳ Subiendo...';
+
+  try {
+    var archivoUrl = null;
+    if (archivo) {
+      var nombreLimpio = archivo.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+      var path = 'esquemas/' + tipo.toLowerCase() + '/' + Date.now() + '-' + nombreLimpio;
+      var { error: upErr } = await sbCoach.storage.from('jugador-documentos').upload(path, archivo);
+      if (upErr) throw upErr;
+      archivoUrl = sbCoach.storage.from('jugador-documentos').getPublicUrl(path).data.publicUrl;
+    }
+
+    var { data, error } = await sbCoach.from('esquemas').insert({
+      titulo: titulo, tipo: tipo, descripcion: descripcion,
+      archivo_url: archivoUrl, link_externo: tipo === 'Video' ? link : null, fecha: fecha
+    }).select().single();
+    if (error) throw error;
+
+    esquemasRecords.unshift(data);
+    renderEsquemas();
+
+    document.getElementById('esq-titulo').value = '';
+    document.getElementById('esq-descripcion').value = '';
+    document.getElementById('esq-archivo').value = '';
+    document.getElementById('esq-link').value = '';
+  } catch (e) {
+    mostrarErrorEsquema('Error: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '💾 Subir esquema';
+  }
+}
+
+async function eliminarEsquema(id) {
+  if (!confirm('¿Eliminar este esquema?')) return;
+  try {
+    var esq = esquemasRecords.find(function(e) { return e.id === id; });
+    var { error } = await sbCoach.from('esquemas').delete().eq('id', id);
+    if (error) throw error;
+    if (esq && esq.archivo_url) {
+      var path = esq.archivo_url.split('/jugador-documentos/')[1];
+      if (path) await sbCoach.storage.from('jugador-documentos').remove([path]);
+    }
+    esquemasRecords = esquemasRecords.filter(function(e) { return e.id !== id; });
+    renderEsquemas();
+  } catch (e) {
+    alert('❌ Error: ' + e.message);
+  }
+}
+
+function renderEsquemas() {
+  var wrap = document.getElementById('esquemas-content');
+  if (!esquemasRecords.length) {
+    wrap.innerHTML = '<div class="empty-msg">Aún no hay esquemas cargados.</div>';
+    return;
+  }
+  wrap.innerHTML = esquemasRecords.map(function(e) {
+    var link = e.tipo === 'Video' ? e.link_externo : e.archivo_url;
+    return '<div class="esq-row">' +
+      '<div class="esq-icon">' + (ICONO_TIPO[e.tipo] || '📄') + '</div>' +
+      '<div class="esq-info">' +
+        '<div class="esq-titulo">' + e.titulo + '</div>' +
+        '<div class="esq-meta">' + e.tipo + ' · ' + fmtFecha(e.fecha) + '</div>' +
+        (e.descripcion ? '<div class="esq-desc">' + e.descripcion + '</div>' : '') +
+      '</div>' +
+      '<div class="esq-acciones">' +
+        '<a class="esq-ver" href="' + link + '" target="_blank" rel="noopener">👁</a>' +
+        '<button class="esq-del" onclick="eliminarEsquema(\'' + e.id + '\')">🗑</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+async function cargarEsquemas() {
+  var { data, error } = await sbCoach.from('esquemas').select('*').order('fecha', { ascending: false });
+  if (error) {
+    document.getElementById('esquemas-content').innerHTML = '<div class="empty-msg">No se pudieron cargar los esquemas.</div>';
+    return;
+  }
+  esquemasRecords = data || [];
+  renderEsquemas();
+}
+
+function salir() {
+  sbCoach.auth.signOut().then(function() { window.location.href = 'coach_login.html'; });
+}
+
+(async function init() {
+  var { data } = await sbCoach.auth.getSession();
+  if (!data || !data.session || (data.session.user.user_metadata || {}).role !== 'coach') {
+    window.location.href = 'coach_login.html';
+    return;
+  }
+  var meta = data.session.user.user_metadata || {};
+  if (meta.usuario) document.getElementById('hdr-nombre').textContent = meta.usuario.toUpperCase() + ' 🧑‍🏫';
+  document.getElementById('esq-fecha').value = new Date().toISOString().slice(0, 10);
+  cargarEsquemas();
+})();
+</script>
+</body>
+</html>

@@ -1051,10 +1051,30 @@ async function crearCuentaJugadora(id) {
     var rec = allRecords.find(function(r) { return r.id === id; });
     rec.fields['Cuenta Creada'] = true;
     openDetail(id);
-    alert('✅ Cuenta lista para ' + data.nombre + '\n\nUsuario: ' + data.id_jugadora + '\nContraseña: ' + data.password + '\n\nCompártele esto para que entre en jugadora_login.html');
+    alert('✅ Cuenta lista para ' + data.nombre + '\n\nUsuario: ' + data.id_jugadora + '\nContraseña: ' + data.password + '\n\nCompártele esto para que entre en wolverines.mx/wehunt');
   } catch(e) {
     alert('❌ Error: ' + e.message);
     if (btn) { btn.disabled = false; btn.textContent = '🔑 Crear cuenta de acceso'; }
+  }
+}
+
+async function crearCuentaCoach(id) {
+  var coach = coachesRecords.find(function(c) { return c.id === id; });
+  var usuarioDefault = coach && coach.usuario ? coach.usuario : '';
+  var usuario = prompt('Usuario para ' + (coach ? coach.nombre : 'este coach') + ' (sin espacios, mín. 3 caracteres):', usuarioDefault);
+  if (!usuario) return;
+  var password = prompt('Contraseña (mín. 6 caracteres):', '');
+  if (!password) return;
+
+  try {
+    var { data, error } = await sb.functions.invoke('crear-cuenta-coach', { body: { p_pwd: PWD, coach_id: id, usuario: usuario, password: password } });
+    if (error) throw error;
+    if (data && data.error) throw new Error(data.error);
+    if (coach) { coach.usuario = data.usuario; coach.cuenta_creada = true; }
+    renderCoaches();
+    alert('✅ Acceso listo para ' + data.nombre + '\n\nUsuario: ' + data.usuario + '\nContraseña: ' + password + '\n\nCompártele esto para que entre en wolverines.mx/wehunt');
+  } catch(e) {
+    alert('❌ Error: ' + e.message);
   }
 }
 
@@ -1935,6 +1955,10 @@ function renderCoaches() {
         '<button class="icon-btn icon-del" title="Eliminar" onclick="deleteCoach(\'' + c.id + '\',\'' + nombreEsc + '\')">🗑</button>' +
       '</div>' +
       '<div class="p-badges" style="width:100%;margin-top:8px">' + rosterBadges + '</div>' +
+      '<div style="width:100%;margin-top:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
+        '<span style="font-size:11px;color:var(--gray)">' + (c.cuenta_creada ? '✅ Acceso WeHunt: ' + (c.usuario||'') : '⏳ Sin acceso a WeHunt') + '</span>' +
+        '<button class="btn-action btn-ghost" style="font-size:11px;padding:6px 10px" onclick="crearCuentaCoach(\'' + c.id + '\')">' + (c.cuenta_creada ? '🔄 Resetear acceso' : '🔑 Crear acceso WeHunt') + '</button>' +
+      '</div>' +
     '</div>';
   });
   container.innerHTML = '<div class="list-wrap">' + html + '</div>';
