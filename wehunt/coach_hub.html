@@ -220,10 +220,8 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
   <div class="card">
     <h2>➕ Nuevo partido</h2>
     <div class="form-grid">
-      <div class="field"><label>Categoría</label>
-        <select id="pt-categoria">
-          <option>U14 (2012-2013)</option><option>U16 (2010-2011)</option><option>U18 (2008-2009)</option><option>Libre</option>
-        </select>
+      <div class="field"><label>Equipo</label>
+        <select id="pt-roster"><option value="">Cargando...</option></select>
       </div>
       <div class="field"><label>Torneo (opcional)</label><input type="text" id="pt-torneo"></div>
       <div class="field"><label>Fecha</label><input type="date" id="pt-fecha"></div>
@@ -576,14 +574,21 @@ function llenarSelectJugadoras() {
 }
 
 /* ============ PARTIDOS ============ */
+async function llenarSelectRosters() {
+  var { data } = await sbCoach.rpc('mis_rosters_coach');
+  var sel = document.getElementById('pt-roster');
+  sel.innerHTML = (data || []).map(function(r) { return '<option value="' + r.roster_id + '">' + r.nombre + '</option>'; }).join('') || '<option value="">No tienes equipos asignados</option>';
+}
+
 async function crearPartido() {
   document.getElementById('pt-error').classList.remove('show');
-  var categoria = document.getElementById('pt-categoria').value;
+  var rosterId = document.getElementById('pt-roster').value;
   var fecha = document.getElementById('pt-fecha').value;
   var rival = document.getElementById('pt-rival').value.trim();
+  if (!rosterId) { var el0 = document.getElementById('pt-error'); el0.textContent = 'No tienes ningún equipo asignado en el admin.'; el0.classList.add('show'); return; }
   if (!fecha || !rival) { var el = document.getElementById('pt-error'); el.textContent = 'Falta la fecha o el rival.'; el.classList.add('show'); return; }
   var { error } = await sbCoach.from('partidos').insert({
-    categoria: categoria,
+    roster_id: rosterId,
     torneo: document.getElementById('pt-torneo').value.trim() || null,
     fecha: fecha,
     hora: document.getElementById('pt-hora').value || null,
@@ -607,13 +612,13 @@ async function eliminarPartido(id) {
 }
 
 async function cargarPartidos() {
-  var { data, error } = await sbCoach.from('partidos').select('*').order('fecha', { ascending: true });
+  var { data, error } = await sbCoach.from('partidos').select('*, rosters(nombre)').order('fecha', { ascending: true });
   var wrap = document.getElementById('partidos-content');
   if (error) { wrap.innerHTML = '<div class="empty-msg">No se pudieron cargar los partidos.</div>'; return; }
   if (!data.length) { wrap.innerHTML = '<div class="empty-msg">Sin partidos agendados.</div>'; return; }
   wrap.innerHTML = data.map(function(p) {
     return '<div class="asist-row" style="align-items:flex-start">' +
-      '<div><b>' + p.rival + '</b> <span style="color:var(--gray);font-size:11.5px">(' + p.categoria + ')</span>' +
+      '<div><b>' + p.rival + '</b> <span style="color:var(--gray);font-size:11.5px">(' + ((p.rosters || {}).nombre || '—') + ')</span>' +
       '<div class="asist-hora">' + fmtFecha(p.fecha) + (p.hora ? ' · ' + p.hora : '') + (p.sede ? ' · ' + p.sede : '') + '</div></div>' +
       '<div style="display:flex;gap:4px;align-items:center">' +
         '<input type="number" value="' + (p.marcador_propio ?? '') + '" style="width:44px;padding:4px;border:1px solid var(--border);border-radius:6px;text-align:center" onchange="actualizarMarcador(\'' + p.id + '\',this.value,document.getElementById(\'riv-' + p.id + '\').value)">' +
@@ -800,6 +805,7 @@ function salir() {
   if (meta.usuario) document.getElementById('hdr-nombre').textContent = meta.usuario.toUpperCase() + ' 🧑‍🏫';
   document.getElementById('esq-fecha').value = new Date().toISOString().slice(0, 10);
   document.getElementById('pt-fecha').value = new Date().toISOString().slice(0, 10);
+  llenarSelectRosters();
   cargarEsquemas();
   cargarAsistenciaHoy();
   asistenciaPollInterval = setInterval(cargarAsistenciaHoy, 10000);

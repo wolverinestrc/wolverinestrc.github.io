@@ -66,12 +66,6 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
 .motivo-form button{background:var(--blue);color:#fff;border:none;font-size:12px;font-weight:800;padding:8px 12px;border-radius:8px;cursor:pointer}
 .motivo-txt{font-size:11.5px;color:var(--gray);font-style:italic;margin-top:4px}
 
-.roster-cat-title{font-size:12px;font-weight:800;color:var(--blue-dk);text-transform:uppercase;letter-spacing:0.4px;margin:16px 0 6px}
-.roster-cat-title:first-child{margin-top:0}
-.roster-row{display:flex;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--border);font-size:13px}
-.roster-row:first-child{border-top:none}
-.roster-num{width:26px;height:26px;border-radius:50%;background:var(--blue-lt);color:var(--blue-dk);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0}
-
 .dc-pos-title{font-size:12.5px;font-weight:800;margin:14px 0 6px}
 .dc-pos-title:first-child{margin-top:0}
 .dc-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--border);font-size:13px}
@@ -114,7 +108,6 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
   <button class="hub-tab" data-tab="polizas" onclick="switchTab('polizas')">🩹 Pólizas</button>
   <button class="hub-tab" data-tab="anuncios" onclick="switchTab('anuncios')">📣 Anuncios</button>
   <button class="hub-tab" data-tab="fisicas" onclick="switchTab('fisicas')">💪 Evaluaciones</button>
-  <button class="hub-tab" data-tab="jugadoras" onclick="switchTab('jugadoras')">👥 Mi equipo</button>
 </div>
 
 <!-- ============ DASHBOARD ============ -->
@@ -217,15 +210,6 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
   </div>
 </div>
 
-<!-- ============ MI EQUIPO ============ -->
-<div class="wrap" id="section-jugadoras" style="display:none">
-  <div class="card">
-    <h2>👥 Mi equipo</h2>
-    <div class="sub">Jugadoras de tu categoría</div>
-    <div id="jugadoras-content"><div class="loading-msg">Cargando...</div></div>
-  </div>
-</div>
-
 <div class="wrap" style="padding-top:0">
   <div class="hub-logout" onclick="salir()">Cerrar sesión</div>
 </div>
@@ -240,7 +224,7 @@ const ICONO_TIPO = { Jugada: '📄', Scout: '📊', Video: '▶️' };
 let miJugadorId = null;
 let miCategoria = null;
 
-const TABS = ['dashboard','esquemas','asistencia','partidos','depth','faltas','polizas','anuncios','fisicas','jugadoras'];
+const TABS = ['dashboard','esquemas','asistencia','partidos','depth','faltas','polizas','anuncios','fisicas'];
 function switchTab(tab) {
   TABS.forEach(function(t) {
     document.querySelector('.hub-tab[data-tab="' + t + '"]').classList.toggle('active', t === tab);
@@ -253,7 +237,6 @@ function switchTab(tab) {
   if (tab === 'polizas') cargarPolizas();
   if (tab === 'anuncios') cargarAnuncios();
   if (tab === 'fisicas') cargarFisicas();
-  if (tab === 'jugadoras') cargarJugadoras();
 }
 
 function fmtFecha(f) {
@@ -350,14 +333,14 @@ async function cargarAsistencia() {
 
 /* ============ PARTIDOS ============ */
 async function cargarPartidos() {
-  var { data, error } = await sbAuth.from('partidos').select('*').order('fecha', { ascending: true });
+  var { data, error } = await sbAuth.from('partidos').select('*, rosters(nombre)').order('fecha', { ascending: true });
   var wrap = document.getElementById('partidos-content');
   if (error) { wrap.innerHTML = '<div class="empty-msg">No se pudieron cargar los partidos.</div>'; return; }
   if (!data.length) { wrap.innerHTML = '<div class="empty-msg">Sin partidos agendados.</div>'; return; }
   wrap.innerHTML = data.map(function(p) {
     var resultado = (p.marcador_propio !== null && p.marcador_rival !== null) ? (p.marcador_propio + ' - ' + p.marcador_rival) : 'Próximo';
     return '<div class="asist-row">' +
-      '<div><b>vs ' + p.rival + '</b> <span style="color:var(--gray);font-size:11.5px">(' + p.categoria.split(' ')[0] + ')</span>' +
+      '<div><b>vs ' + p.rival + '</b> <span style="color:var(--gray);font-size:11.5px">(' + ((p.rosters || {}).nombre || '—') + ')</span>' +
       '<div class="asist-hora">' + fmtFecha(p.fecha) + (p.hora ? ' · ' + p.hora : '') + (p.sede ? ' · ' + p.sede : '') + '</div></div>' +
       '<b>' + resultado + '</b>' +
     '</div>';
@@ -516,20 +499,6 @@ async function cargarFisicas() {
   });
   html += '</table>';
   wrap.innerHTML = html;
-}
-
-/* ============ MI EQUIPO ============ */
-async function cargarJugadoras() {
-  var { data, error } = await sbAuth.rpc('portal_roster');
-  var wrap = document.getElementById('jugadoras-content');
-  if (error) { wrap.innerHTML = '<div class="empty-msg">No se pudo cargar.</div>'; return; }
-  if (!data.length) { wrap.innerHTML = '<div class="empty-msg">Sin compañeras registradas.</div>'; return; }
-  wrap.innerHTML = data.map(function(j) {
-    return '<div class="roster-row">' +
-      '<div class="roster-num">' + (j.numero_jugador || '—') + '</div>' +
-      '<div>' + j.nombre + ' ' + j.apellidos + (j.id === miJugadorId ? ' (tú)' : '') + '</div>' +
-    '</div>';
-  }).join('');
 }
 
 /* ============ PERFIL ============ */
