@@ -545,8 +545,11 @@ async function renderPerfil() {
   var fotoHtml = p.foto_url
     ? '<img src="' + p.foto_url + '" class="perfil-foto">'
     : '<div class="perfil-foto-ph">🏈</div>';
-  var categoriasHtml = '<span class="cat-chip">' + p.categoria + '</span>' +
-    (p.categoria_secundaria ? '<span class="cat-chip">' + p.categoria_secundaria + '</span>' : '');
+
+  var { data: misRosters } = await sbAuth.rpc('mis_rosters_jugadora');
+  var categoriasHtml = (misRosters && misRosters.length)
+    ? misRosters.map(function(r) { return '<span class="cat-chip">' + r.nombre + '</span>'; }).join('')
+    : '<span class="cat-chip">' + p.categoria + '</span>' + (p.categoria_secundaria ? '<span class="cat-chip">' + p.categoria_secundaria + '</span>' : '');
 
   wrap.innerHTML =
     '<div class="perfil-header">' +
@@ -558,7 +561,7 @@ async function renderPerfil() {
     '</div>' +
     '<div class="perfil-datos">' +
       '<div class="perfil-row"><span class="perfil-label">Fecha de nacimiento</span><span class="perfil-val">' + fmtFechaNacimiento(p.fecha_nacimiento) + '</span></div>' +
-      '<div class="perfil-row"><span class="perfil-label">Categorías</span><span class="perfil-val">' + categoriasHtml + '</span></div>' +
+      '<div class="perfil-row"><span class="perfil-label">Equipos</span><span class="perfil-val">' + categoriasHtml + '</span></div>' +
     '</div>' +
     '<a class="submit-btn" style="display:block;text-align:center;text-decoration:none;margin-top:18px" href="https://wolverines.mx/credencial.html?id=' + p.id + '" target="_blank" rel="noopener">🎫 Ver mi credencial</a>';
 }
