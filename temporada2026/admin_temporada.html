@@ -283,6 +283,7 @@ table.lt td{padding:12px 14px;font-size:13px;color:var(--text);border-top:1px so
       <button class="tab-btn" id="tb-avisos" onclick="switchTab('avisos')">📢 Avisos</button>
       <button class="tab-btn" id="tb-rosters" onclick="switchTab('rosters')">🗂️ Rosters</button>
       <button class="tab-btn" id="tb-juegos" onclick="switchTab('juegos')">🏈 Juegos</button>
+      <button class="tab-btn" id="tb-esquemas" onclick="switchTab('esquemas')">📋 Esquemas</button>
     </div>
 
     <!-- JUGADORES -->
@@ -559,6 +560,35 @@ table.lt td{padding:12px 14px;font-size:13px;color:var(--text);border-top:1px so
 
       <div id="juegos-content"></div>
     </div>
+
+    <!-- ESQUEMAS (jugadas/scout/video para juvenil) -->
+    <div class="morosos-section" id="section-esquemas" style="display:none">
+      <div class="content-card">
+        <div class="mor-header">
+          <div>
+            <div class="mor-title">📋 Esquemas (jugadas / scout / video)</div>
+            <div class="mor-sub">Solo lo ven las jugadoras juvenil con cuenta creada, desde su propio acceso (no el Wolve Hub de papás)</div>
+          </div>
+        </div>
+        <div class="controls" style="padding:0 24px;flex-wrap:wrap">
+          <input class="search-box" type="text" id="esq-titulo" placeholder="Título" style="flex:1;min-width:200px">
+          <select class="filter-select" id="esq-tipo" onchange="onCambioTipoEsquema()">
+            <option value="Jugada">Jugada (PDF/imagen)</option>
+            <option value="Scout">Scout (PDF/imagen)</option>
+            <option value="Video">Video (link)</option>
+          </select>
+          <input class="search-box" type="date" id="esq-fecha" style="max-width:150px">
+        </div>
+        <div class="controls" style="padding:0 24px">
+          <input type="file" id="esq-archivo" accept="application/pdf,image/*" style="max-width:260px">
+          <input class="search-box" type="text" id="esq-link" placeholder="Link externo (YouTube/Drive)" style="flex:1;min-width:220px;display:none">
+          <input class="search-box" type="text" id="esq-descripcion" placeholder="Descripción (opcional)" style="flex:2;min-width:220px">
+          <button class="btn-action btn-ghost" id="btn-subir-esquema" onclick="crearEsquema()">➕ Subir</button>
+        </div>
+        <div id="esquema-error" style="display:none;padding:0 24px 16px;color:var(--red);font-size:13px;font-weight:700"></div>
+      </div>
+      <div id="esquemas-content"></div>
+    </div>
   </div>
 </div>
 
@@ -637,6 +667,7 @@ function mapJugadorFromSupabase(j) {
     'CURP Documento': j.curp_documento_url, 'Seguro Médico': j.seguro_medico_url,
     'Número Jugador': j.numero_jugador,
     'Descuento Codigo Id': j.descuento_codigo_id || null, 'Descuento': j.descuento || null,
+    'Id Jugadora': j.id_jugadora || null, 'Cuenta Creada': !!j.cuenta_creada,
   };
   (j.pagos || []).forEach(function(p) {
     var mesCap = p.periodo.charAt(0).toUpperCase() + p.periodo.slice(1);
@@ -692,6 +723,7 @@ let rosterMiembrosRecords = [];
 let rosterCoachesRecords = [];
 let juegosRecords = [];
 let descuentoCodigosRecords = [];
+let esquemasRecords = [];
 let currentId    = null;
 const ESTADO_PAGO_LABEL = { pendiente: 'Pendiente', abono: 'Abono', pagado: 'Pagado' };
 const ESTADO_PAGO_NEXT  = { pendiente: 'abono', abono: 'pagado', pagado: 'pendiente' };
@@ -776,6 +808,10 @@ async function loadData() {
     if (descErr) throw descErr;
     descuentoCodigosRecords = descData || [];
 
+    const { data: esqData, error: esqErr } = await sb.rpc('admin_list_esquemas', { p_pwd: PWD });
+    if (esqErr) throw esqErr;
+    esquemasRecords = esqData || [];
+
     updateStats();
     renderAnioFiltro();
     renderTable();
@@ -808,7 +844,7 @@ function tieneAtraso(rec) {
 
 // ── TABS ──
 function switchTab(tab) {
-  ['jugadores','pagos','morosos','uniformes','tienda','coaches','avisos','rosters','juegos'].forEach(function(t) {
+  ['jugadores','pagos','morosos','uniformes','tienda','coaches','avisos','rosters','juegos','esquemas'].forEach(function(t) {
     var btn = document.getElementById('tb-' + t);
     if (btn) btn.classList.remove('active');
     var sec = document.getElementById('section-' + t);
@@ -827,6 +863,7 @@ function switchTab(tab) {
   if (tab === 'avisos') { renderStaffAvisos(); document.getElementById('aviso-preview').innerHTML = ''; }
   if (tab === 'rosters') renderRosters();
   if (tab === 'juegos') renderJuegos();
+  if (tab === 'esquemas') renderEsquemas();
 }
 
 // ── LIST (jugadores) ──
@@ -1002,6 +1039,23 @@ async function togglePago(mes, id) {
     if (document.getElementById('section-morosos').style.display !== 'none') renderMorosos();
     if (document.getElementById('detail-modal').classList.contains('open') && currentId === id) openDetail(id);
   } catch(e) { alert('Error: ' + e.message); }
+}
+
+async function crearCuentaJugadora(id) {
+  var btn = document.getElementById('btn-cuenta-jugadora');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Creando...'; }
+  try {
+    var { data, error } = await sb.functions.invoke('crear-cuenta-jugadora', { body: { p_pwd: PWD, jugador_id: id } });
+    if (error) throw error;
+    if (data && data.error) throw new Error(data.error);
+    var rec = allRecords.find(function(r) { return r.id === id; });
+    rec.fields['Cuenta Creada'] = true;
+    openDetail(id);
+    alert('✅ Cuenta lista para ' + data.nombre + '\n\nUsuario: ' + data.id_jugadora + '\nContraseña: ' + data.password + '\n\nCompártele esto para que entre en jugadora_login.html');
+  } catch(e) {
+    alert('❌ Error: ' + e.message);
+    if (btn) { btn.disabled = false; btn.textContent = '🔑 Crear cuenta de acceso'; }
+  }
 }
 
 async function onCambioDescuento(id) {
@@ -1306,6 +1360,22 @@ function openDetail(id) {
     '<select id="modal-descuento" class="d-select" onchange="onCambioDescuento(\'' + id + '\')">' + descuentoOptionsHtml + '</select>' +
     '<div style="font-size:11px;color:var(--gray);margin-top:4px">Aplica solo a mensualidades (Septiembre en adelante), no a la Inscripción.</div>';
 
+  var CATEGORIAS_CUENTA_JUGADORA = ['U14 (2012-2013)','U16 (2010-2011)','U18 (2008-2009)','Libre'];
+  var cuentaHtml = '';
+  if (CATEGORIAS_CUENTA_JUGADORA.indexOf(f['Categoría']) !== -1) {
+    var pwdCalc = '';
+    if (f['Fecha de Nacimiento']) {
+      var partesFecha = f['Fecha de Nacimiento'].split('-');
+      pwdCalc = partesFecha[2] + partesFecha[1] + partesFecha[0];
+    }
+    cuentaHtml = '<div class="d-section">Cuenta de jugadora (acceso propio a Esquemas, no el Wolve Hub)</div>' +
+      (f['Id Jugadora']
+        ? '<div style="font-size:13px;margin-bottom:6px"><b>Usuario:</b> ' + f['Id Jugadora'] + ' &nbsp; <b>Contraseña:</b> ' + (pwdCalc || '—') + '</div>' +
+          '<div style="font-size:11px;color:var(--gray);margin-bottom:8px">' + (f['Cuenta Creada'] ? '✅ Cuenta ya creada' : '⏳ Aún no se ha creado la cuenta de acceso') + '</div>' +
+          '<button class="btn-action btn-ghost" id="btn-cuenta-jugadora" onclick="crearCuentaJugadora(\'' + id + '\')">' + (f['Cuenta Creada'] ? '🔄 Resetear acceso' : '🔑 Crear cuenta de acceso') + '</button>'
+        : '<div style="font-size:12px;color:var(--gray)">Esta jugadora no tiene ID de cuenta asignado todavía.</div>');
+  }
+
   var pagosHtml = '';
   mesesAplicables(f).forEach(function(mes) {
     var estado = f['Pago ' + mes] || 'Pendiente';
@@ -1391,6 +1461,7 @@ function openDetail(id) {
         '<div class="d-section" style="margin-top:0">Documentos</div>' +
         '<div style="margin-bottom:8px">' + docsHtml + '</div>' +
         descuentoHtml +
+        cuentaHtml +
         '<div class="d-section">' + (esMoms(f) ? 'Pago único de temporada (Moms +30)' : 'Mensualidades (inscripción y pagos)') + ' — clic en el mes o escribe un abono</div>' +
         '<div class="d-pagos-grid">' + pagosHtml + '</div>' +
         '<div class="d-section">Número de jugador</div>' +
@@ -2823,6 +2894,87 @@ async function guardarImportados() {
   renderImportados();
   renderJuegos();
   alert('✅ Se agregaron ' + ok + ' juego(s) como borrador.' + (fallos.length ? '\n\n❌ Fallaron:\n' + fallos.join('\n') : ''));
+}
+
+// ── ESQUEMAS (jugadas/scout/video para juvenil, lo ven las jugadoras en su propio acceso) ──
+function onCambioTipoEsquema() {
+  var esVideo = document.getElementById('esq-tipo').value === 'Video';
+  document.getElementById('esq-archivo').style.display = esVideo ? 'none' : '';
+  document.getElementById('esq-link').style.display = esVideo ? '' : 'none';
+}
+
+function mostrarErrorEsquema(msg) {
+  var el = document.getElementById('esquema-error');
+  if (!msg) { el.style.display = 'none'; el.textContent = ''; return; }
+  el.textContent = '❌ ' + msg;
+  el.style.display = 'block';
+}
+
+async function crearEsquema() {
+  mostrarErrorEsquema(null);
+  var titulo = document.getElementById('esq-titulo').value.trim();
+  var tipo = document.getElementById('esq-tipo').value;
+  var descripcion = document.getElementById('esq-descripcion').value.trim();
+  var fecha = document.getElementById('esq-fecha').value || null;
+  var link = document.getElementById('esq-link').value.trim();
+  var archivo = document.getElementById('esq-archivo').files[0];
+
+  if (!titulo) { mostrarErrorEsquema('Falta el título.'); return; }
+  if (tipo === 'Video' && !link) { mostrarErrorEsquema('Falta el link del video.'); return; }
+  if (tipo !== 'Video' && !archivo) { mostrarErrorEsquema('Falta el archivo (PDF o imagen).'); return; }
+
+  var btn = document.getElementById('btn-subir-esquema');
+  btn.disabled = true; btn.textContent = '⏳ Subiendo...';
+  try {
+    var archivoUrl = null;
+    if (archivo) {
+      var path = 'esquemas/' + tipo.toLowerCase() + '/' + Date.now() + '-' + archivo.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      var { error: upErr } = await sb.storage.from('jugador-documentos').upload(path, archivo);
+      if (upErr) throw upErr;
+      archivoUrl = sb.storage.from('jugador-documentos').getPublicUrl(path).data.publicUrl;
+    }
+    var { data, error } = await sb.rpc('admin_crear_esquema', {
+      p_pwd: PWD, p_titulo: titulo, p_tipo: tipo, p_descripcion: descripcion || null,
+      p_archivo_url: archivoUrl, p_link_externo: tipo === 'Video' ? link : null, p_fecha: fecha
+    });
+    if (error) throw error;
+    esquemasRecords.unshift(data);
+    document.getElementById('esq-titulo').value = '';
+    document.getElementById('esq-descripcion').value = '';
+    document.getElementById('esq-link').value = '';
+    document.getElementById('esq-archivo').value = '';
+    renderEsquemas();
+  } catch(e) { mostrarErrorEsquema(e.message); }
+  finally { btn.disabled = false; btn.textContent = '➕ Subir'; }
+}
+
+async function eliminarEsquema(id) {
+  if (!confirm('¿Eliminar este esquema?')) return;
+  try {
+    var { error } = await sb.rpc('admin_eliminar_esquema', { p_pwd: PWD, p_id: id });
+    if (error) throw error;
+    esquemasRecords = esquemasRecords.filter(function(e) { return e.id !== id; });
+    renderEsquemas();
+  } catch(e) { alert('❌ Error: ' + e.message); }
+}
+
+function renderEsquemas() {
+  var cont = document.getElementById('esquemas-content');
+  if (!esquemasRecords.length) { cont.innerHTML = '<div class="empty">Aún no hay esquemas cargados.</div>'; return; }
+  var iconoTipo = { Jugada: '📄', Scout: '📊', Video: '▶️' };
+  var html = esquemasRecords.map(function(e) {
+    var link = e.tipo === 'Video' ? e.link_externo : e.archivo_url;
+    return '<div class="p-row" style="cursor:default">' +
+      '<div class="p-avatar-ph">' + iconoTipo[e.tipo] + '</div>' +
+      '<div class="p-info"><div class="p-name">' + e.titulo + '</div>' +
+      '<div class="p-sub">' + e.tipo + ' · ' + (e.fecha || '') + (e.descripcion ? ' · ' + e.descripcion : '') + '</div></div>' +
+      '<div class="p-badges"><a href="' + link + '" target="_blank" class="badge badge-cat">👁 Ver</a></div>' +
+      '<div class="p-actions">' +
+        '<button class="icon-btn icon-del" title="Eliminar" onclick="eliminarEsquema(\'' + e.id + '\')">🗑</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+  cont.innerHTML = '<div class="list-wrap">' + html + '</div>';
 }
 </script>
 </body>

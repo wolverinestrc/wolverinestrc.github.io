@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mi Hub – Wolverines TRC</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f1f4f9; --card:#fff; --border:#e5e9f2;
+  --navy:#101f3d; --navy2:#16294f; --gold:#FFCB05; --blue:#2563eb; --blue-dk:#1d4ed8; --blue-lt:#eaf1ff;
+  --text:#182338; --gray:#67728c; --gray-lt:#a4adc2; --red:#e11d48;
+  --shadow:0 1px 2px rgba(16,31,61,0.04), 0 1px 6px rgba(16,31,61,0.05);
+}
+body{background:var(--bg);font-family:'Montserrat',sans-serif;color:var(--text)}
+header{background:var(--navy);padding:20px 24px;display:flex;align-items:center;gap:14px}
+header img{width:44px;height:44px;border-radius:50%;background:white;object-fit:contain;padding:4px}
+header h1{font-size:17px;font-weight:800;color:white}
+header p{font-size:12px;color:#8ea0c4;margin-top:1px}
+
+.wrap{max-width:640px;margin:0 auto;padding:20px 20px 60px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:20px}
+.card + .card{margin-top:14px}
+.card h2{font-size:15px;font-weight:800;margin-bottom:2px}
+.card .sub{font-size:12.5px;color:var(--gray);margin-bottom:14px}
+
+.esq-row{display:flex;gap:12px;align-items:center;padding:14px 0;border-top:1px solid var(--border)}
+.esq-row:first-child{border-top:none}
+.esq-icon{width:42px;height:42px;border-radius:10px;background:var(--blue-lt);display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0}
+.esq-info{flex:1;min-width:0}
+.esq-titulo{font-size:13.5px;font-weight:700}
+.esq-meta{font-size:11.5px;color:var(--gray);margin-top:1px}
+.esq-desc{font-size:12px;color:var(--gray);margin-top:3px;line-height:1.4}
+.esq-ver{background:var(--blue);color:#fff;text-decoration:none;font-size:12px;font-weight:800;padding:9px 14px;border-radius:9px;flex-shrink:0}
+.esq-ver:hover{background:var(--blue-dk)}
+
+.empty-msg{font-size:13px;color:var(--gray-lt);text-align:center;padding:24px 0}
+
+.hub-logout{display:block;text-align:center;font-size:12px;color:var(--gray);margin-top:16px;cursor:pointer;text-decoration:underline}
+.loading-msg{font-size:13px;color:var(--gray);text-align:center;padding:40px 0}
+</style>
+</head>
+<body>
+
+<header>
+  <img src="https://wolverines.mx/IMG_0019_transparent.png" alt="Wolverines" onerror="this.style.display='none'">
+  <div>
+    <h1 id="hdr-nombre">MI HUB 🏈</h1>
+    <p>Esquemas y jugadas · Wolverines TRC</p>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="card">
+    <h2>📋 Esquemas</h2>
+    <div class="sub">Jugadas, scouting y video de tu equipo</div>
+    <div id="esquemas-content"><div class="loading-msg">Cargando...</div></div>
+  </div>
+  <div class="hub-logout" onclick="salir()">Cerrar sesión</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://xaawoqyjavqcybafirri.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhYXdvcXlqYXZxY3liYWZpcnJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1Mzg4MjcsImV4cCI6MjEwMTExNDgyN30.TdLuimBVQIILaaW0UtZDHDSoDpDomwmL6RbG-K-GDZ0';
+const sbAuth = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { storageKey: 'wolverines-jugadora-auth' } });
+
+const ICONO_TIPO = { Jugada: '📄', Scout: '📊', Video: '▶️' };
+
+function fmtFecha(f) {
+  if (!f) return '';
+  var p = f.split('-');
+  return p[2] + '/' + p[1] + '/' + p[0];
+}
+
+function renderEsquemas(rows) {
+  var wrap = document.getElementById('esquemas-content');
+  if (!rows || !rows.length) {
+    wrap.innerHTML = '<div class="empty-msg">Aún no hay esquemas cargados.</div>';
+    return;
+  }
+  wrap.innerHTML = rows.map(function(e) {
+    var link = e.tipo === 'Video' ? e.link_externo : e.archivo_url;
+    return '<div class="esq-row">' +
+      '<div class="esq-icon">' + (ICONO_TIPO[e.tipo] || '📄') + '</div>' +
+      '<div class="esq-info">' +
+        '<div class="esq-titulo">' + e.titulo + '</div>' +
+        '<div class="esq-meta">' + e.tipo + ' · ' + fmtFecha(e.fecha) + '</div>' +
+        (e.descripcion ? '<div class="esq-desc">' + e.descripcion + '</div>' : '') +
+      '</div>' +
+      '<a class="esq-ver" href="' + link + '" target="_blank" rel="noopener">👁 Ver</a>' +
+    '</div>';
+  }).join('');
+}
+
+async function cargarEsquemas() {
+  var { data, error } = await sbAuth.from('esquemas').select('*').order('fecha', { ascending: false });
+  if (error) {
+    document.getElementById('esquemas-content').innerHTML = '<div class="empty-msg">No se pudieron cargar los esquemas.</div>';
+    return;
+  }
+  renderEsquemas(data);
+}
+
+function salir() {
+  sbAuth.auth.signOut().then(function() { window.location.href = 'jugadora_login.html'; });
+}
+
+(async function init() {
+  var { data } = await sbAuth.auth.getSession();
+  if (!data || !data.session) { window.location.href = 'jugadora_login.html'; return; }
+  var meta = data.session.user.user_metadata || {};
+  if (meta.id_jugadora) document.getElementById('hdr-nombre').textContent = meta.id_jugadora + ' 🏈';
+  cargarEsquemas();
+})();
+</script>
+</body>
+</html>
