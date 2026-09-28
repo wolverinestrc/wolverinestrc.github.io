@@ -111,8 +111,7 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
 </header>
 
 <div class="hub-tabs">
-  <button class="hub-tab active" data-tab="dashboard" onclick="switchTab('dashboard')">🏠 Inicio</button>
-  <button class="hub-tab" data-tab="perfil" onclick="switchTab('perfil')">🪪 Mi Perfil</button>
+  <button class="hub-tab active" data-tab="dashboard" onclick="switchTab('dashboard')">📊 Dashboard</button>
   <button class="hub-tab" data-tab="esquemas" onclick="switchTab('esquemas')">📋 Esquemas</button>
   <button class="hub-tab" data-tab="asistencia" onclick="switchTab('asistencia')">✅ Asistencia</button>
   <button class="hub-tab" data-tab="partidos" onclick="switchTab('partidos')">🏈 Partidos</button>
@@ -126,16 +125,12 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
 <!-- ============ DASHBOARD ============ -->
 <div class="wrap" id="section-dashboard">
   <div class="card">
+    <div id="perfil-content"><div class="loading-msg">Cargando...</div></div>
+  </div>
+  <div class="card">
     <h2>👋 Hola</h2>
     <div class="sub" id="dash-sub">Bienvenida a tu hub</div>
     <div id="dash-stats"><div class="loading-msg">Cargando...</div></div>
-  </div>
-</div>
-
-<!-- ============ PERFIL ============ -->
-<div class="wrap" id="section-perfil" style="display:none">
-  <div class="card">
-    <div id="perfil-content"><div class="loading-msg">Cargando...</div></div>
   </div>
 </div>
 
@@ -244,13 +239,12 @@ const ICONO_TIPO = { Jugada: '📄', Scout: '📊', Video: '▶️' };
 let miJugadorId = null;
 let miCategoria = null;
 
-const TABS = ['dashboard','perfil','esquemas','asistencia','partidos','depth','faltas','polizas','anuncios','fisicas'];
+const TABS = ['dashboard','esquemas','asistencia','partidos','depth','faltas','polizas','anuncios','fisicas'];
 function switchTab(tab) {
   TABS.forEach(function(t) {
     document.querySelector('.hub-tab[data-tab="' + t + '"]').classList.toggle('active', t === tab);
     document.getElementById('section-' + t).style.display = t === tab ? '' : 'none';
   });
-  if (tab === 'perfil') renderPerfil();
   if (tab === 'asistencia') cargarAsistencia();
   if (tab === 'partidos') cargarPartidos();
   if (tab === 'depth') cargarDepthChart();
@@ -580,6 +574,7 @@ function salir() {
   if (meta.id_jugadora) document.getElementById('hdr-nombre').textContent = meta.id_jugadora + ' 🏈';
   document.getElementById('fi-fecha').value = new Date().toISOString().slice(0, 10);
   await cargarMiPerfil();
+  renderPerfil();
   cargarDashboard();
   cargarEsquemas();
 })();
