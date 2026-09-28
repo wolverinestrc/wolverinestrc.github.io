@@ -609,10 +609,15 @@ const ESTADO_PAGO_FROM_DB = { 'pendiente': 'Pendiente', 'abono': 'Abono', 'pagad
 function esDeuda(estado) {
   return estado === 'Pendiente' || estado === 'Abono' || !estado;
 }
+// El descuento (beca o hermano) solo aplica a mensualidades (Septiembre en adelante), no a la Inscripción de Agosto.
+function montoMensualidad(f, mes) {
+  if (mes !== 'Agosto' && f['Descuento']) return Number(f['Descuento'].monto_mensualidad);
+  return PAGOS_INFO[mes].monto;
+}
 function deudaRestante(f, mes) {
   var estado = f['Pago ' + mes] || 'Pendiente';
   if (estado === 'Pagado' || estado === 'Exento') return 0;
-  var monto = PAGOS_INFO[mes].monto;
+  var monto = montoMensualidad(f, mes);
   if (estado === 'Abono') return Math.max(0, monto - (parseFloat(f['Abono ' + mes]) || 0));
   return monto;
 }
@@ -625,6 +630,7 @@ function mapJugadorFromSupabase(j) {
     'Foto': j.foto_url, 'Acta de Nacimiento': j.acta_nacimiento_url,
     'CURP Documento': j.curp_documento_url, 'Seguro Médico': j.seguro_medico_url,
     'Número Jugador': j.numero_jugador,
+    'Descuento Codigo Id': j.descuento_codigo_id || null, 'Descuento': j.descuento || null,
   };
   (j.pagos || []).forEach(function(p) {
     var mesCap = p.periodo.charAt(0).toUpperCase() + p.periodo.slice(1);
@@ -679,6 +685,7 @@ let rostersRecords = [];
 let rosterMiembrosRecords = [];
 let rosterCoachesRecords = [];
 let juegosRecords = [];
+let descuentoCodigosRecords = [];
 let currentId    = null;
 const ESTADO_PAGO_LABEL = { pendiente: 'Pendiente', abono: 'Abono', pagado: 'Pagado' };
 const ESTADO_PAGO_NEXT  = { pendiente: 'abono', abono: 'pagado', pagado: 'pendiente' };
@@ -758,6 +765,10 @@ async function loadData() {
     const { data: juegosData, error: juegosErr } = await sb.rpc('admin_list_juegos', { p_pwd: PWD });
     if (juegosErr) throw juegosErr;
     juegosRecords = juegosData || [];
+
+    const { data: descData, error: descErr } = await sb.rpc('admin_list_descuento_codigos', { p_pwd: PWD });
+    if (descErr) throw descErr;
+    descuentoCodigosRecords = descData || [];
 
     updateStats();
     renderAnioFiltro();
@@ -917,7 +928,7 @@ function renderTable() {
       var estado = f['Pago ' + mes] || 'Pendiente';
       var cls = estado === 'Pagado' ? 'pagado' : estado === 'Exento' ? 'exento' : estado === 'Abono' ? 'abono' : 'pendiente';
       var estadoTxt = estado === 'Abono' && f['Abono ' + mes] ? 'Abono $' + Number(f['Abono ' + mes]).toLocaleString() : estado;
-      var title = info.label + ' ($' + info.monto.toLocaleString() + ', vence ' + info.fechaTxt + '): ' + estadoTxt + ' (clic para cambiar)';
+      var title = info.label + ' ($' + montoMensualidad(f, mes).toLocaleString() + ', vence ' + info.fechaTxt + '): ' + estadoTxt + ' (clic para cambiar)';
       return '<div class="m-dot ' + cls + '" title="' + title + '" onclick="event.stopPropagation();togglePago(\'' + mes + '\',\'' + rec.id + '\')">' + MES_CORTO[mes] + '</div>';
     }).join('');
 
@@ -936,6 +947,7 @@ function renderTable() {
       '</div>' +
       '<div class="p-badges"><span class="badge badge-cat">' + (f['Categoría']||'—') + '</span>' + pagoBadge +
         '<span class="badge badge-num' + (f['Número Jugador'] ? '' : ' sin') + '">' + (f['Número Jugador'] ? '#' + f['Número Jugador'] : 'Sin número') + '</span>' +
+        (f['Descuento'] ? '<span class="badge badge-cat" title="Mensualidad con descuento: $' + Number(f['Descuento'].monto_mensualidad).toLocaleString() + '">🎓 ' + f['Descuento'].codigo + '</span>' : '') +
       '</div>' +
       '<div class="p-months">' + monthsHtml + '</div>' +
       '<div style="min-width:60px">' + (docsHtml || '<span style="color:var(--gray-lt);font-size:12px">Sin docs</span>') + '</div>' +
@@ -985,10 +997,48 @@ async function togglePago(mes, id) {
   } catch(e) { alert('Error: ' + e.message); }
 }
 
+async function onCambioDescuento(id) {
+  var sel = document.getElementById('modal-descuento');
+  var valor = sel.value;
+
+  if (valor === '__nuevo__') {
+    var codigo = prompt('Código nuevo (ej. BECA50):');
+    if (!codigo || !codigo.trim()) { openDetail(id); return; }
+    var nombre = prompt('Nombre a mostrar (ej. "Beca 50%"):', codigo.trim());
+    if (nombre === null) { openDetail(id); return; }
+    var montoTxt = prompt('Monto de la mensualidad CON este descuento (ej. 475):');
+    var monto = parseFloat(montoTxt);
+    if (isNaN(monto) || monto < 0) { alert('Monto inválido.'); openDetail(id); return; }
+    try {
+      var { data, error } = await sb.rpc('admin_crear_descuento_codigo', {
+        p_pwd: PWD, p_codigo: codigo.trim(), p_nombre: (nombre.trim() || codigo.trim()), p_monto_mensualidad: monto
+      });
+      if (error) throw error;
+      descuentoCodigosRecords.push(data);
+      valor = data.id;
+    } catch(e) { alert('❌ Error creando el código: ' + e.message); openDetail(id); return; }
+  }
+
+  try {
+    var { error: setErr } = await sb.rpc('admin_set_jugador_descuento', {
+      p_pwd: PWD, p_jugador_id: id, p_descuento_codigo_id: valor || null
+    });
+    if (setErr) throw setErr;
+    var rec = allRecords.find(function(r) { return r.id === id; });
+    var codigoObj = valor ? descuentoCodigosRecords.find(function(d) { return d.id === valor; }) : null;
+    rec.fields['Descuento Codigo Id'] = valor || null;
+    rec.fields['Descuento'] = codigoObj || null;
+    openDetail(id);
+    if (document.getElementById('section-morosos').style.display !== 'none') renderMorosos();
+    if (document.getElementById('section-pagos').style.display !== 'none') renderPagos();
+  } catch(e) { alert('❌ Error: ' + e.message); }
+}
+
 async function setAbono(mes, id, valor) {
   var monto = parseFloat(valor);
   if (!monto || monto <= 0) return;
-  var maxMonto = (PAGOS_INFO[mes] || {}).monto || 0;
+  var recAbono = allRecords.find(function(r) { return r.id === id; });
+  var maxMonto = recAbono ? montoMensualidad(recAbono.fields, mes) : ((PAGOS_INFO[mes] || {}).monto || 0);
   if (monto >= maxMonto) { alert('El abono debe ser menor al monto total ($' + maxMonto.toLocaleString() + '). Si ya se pagó completo, marca "Pagado" en su lugar.'); if (document.getElementById('detail-modal').classList.contains('open') && currentId === id) openDetail(id); return; }
   try {
     var { error } = await sb.rpc('admin_update_pago', {
@@ -1013,9 +1063,10 @@ function renderPagos() {
   var ingresos = 0;
   MESES.forEach(function(mes) {
     var info = PAGOS_INFO[mes];
-    var pagados  = allRecords.filter(function(r) { return r.fields['Pago ' + mes] === 'Pagado'; }).length;
+    var pagadosRecs = allRecords.filter(function(r) { return r.fields['Pago ' + mes] === 'Pagado'; });
+    var pagados  = pagadosRecs.length;
     var pendientes = allRecords.filter(function(r) { return esDeuda(r.fields['Pago ' + mes]); }).length;
-    var total = pagados * info.monto;
+    var total = pagadosRecs.reduce(function(sum, r) { return sum + montoMensualidad(r.fields, mes); }, 0);
     ingresos += total;
     html += '<div class="mes-card">' +
       '<div class="mc-mes">' + info.label + '</div>' +
@@ -1233,15 +1284,27 @@ function openDetail(id) {
   if (f['Seguro Médico']) docsHtml += '<a href="' + f['Seguro Médico'] + '" target="_blank" class="doc-btn">🏥 Seguro</a>';
   if (!docsHtml) docsHtml = '<span style="color:var(--gray);font-size:12px">Sin documentos</span>';
 
+  var descuentoOptionsHtml = '<option value="">— Sin descuento —</option>' +
+    descuentoCodigosRecords.map(function(d) {
+      return '<option value="' + d.id + '"' + (f['Descuento Codigo Id'] === d.id ? ' selected' : '') + '>' +
+        d.nombre + ' (' + d.codigo + ' · $' + Number(d.monto_mensualidad).toLocaleString() + '/mes)</option>';
+    }).join('') +
+    '<option value="__nuevo__">+ Nuevo código…</option>';
+  var descuentoHtml = '<div class="d-section">Código de descuento (beca / hermano)</div>' +
+    '<select id="modal-descuento" class="d-select" onchange="onCambioDescuento(\'' + id + '\')">' + descuentoOptionsHtml + '</select>' +
+    '<div style="font-size:11px;color:var(--gray);margin-top:4px">Aplica solo a mensualidades (Septiembre en adelante), no a la Inscripción.</div>';
+
   var pagosHtml = '';
   MESES.forEach(function(mes) {
     var estado = f['Pago ' + mes] || 'Pendiente';
     var abono = f['Abono ' + mes];
+    var monto = montoMensualidad(f, mes);
     var icon = estado === 'Pagado' ? '✅' : estado === 'Exento' ? '🔵' : estado === 'Abono' ? '🟡' : '❌';
-    var estadoTxt = estado === 'Abono' && abono ? 'Abono $' + Number(abono).toLocaleString() : estado;
+    var estadoTxt = estado === 'Abono' && abono ? 'Abono $' + Number(abono).toLocaleString() + ' de $' + monto.toLocaleString() : estado;
     pagosHtml += '<div class="d-pago-chip">' +
       '<div style="cursor:pointer" title="Clic para marcar Pagado/Exento" onclick="togglePago(\'' + mes + '\',\'' + id + '\')">' +
         '<div class="dp-mes">' + mes + '</div>' +
+        '<div style="font-size:10px;color:var(--gray)">$' + monto.toLocaleString() + '</div>' +
         '<div class="dp-icon">' + icon + '</div>' +
         '<div class="dp-estado">' + estadoTxt + '</div>' +
       '</div>' +
@@ -1315,6 +1378,7 @@ function openDetail(id) {
       '<div class="d-col-right">' +
         '<div class="d-section" style="margin-top:0">Documentos</div>' +
         '<div style="margin-bottom:8px">' + docsHtml + '</div>' +
+        descuentoHtml +
         '<div class="d-section">Mensualidades (inscripción y pagos) — clic en el mes o escribe un abono</div>' +
         '<div class="d-pagos-grid">' + pagosHtml + '</div>' +
         '<div class="d-section">Número de jugador</div>' +
@@ -2343,7 +2407,7 @@ function exportPagosRealizados() {
           Categoría: f['Categoría']||'',
           Pago: PAGOS_INFO[mes].label,
           'Fecha de vencimiento': PAGOS_INFO[mes].fechaTxt,
-          Monto: PAGOS_INFO[mes].monto
+          Monto: montoMensualidad(f, mes)
         });
       }
     });
