@@ -86,6 +86,18 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
 .dash-stat{display:inline-flex;flex-direction:column;background:var(--blue-lt);border-radius:12px;padding:14px 18px;margin:4px 8px 4px 0}
 .dash-stat b{font-size:22px;color:var(--blue-dk)}
 .dash-stat span{font-size:11px;color:var(--gray);font-weight:700;text-transform:uppercase}
+
+.perfil-header{display:flex;gap:16px;align-items:center}
+.perfil-foto{width:88px;height:88px;border-radius:50%;object-fit:cover;background:var(--blue-lt);flex-shrink:0;border:3px solid var(--blue-lt)}
+.perfil-foto-ph{width:88px;height:88px;border-radius:50%;background:var(--blue-lt);color:var(--blue-dk);display:flex;align-items:center;justify-content:center;font-size:34px;flex-shrink:0}
+.perfil-nombre{font-size:17px;font-weight:900}
+.perfil-id{font-size:12px;color:var(--blue-dk);font-weight:800;margin-top:2px}
+.perfil-datos{margin-top:18px}
+.perfil-row{display:flex;justify-content:space-between;padding:10px 0;border-top:1px solid var(--border);font-size:13px}
+.perfil-row:first-child{border-top:none}
+.perfil-label{color:var(--gray)}
+.perfil-val{font-weight:700;text-align:right}
+.cat-chip{display:inline-block;background:var(--blue-lt);color:var(--blue-dk);font-size:11px;font-weight:800;padding:4px 10px;border-radius:20px;margin-left:6px}
 </style>
 </head>
 <body>
@@ -100,6 +112,7 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
 
 <div class="hub-tabs">
   <button class="hub-tab active" data-tab="dashboard" onclick="switchTab('dashboard')">🏠 Inicio</button>
+  <button class="hub-tab" data-tab="perfil" onclick="switchTab('perfil')">🪪 Mi Perfil</button>
   <button class="hub-tab" data-tab="esquemas" onclick="switchTab('esquemas')">📋 Esquemas</button>
   <button class="hub-tab" data-tab="asistencia" onclick="switchTab('asistencia')">✅ Asistencia</button>
   <button class="hub-tab" data-tab="partidos" onclick="switchTab('partidos')">🏈 Partidos</button>
@@ -116,6 +129,13 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
     <h2>👋 Hola</h2>
     <div class="sub" id="dash-sub">Bienvenida a tu hub</div>
     <div id="dash-stats"><div class="loading-msg">Cargando...</div></div>
+  </div>
+</div>
+
+<!-- ============ PERFIL ============ -->
+<div class="wrap" id="section-perfil" style="display:none">
+  <div class="card">
+    <div id="perfil-content"><div class="loading-msg">Cargando...</div></div>
   </div>
 </div>
 
@@ -224,12 +244,13 @@ const ICONO_TIPO = { Jugada: '📄', Scout: '📊', Video: '▶️' };
 let miJugadorId = null;
 let miCategoria = null;
 
-const TABS = ['dashboard','esquemas','asistencia','partidos','depth','faltas','polizas','anuncios','fisicas'];
+const TABS = ['dashboard','perfil','esquemas','asistencia','partidos','depth','faltas','polizas','anuncios','fisicas'];
 function switchTab(tab) {
   TABS.forEach(function(t) {
     document.querySelector('.hub-tab[data-tab="' + t + '"]').classList.toggle('active', t === tab);
     document.getElementById('section-' + t).style.display = t === tab ? '' : 'none';
   });
+  if (tab === 'perfil') renderPerfil();
   if (tab === 'asistencia') cargarAsistencia();
   if (tab === 'partidos') cargarPartidos();
   if (tab === 'depth') cargarDepthChart();
@@ -502,9 +523,50 @@ async function cargarFisicas() {
 }
 
 /* ============ PERFIL ============ */
+let miPerfil = null;
+
 async function cargarMiPerfil() {
-  var { data } = await sbAuth.from('jugadores').select('id, categoria').limit(1).single();
-  if (data) { miJugadorId = data.id; miCategoria = data.categoria; }
+  var { data } = await sbAuth.from('jugadores')
+    .select('id, id_jugadora, nombre, apellidos, categoria, categoria_secundaria, fecha_nacimiento, foto_url, numero_jugador')
+    .limit(1).single();
+  if (data) {
+    miJugadorId = data.id;
+    miCategoria = data.categoria;
+    miPerfil = data;
+  }
+}
+
+function fmtFechaNacimiento(f) {
+  if (!f) return '—';
+  var p = f.split('-');
+  var meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  return parseInt(p[2], 10) + ' de ' + meses[parseInt(p[1], 10) - 1] + ' de ' + p[0];
+}
+
+async function renderPerfil() {
+  var wrap = document.getElementById('perfil-content');
+  if (!miPerfil) await cargarMiPerfil();
+  if (!miPerfil) { wrap.innerHTML = '<div class="empty-msg">No se pudo cargar tu perfil.</div>'; return; }
+  var p = miPerfil;
+  var fotoHtml = p.foto_url
+    ? '<img src="' + p.foto_url + '" class="perfil-foto">'
+    : '<div class="perfil-foto-ph">🏈</div>';
+  var categoriasHtml = '<span class="cat-chip">' + p.categoria + '</span>' +
+    (p.categoria_secundaria ? '<span class="cat-chip">' + p.categoria_secundaria + '</span>' : '');
+
+  wrap.innerHTML =
+    '<div class="perfil-header">' +
+      fotoHtml +
+      '<div>' +
+        '<div class="perfil-nombre">' + p.nombre + ' ' + p.apellidos + '</div>' +
+        '<div class="perfil-id">' + p.id_jugadora + (p.numero_jugador ? ' · #' + p.numero_jugador : '') + '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="perfil-datos">' +
+      '<div class="perfil-row"><span class="perfil-label">Fecha de nacimiento</span><span class="perfil-val">' + fmtFechaNacimiento(p.fecha_nacimiento) + '</span></div>' +
+      '<div class="perfil-row"><span class="perfil-label">Categorías</span><span class="perfil-val">' + categoriasHtml + '</span></div>' +
+    '</div>' +
+    '<a class="submit-btn" style="display:block;text-align:center;text-decoration:none;margin-top:18px" href="https://wolverines.mx/credencial.html?id=' + p.id + '" target="_blank" rel="noopener">🎫 Ver mi credencial</a>';
 }
 
 function salir() {
