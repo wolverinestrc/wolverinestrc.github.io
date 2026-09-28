@@ -609,8 +609,14 @@ const ESTADO_PAGO_FROM_DB = { 'pendiente': 'Pendiente', 'abono': 'Abono', 'pagad
 function esDeuda(estado) {
   return estado === 'Pendiente' || estado === 'Abono' || !estado;
 }
+// Moms +30 no paga mensualidades: es un pago único de temporada (se cobra en Agosto/Inscripción).
+const MOMS_CATEGORIA = 'Moms +30';
+const MOMS_COSTO_TEMPORADA = 390;
+function esMoms(f) { return f['Categoría'] === MOMS_CATEGORIA; }
+function mesesAplicables(f) { return esMoms(f) ? ['Agosto'] : MESES; }
 // El descuento (beca o hermano) solo aplica a mensualidades (Septiembre en adelante), no a la Inscripción de Agosto.
 function montoMensualidad(f, mes) {
+  if (esMoms(f)) return mes === 'Agosto' ? MOMS_COSTO_TEMPORADA : 0;
   if (mes !== 'Agosto' && f['Descuento']) return Number(f['Descuento'].monto_mensualidad);
   return PAGOS_INFO[mes].monto;
 }
@@ -794,8 +800,9 @@ function updateStats() {
 
 function tieneAtraso(rec) {
   const mesesVencidos = getMesesVencidos();
+  const aplicables = mesesAplicables(rec.fields);
   return mesesVencidos.some(function(m) {
-    return esDeuda(rec.fields['Pago ' + m]);
+    return aplicables.indexOf(m) !== -1 && esDeuda(rec.fields['Pago ' + m]);
   });
 }
 
@@ -923,7 +930,7 @@ function renderTable() {
       ? '<span class="badge badge-warn">⚠ Con atraso</span>'
       : '<span class="badge badge-ok">✓ Al corriente</span>';
 
-    var monthsHtml = MESES.map(function(mes) {
+    var monthsHtml = mesesAplicables(f).map(function(mes) {
       var info = PAGOS_INFO[mes];
       var estado = f['Pago ' + mes] || 'Pendiente';
       var cls = estado === 'Pagado' ? 'pagado' : estado === 'Exento' ? 'exento' : estado === 'Abono' ? 'abono' : 'pendiente';
@@ -1197,8 +1204,9 @@ function renderMorosos() {
   }
 
   var morosos = allRecords.filter(function(r) {
+    var aplicables = mesesAplicables(r.fields);
     return mesesVencidos.some(function(m) {
-      return esDeuda(r.fields['Pago ' + m]);
+      return aplicables.indexOf(m) !== -1 && esDeuda(r.fields['Pago ' + m]);
     });
   });
 
@@ -1216,7 +1224,8 @@ function renderMorosos() {
   var totalDeuda = 0;
   morosos.forEach(function(rec) {
     var f = rec.fields;
-    var mesesPend = mesesVencidos.filter(function(m) { return esDeuda(f['Pago ' + m]); });
+    var aplicables = mesesAplicables(f);
+    var mesesPend = mesesVencidos.filter(function(m) { return aplicables.indexOf(m) !== -1 && esDeuda(f['Pago ' + m]); });
     var deuda = mesesPend.reduce(function(sum, m) { return sum + deudaRestante(f, m); }, 0);
     totalDeuda += deuda;
 
@@ -1226,6 +1235,7 @@ function renderMorosos() {
     tbody += '<td style="color:var(--gray)">' + (f['Tutor']||'—') + '</td>';
     tbody += '<td style="color:var(--gray)">' + (f['Teléfono']||'—') + '</td>';
     mesesVencidos.forEach(function(m) {
+      if (aplicables.indexOf(m) === -1) { tbody += '<td style="text-align:center;color:var(--gray-lt)">—</td>'; return; }
       var est = f['Pago ' + m] || 'Pendiente';
       var icon = est === 'Pagado' ? '✅' : est === 'Exento' ? '🔵' : est === 'Abono' ? '🟡' : '❌';
       tbody += '<td style="text-align:center">' + icon + '</td>';
@@ -1244,8 +1254,9 @@ function renderMorosos() {
 function notificarAtrasos() {
   var mesesVencidos = getMesesVencidos();
   var morosos = allRecords.filter(function(r) {
+    var aplicables = mesesAplicables(r.fields);
     return mesesVencidos.some(function(m) {
-      return esDeuda(r.fields['Pago ' + m]);
+      return aplicables.indexOf(m) !== -1 && esDeuda(r.fields['Pago ' + m]);
     });
   });
 
@@ -1253,7 +1264,8 @@ function notificarAtrasos() {
 
   var lista = morosos.map(function(r) {
     var f = r.fields;
-    var pend = mesesVencidos.filter(function(m) { return esDeuda(f['Pago ' + m]); });
+    var aplicables = mesesAplicables(f);
+    var pend = mesesVencidos.filter(function(m) { return aplicables.indexOf(m) !== -1 && esDeuda(f['Pago ' + m]); });
     var deuda = pend.reduce(function(s, m) { return s + deudaRestante(f, m); }, 0);
     var pendLabels = pend.map(function(m) { return PAGOS_INFO[m].label; });
     return '%E2%80%A2 ' + (f['Nombre']||'') + ' ' + (f['Apellidos']||'') + ' (' + pendLabels.join(', ') + ') - $' + deuda.toLocaleString();
@@ -1295,7 +1307,7 @@ function openDetail(id) {
     '<div style="font-size:11px;color:var(--gray);margin-top:4px">Aplica solo a mensualidades (Septiembre en adelante), no a la Inscripción.</div>';
 
   var pagosHtml = '';
-  MESES.forEach(function(mes) {
+  mesesAplicables(f).forEach(function(mes) {
     var estado = f['Pago ' + mes] || 'Pendiente';
     var abono = f['Abono ' + mes];
     var monto = montoMensualidad(f, mes);
@@ -1379,7 +1391,7 @@ function openDetail(id) {
         '<div class="d-section" style="margin-top:0">Documentos</div>' +
         '<div style="margin-bottom:8px">' + docsHtml + '</div>' +
         descuentoHtml +
-        '<div class="d-section">Mensualidades (inscripción y pagos) — clic en el mes o escribe un abono</div>' +
+        '<div class="d-section">' + (esMoms(f) ? 'Pago único de temporada (Moms +30)' : 'Mensualidades (inscripción y pagos)') + ' — clic en el mes o escribe un abono</div>' +
         '<div class="d-pagos-grid">' + pagosHtml + '</div>' +
         '<div class="d-section">Número de jugador</div>' +
         '<input type="number" id="modal-num" class="d-input" value="' + (f['Número Jugador']||'') + '" placeholder="Ej: 12">' +
