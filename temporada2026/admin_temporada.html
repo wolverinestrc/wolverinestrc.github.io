@@ -534,6 +534,7 @@ table.lt td{padding:12px 14px;font-size:13px;color:var(--text);border-top:1px so
           <input class="search-box" type="text" id="juego-hora" placeholder="Hora (HH:MM)" style="max-width:120px">
           <input class="search-box" type="text" id="juego-campo" placeholder="Campo" style="max-width:120px">
           <input class="search-box" type="text" id="juego-sede" placeholder="Sede" style="max-width:180px">
+          <select class="filter-select" id="juego-roster" title="Equipo en WeHunt — sin esto solo tú (GM) lo ves ahí" style="min-width:200px"><option value="">Sin equipo (solo GM en WeHunt)</option></select>
           <label style="display:flex;align-items:center;gap:6px;font-size:13px"><input type="checkbox" id="juego-pospuesto"> Pospuesto</label>
           <button class="btn-action btn-ghost" id="btn-guardar-juego" onclick="crearJuego()">➕ Agregar juego</button>
           <button class="btn-action btn-ghost" onclick="limpiarFormJuego()">✕ Cancelar</button>
@@ -862,7 +863,7 @@ function switchTab(tab) {
   if (tab === 'coaches') renderCoaches();
   if (tab === 'avisos') { renderStaffAvisos(); document.getElementById('aviso-preview').innerHTML = ''; }
   if (tab === 'rosters') renderRosters();
-  if (tab === 'juegos') renderJuegos();
+  if (tab === 'juegos') { llenarSelectRosterJuego(); renderJuegos(); }
   if (tab === 'esquemas') renderEsquemas();
 }
 
@@ -2605,12 +2606,14 @@ function fechaCortaJuego(f) {
 function juegoRowHtml(j) {
   var estado = j.archivado ? '<span class="badge badge-cat">Archivado</span>' : j.publicado ? '<span class="badge badge-ok">Publicado</span>' : '<span class="badge badge-num">Borrador</span>';
   var pospuestoBadge = j.pospuesto ? ' <span class="badge badge-warn">Pospuesto</span>' : '';
+  var roster = j.roster_id ? rostersRecords.find(function(r) { return r.id === j.roster_id; }) : null;
+  var rosterBadge = roster ? ' <span class="badge badge-cat">🏈 ' + esc(roster.nombre) + '</span>' : ' <span class="badge badge-warn" title="Sin equipo asignado: en WeHunt solo lo ve el GM">Sin equipo en WeHunt</span>';
   var fechaTxt = fechaCortaJuego(j.fecha);
   return '<div class="p-row" style="cursor:default">' +
     '<div class="p-avatar-ph">🏈</div>' +
     '<div class="p-info"><div class="p-name">' + j.dia + (fechaTxt ? ' ' + fechaTxt : '') + ' ' + (j.hora || 'sin hora') + ' · ' + j.partido + '</div>' +
     '<div class="p-sub">' + (j.liga ? j.liga + ' · ' : '') + (j.categoria || '') + (j.campo ? ' · ' + j.campo : '') + (j.sede ? ' · ' + j.sede : '') + '</div></div>' +
-    '<div class="p-badges">' + estado + pospuestoBadge + '</div>' +
+    '<div class="p-badges">' + estado + pospuestoBadge + rosterBadge + '</div>' +
     '<div class="p-actions">' +
       '<button class="icon-btn icon-edit" title="Editar" onclick="editarJuego(\'' + j.id + '\')">✏️</button>' +
       '<button class="icon-btn icon-del" title="Eliminar" onclick="eliminarJuego(\'' + j.id + '\')">🗑</button>' +
@@ -2686,8 +2689,18 @@ function limpiarFormJuego() {
   document.getElementById('juego-campo').value = '';
   document.getElementById('juego-sede').value = '';
   document.getElementById('juego-pospuesto').checked = false;
+  document.getElementById('juego-roster').value = '';
   juegoEditandoId = null;
   document.getElementById('btn-guardar-juego').textContent = '➕ Agregar juego';
+}
+
+function llenarSelectRosterJuego() {
+  var sel = document.getElementById('juego-roster');
+  var actual = sel.value;
+  sel.innerHTML = '<option value="">Sin equipo (solo GM en WeHunt)</option>' +
+    rostersRecords.slice().sort(function(a, b) { return a.nombre.localeCompare(b.nombre); })
+      .map(function(r) { return '<option value="' + r.id + '">' + r.nombre + '</option>'; }).join('');
+  sel.value = actual;
 }
 
 function editarJuego(id) {
@@ -2702,6 +2715,8 @@ function editarJuego(id) {
   document.getElementById('juego-campo').value = j.campo || '';
   document.getElementById('juego-sede').value = j.sede || '';
   document.getElementById('juego-pospuesto').checked = !!j.pospuesto;
+  llenarSelectRosterJuego();
+  document.getElementById('juego-roster').value = j.roster_id || '';
   juegoEditandoId = id;
   document.getElementById('btn-guardar-juego').textContent = '💾 Guardar cambios';
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2720,13 +2735,14 @@ async function crearJuego() {
     campo: document.getElementById('juego-campo').value.trim() || null,
     sede: document.getElementById('juego-sede').value.trim() || null,
     pospuesto: document.getElementById('juego-pospuesto').checked,
+    roster_id: document.getElementById('juego-roster').value || null,
   };
   try {
     if (juegoEditandoId) {
       var { error } = await sb.rpc('admin_update_juego', {
         p_pwd: PWD, p_id: juegoEditandoId, p_dia: datos.dia, p_liga: datos.liga, p_categoria: datos.categoria,
         p_partido: datos.partido, p_hora: datos.hora, p_campo: datos.campo, p_sede: datos.sede, p_pospuesto: datos.pospuesto,
-        p_fecha: datos.fecha
+        p_fecha: datos.fecha, p_roster_id: datos.roster_id
       });
       if (error) throw error;
       var j = juegosRecords.find(function(x) { return x.id === juegoEditandoId; });
@@ -2734,7 +2750,8 @@ async function crearJuego() {
     } else {
       var { data, error } = await sb.rpc('admin_create_juego', {
         p_pwd: PWD, p_dia: datos.dia, p_liga: datos.liga, p_categoria: datos.categoria, p_partido: datos.partido,
-        p_hora: datos.hora, p_campo: datos.campo, p_sede: datos.sede, p_pospuesto: datos.pospuesto, p_fecha: datos.fecha
+        p_hora: datos.hora, p_campo: datos.campo, p_sede: datos.sede, p_pospuesto: datos.pospuesto, p_fecha: datos.fecha,
+        p_roster_id: datos.roster_id
       });
       if (error) throw error;
       juegosRecords.push(data);
