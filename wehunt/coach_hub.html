@@ -149,6 +149,11 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
     <div class="sub">Jugadoras que ya registraron su llegada</div>
     <div id="asistencia-hoy-content"><div class="loading-msg">Cargando...</div></div>
   </div>
+  <div class="card">
+    <h2>📊 Reporte de asistencia</h2>
+    <div class="sub">Sesiones, presentes, retardos, faltas y % de asistencia de toda la temporada</div>
+    <div id="reporte-asistencia-content"><div class="loading-msg">Cargando...</div></div>
+  </div>
 </div>
 
 <!-- ============ ESQUEMAS ============ -->
@@ -266,7 +271,7 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
 <div class="wrap" id="section-faltas" style="display:none">
   <div class="card">
     <h2>📉 Faltas y retardos</h2>
-    <div class="sub">Resumen de asistencia por jugadora (sesiones ya ocurridas)</div>
+    <div class="sub">Solo jugadoras con retardos o faltas pendientes — da clic en una para ver el detalle y justificar</div>
     <div id="faltas-content"><div class="loading-msg">Cargando...</div></div>
   </div>
 </div>
@@ -340,6 +345,7 @@ function switchTab(tab) {
     document.querySelector('.hub-tab[data-tab="' + t + '"]').classList.toggle('active', t === tab);
     document.getElementById('section-' + t).style.display = t === tab ? '' : 'none';
   });
+  if (tab === 'asistencia') cargarReporteAsistencia();
   if (tab === 'jugadoras' && !rosterCache.length) cargarJugadoras();
   if (tab === 'partidos') cargarPartidos();
   if (tab === 'depth') cargarDepthChart();
@@ -686,20 +692,85 @@ async function cargarDepthChart() {
   wrap.innerHTML = html;
 }
 
+/* ============ REPORTE DE ASISTENCIA (pestaña Asistencia) ============ */
+async function cargarReporteAsistencia() {
+  var { data, error } = await sbCoach.rpc('resumen_asistencia_equipo');
+  var wrap = document.getElementById('reporte-asistencia-content');
+  if (error) { wrap.innerHTML = '<div class="empty-msg">No se pudo cargar.</div>'; return; }
+  if (!data.length) { wrap.innerHTML = '<div class="empty-msg">Todavía no hay sesiones registradas.</div>'; return; }
+  var html = '<table class="tabla-simple"><tr><th>Jugadora</th><th>Cat.</th><th>Sesiones</th><th>Presente</th><th>Retardos</th><th>Faltas</th><th>% Asist.</th></tr>';
+  data.forEach(function(r) {
+    var pct = r.total_sesiones > 0 ? Math.round((r.presentes / r.total_sesiones) * 100) : 0;
+    html += '<tr><td>' + r.nombre + '</td><td>' + r.categoria.split(' ')[0] + '</td><td>' + r.total_sesiones + '</td>' +
+      '<td>' + r.presentes + '</td><td>' + (r.retardos > 0 ? '<span class="tag-retardo">' + r.retardos + '</span>' : '0') + '</td>' +
+      '<td>' + (r.faltas > 0 ? '<span class="tag-falta">' + r.faltas + '</span>' : '0') + '</td>' +
+      '<td><b>' + pct + '%</b></td></tr>';
+  });
+  html += '</table>';
+  wrap.innerHTML = html;
+}
+
 /* ============ FALTAS Y RETARDOS ============ */
+let resumenFaltasCache = [];
+
 async function cargarFaltas() {
   var { data, error } = await sbCoach.rpc('resumen_asistencia_equipo');
   var wrap = document.getElementById('faltas-content');
   if (error) { wrap.innerHTML = '<div class="empty-msg">No se pudo cargar.</div>'; return; }
-  if (!data.length) { wrap.innerHTML = '<div class="empty-msg">Todavía no hay sesiones registradas.</div>'; return; }
-  var html = '<table class="tabla-simple"><tr><th>Jugadora</th><th>Cat.</th><th>Sesiones</th><th>Presente</th><th>Retardos</th><th>Faltas</th></tr>';
-  data.forEach(function(r) {
-    html += '<tr><td>' + r.nombre + '</td><td>' + r.categoria.split(' ')[0] + '</td><td>' + r.total_sesiones + '</td>' +
-      '<td>' + r.presentes + '</td><td>' + (r.retardos > 0 ? '<span class="tag-retardo">' + r.retardos + '</span>' : '0') + '</td>' +
-      '<td>' + (r.faltas > 0 ? '<span class="tag-falta">' + r.faltas + '</span>' : '0') + '</td></tr>';
+  resumenFaltasCache = data || [];
+  var pendientes = resumenFaltasCache.filter(function(r) { return r.retardos > 0 || r.faltas > 0; });
+  if (!pendientes.length) { wrap.innerHTML = '<div class="empty-msg">¡Nadie tiene retardos ni faltas pendientes! 🎉</div>'; return; }
+  wrap.innerHTML = pendientes.map(function(r) {
+    return '<div class="asist-row" style="flex-direction:column;align-items:stretch;cursor:pointer" onclick="toggleDetalleJugadora(\'' + r.jugador_id + '\')">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center">' +
+        '<span class="asist-fecha">' + r.nombre + ' <span style="color:var(--gray);font-size:11px;font-weight:400">(' + r.categoria.split(' ')[0] + ')</span></span>' +
+        '<span>' + (r.retardos > 0 ? '<span class="tag-retardo">' + r.retardos + ' retardo(s)</span> ' : '') + (r.faltas > 0 ? '<span class="tag-falta">' + r.faltas + ' falta(s)</span>' : '') + '</span>' +
+      '</div>' +
+      '<div id="detalle-' + r.jugador_id + '" style="display:none;margin-top:10px"></div>' +
+    '</div>';
+  }).join('');
+}
+
+async function toggleDetalleJugadora(jugadorId) {
+  var el = document.getElementById('detalle-' + jugadorId);
+  if (!el) return;
+  if (el.style.display !== 'none') { el.style.display = 'none'; return; }
+  el.style.display = 'block';
+  el.innerHTML = '<div class="loading-msg">Cargando...</div>';
+
+  var { data: retardos } = await sbCoach.from('asistencia')
+    .select('id, fecha, tipo_evento, motivo_retardo, justificado')
+    .eq('jugador_id', jugadorId).eq('retardo', true).order('fecha', { ascending: false });
+  var { data: faltas } = await sbCoach.rpc('detalle_faltas_jugador', { p_jugador_id: jugadorId });
+
+  var html = '';
+  (retardos || []).forEach(function(r) {
+    html += '<div class="asist-row" style="align-items:flex-start">' +
+      '<div><b>⏰ ' + fmtFecha(r.fecha) + ' · ' + r.tipo_evento + '</b>' +
+      (r.motivo_retardo ? '<div class="asist-hora">' + r.motivo_retardo + '</div>' : '<div class="asist-hora">Sin motivo</div>') + '</div>' +
+      '<label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer">' +
+        '<input type="checkbox" ' + (r.justificado ? 'checked' : '') + ' onclick="event.stopPropagation()" onchange="justificarRetardo(\'' + r.id + '\',this.checked)"> Justificado' +
+      '</label>' +
+    '</div>';
   });
-  html += '</table>';
-  wrap.innerHTML = html;
+  (faltas || []).forEach(function(f) {
+    html += '<div class="asist-row" style="align-items:flex-start">' +
+      '<div><b>❌ ' + fmtFecha(f.fecha) + ' · ' + f.tipo_evento + '</b>' +
+      (f.motivo ? '<div class="asist-hora">' + f.motivo + '</div>' : '<div class="asist-hora">Sin motivo</div>') + '</div>' +
+      '<label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer">' +
+        '<input type="checkbox" ' + (f.justificado ? 'checked' : '') + ' onclick="event.stopPropagation()" onchange="justificarFaltaUI(\'' + jugadorId + '\',\'' + f.fecha + '\',\'' + f.tipo_evento + '\',this.checked)"> Justificado' +
+      '</label>' +
+    '</div>';
+  });
+  el.innerHTML = html || '<div class="empty-msg">Sin detalle.</div>';
+}
+
+async function justificarRetardo(asistenciaId, justificado) {
+  await sbCoach.from('asistencia').update({ justificado: justificado }).eq('id', asistenciaId);
+}
+
+async function justificarFaltaUI(jugadorId, fecha, tipoEvento, justificado) {
+  await sbCoach.rpc('justificar_falta', { p_jugador_id: jugadorId, p_fecha: fecha, p_tipo_evento: tipoEvento, p_justificado: justificado });
 }
 
 /* ============ POLIZAS ============ */
@@ -808,6 +879,7 @@ function salir() {
   llenarSelectRosters();
   cargarEsquemas();
   cargarAsistenciaHoy();
+  cargarReporteAsistencia();
   asistenciaPollInterval = setInterval(cargarAsistenciaHoy, 10000);
 })();
 </script>
