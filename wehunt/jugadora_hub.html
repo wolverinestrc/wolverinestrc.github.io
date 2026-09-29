@@ -329,15 +329,15 @@ async function cargarAsistencia() {
 
 /* ============ PARTIDOS ============ */
 async function cargarPartidos() {
-  var { data, error } = await sbAuth.from('partidos').select('*, rosters(nombre)').order('fecha', { ascending: true });
+  var { data, error } = await sbAuth.rpc('portal_list_juegos');
   var wrap = document.getElementById('partidos-content');
   if (error) { wrap.innerHTML = '<div class="empty-msg">No se pudieron cargar los partidos.</div>'; return; }
   if (!data.length) { wrap.innerHTML = '<div class="empty-msg">Sin partidos agendados.</div>'; return; }
   wrap.innerHTML = data.map(function(p) {
     var resultado = (p.marcador_propio !== null && p.marcador_rival !== null) ? (p.marcador_propio + ' - ' + p.marcador_rival) : 'Próximo';
     return '<div class="asist-row">' +
-      '<div><b>vs ' + p.rival + '</b> <span style="color:var(--gray);font-size:11.5px">(' + ((p.rosters || {}).nombre || '—') + ')</span>' +
-      '<div class="asist-hora">' + fmtFecha(p.fecha) + (p.hora ? ' · ' + p.hora : '') + (p.sede ? ' · ' + p.sede : '') + '</div></div>' +
+      '<div><b>' + p.partido + '</b> <span style="color:var(--gray);font-size:11.5px">(' + (p.roster_nombre || p.categoria || '—') + ')</span>' +
+      '<div class="asist-hora">' + (p.fecha ? fmtFecha(p.fecha) : p.dia) + (p.hora ? ' · ' + p.hora : '') + (p.sede ? ' · ' + p.sede : '') + '</div></div>' +
       '<b>' + resultado + '</b>' +
     '</div>';
   }).join('');

@@ -593,13 +593,13 @@ async function crearPartido() {
   var rival = document.getElementById('pt-rival').value.trim();
   if (!rosterId) { var el0 = document.getElementById('pt-error'); el0.textContent = 'No tienes ningún equipo asignado en el admin.'; el0.classList.add('show'); return; }
   if (!fecha || !rival) { var el = document.getElementById('pt-error'); el.textContent = 'Falta la fecha o el rival.'; el.classList.add('show'); return; }
-  var { error } = await sbCoach.from('partidos').insert({
-    roster_id: rosterId,
-    torneo: document.getElementById('pt-torneo').value.trim() || null,
-    fecha: fecha,
-    hora: document.getElementById('pt-hora').value || null,
-    rival: rival,
-    sede: document.getElementById('pt-sede').value.trim() || null
+  var { error } = await sbCoach.rpc('coach_crear_juego', {
+    p_roster_id: rosterId,
+    p_rival: rival,
+    p_fecha: fecha,
+    p_hora: document.getElementById('pt-hora').value || null,
+    p_sede: document.getElementById('pt-sede').value.trim() || null,
+    p_torneo: document.getElementById('pt-torneo').value.trim() || null
   });
   if (error) { var el2 = document.getElementById('pt-error'); el2.textContent = 'Error: ' + error.message; el2.classList.add('show'); return; }
   document.getElementById('pt-torneo').value = ''; document.getElementById('pt-fecha').value = '';
@@ -608,30 +608,38 @@ async function crearPartido() {
 }
 
 async function actualizarMarcador(id, propio, rival) {
-  await sbCoach.from('partidos').update({ marcador_propio: propio === '' ? null : parseInt(propio), marcador_rival: rival === '' ? null : parseInt(rival) }).eq('id', id);
+  await sbCoach.rpc('coach_actualizar_marcador_juego', {
+    p_id: id,
+    p_marcador_propio: propio === '' ? null : parseInt(propio),
+    p_marcador_rival: rival === '' ? null : parseInt(rival)
+  });
 }
 
 async function eliminarPartido(id) {
   if (!confirm('¿Eliminar este partido?')) return;
-  await sbCoach.from('partidos').delete().eq('id', id);
+  var { error } = await sbCoach.rpc('coach_eliminar_juego', { p_id: id });
+  if (error) { alert('❌ ' + error.message); return; }
   cargarPartidos();
 }
 
 async function cargarPartidos() {
-  var { data, error } = await sbCoach.from('partidos').select('*, rosters(nombre)').order('fecha', { ascending: true });
+  var { data, error } = await sbCoach.rpc('portal_list_juegos');
   var wrap = document.getElementById('partidos-content');
   if (error) { wrap.innerHTML = '<div class="empty-msg">No se pudieron cargar los partidos.</div>'; return; }
   if (!data.length) { wrap.innerHTML = '<div class="empty-msg">Sin partidos agendados.</div>'; return; }
   wrap.innerHTML = data.map(function(p) {
+    var puedeEditar = !!p.roster_id;
     return '<div class="asist-row" style="align-items:flex-start">' +
-      '<div><b>' + p.rival + '</b> <span style="color:var(--gray);font-size:11.5px">(' + ((p.rosters || {}).nombre || '—') + ')</span>' +
-      '<div class="asist-hora">' + fmtFecha(p.fecha) + (p.hora ? ' · ' + p.hora : '') + (p.sede ? ' · ' + p.sede : '') + '</div></div>' +
-      '<div style="display:flex;gap:4px;align-items:center">' +
-        '<input type="number" value="' + (p.marcador_propio ?? '') + '" style="width:44px;padding:4px;border:1px solid var(--border);border-radius:6px;text-align:center" onchange="actualizarMarcador(\'' + p.id + '\',this.value,document.getElementById(\'riv-' + p.id + '\').value)">' +
-        '<span>-</span>' +
-        '<input id="riv-' + p.id + '" type="number" value="' + (p.marcador_rival ?? '') + '" style="width:44px;padding:4px;border:1px solid var(--border);border-radius:6px;text-align:center" onchange="actualizarMarcador(\'' + p.id + '\',this.previousElementSibling.previousElementSibling.value,this.value)">' +
-        '<button class="btn-sm danger" onclick="eliminarPartido(\'' + p.id + '\')">🗑</button>' +
-      '</div>' +
+      '<div><b>' + p.partido + '</b> <span style="color:var(--gray);font-size:11.5px">(' + (p.roster_nombre || p.categoria || '—') + ')</span>' +
+      '<div class="asist-hora">' + (p.fecha ? fmtFecha(p.fecha) : p.dia) + (p.hora ? ' · ' + p.hora : '') + (p.sede ? ' · ' + p.sede : '') + '</div></div>' +
+      (puedeEditar ? (
+        '<div style="display:flex;gap:4px;align-items:center">' +
+          '<input type="number" value="' + (p.marcador_propio ?? '') + '" style="width:44px;padding:4px;border:1px solid var(--border);border-radius:6px;text-align:center" onchange="actualizarMarcador(\'' + p.id + '\',this.value,document.getElementById(\'riv-' + p.id + '\').value)">' +
+          '<span>-</span>' +
+          '<input id="riv-' + p.id + '" type="number" value="' + (p.marcador_rival ?? '') + '" style="width:44px;padding:4px;border:1px solid var(--border);border-radius:6px;text-align:center" onchange="actualizarMarcador(\'' + p.id + '\',this.previousElementSibling.previousElementSibling.value,this.value)">' +
+          '<button class="btn-sm danger" onclick="eliminarPartido(\'' + p.id + '\')">🗑</button>' +
+        '</div>'
+      ) : '<span style="font-size:11px;color:var(--gray-lt)">Del rol público</span>') +
     '</div>';
   }).join('');
 }
