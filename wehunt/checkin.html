@@ -81,7 +81,7 @@ async function enviarMotivo(fecha, tipoEvento) {
   var { data: sessionData } = await sbAuth.auth.getSession();
   if (!sessionData || !sessionData.session) {
     sessionStorage.setItem('wehunt_checkin_token', token);
-    window.location.href = 'jugadora_login.html';
+    window.location.href = 'index.html';
     return;
   }
 
