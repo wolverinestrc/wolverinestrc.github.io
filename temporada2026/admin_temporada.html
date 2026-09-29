@@ -2759,13 +2759,16 @@ async function publicarJuegos() {
   var semana = prompt('¿Qué semana/jornada es? (ej. "Semana 3" o "Jornada 5")\n\nLo publicado hasta ahora pasa al archivo y deja de verse en el sitio.');
   if (semana === null) return;
   if (!semana.trim()) { alert('Escribe la semana/jornada.'); return; }
-  if (!confirm('¿Publicar el rol como "' + semana.trim() + '"? Lo publicado actualmente se archiva, y estos borradores se ven de inmediato en wolverines.mx/games.html')) return;
+  var fecha = prompt('¿Qué fecha exacta son estos juegos? (AAAA-MM-DD, ej. 2026-10-03)\n\nSe usa para el calendario de WeHunt — se aplica a los borradores que no tengan ya su propia fecha.');
+  if (fecha === null) return;
+  if (fecha.trim() && !/^\d{4}-\d{2}-\d{2}$/.test(fecha.trim())) { alert('La fecha debe tener el formato AAAA-MM-DD.'); return; }
+  if (!confirm('¿Publicar el rol como "' + semana.trim() + '"' + (fecha.trim() ? ' (fecha ' + fecha.trim() + ')' : '') + '? Lo publicado actualmente se archiva, y estos borradores se ven de inmediato en wolverines.mx/games.html')) return;
   try {
-    var { data, error } = await sb.rpc('admin_publicar_juegos', { p_pwd: PWD, p_semana: semana.trim() });
+    var { data, error } = await sb.rpc('admin_publicar_juegos', { p_pwd: PWD, p_semana: semana.trim(), p_fecha: fecha.trim() || null });
     if (error) throw error;
     juegosRecords.forEach(function(j) {
       if (j.publicado && !j.archivado) j.archivado = true;
-      else if (!j.publicado) { j.publicado = true; j.semana = semana.trim(); }
+      else if (!j.publicado) { j.publicado = true; j.semana = semana.trim(); if (!j.fecha && fecha.trim()) j.fecha = fecha.trim(); }
     });
     renderJuegos();
     alert('✅ Se publicaron ' + data + ' juego(s) como "' + semana.trim() + '".');
