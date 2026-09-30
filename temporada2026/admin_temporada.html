@@ -559,6 +559,21 @@ table.lt td{padding:12px 14px;font-size:13px;color:var(--text);border-top:1px so
         <div id="import-preview"></div>
       </div>
 
+      <div class="content-card" style="margin-top:16px">
+        <div class="mor-header">
+          <div>
+            <div class="mor-title">🔄 Sincronización automática con ltlkids.mx</div>
+            <div class="mor-sub">Cada 3 horas revisa el rol y actualiza solo los partidos de Wolverines de esta semana (nunca borra). Solo tienes que actualizar el número de jornada cuando cambie.</div>
+          </div>
+        </div>
+        <div class="controls" style="padding:0 24px 16px;flex-wrap:wrap;gap:10px">
+          <input class="search-box" type="number" id="jornada-ltlkids" placeholder="Jornada" style="max-width:100px">
+          <button class="btn-action btn-ghost" onclick="guardarJornadaLtlKids()">💾 Guardar jornada</button>
+          <button class="btn-action" onclick="sincronizarJuegosAhora(this)">🔄 Sincronizar ahora</button>
+        </div>
+        <div id="jornada-ultimo-sync" style="padding:0 24px 16px;font-size:12.5px;color:var(--gray)"></div>
+      </div>
+
       <div id="juegos-content"></div>
     </div>
 
@@ -863,7 +878,7 @@ function switchTab(tab) {
   if (tab === 'coaches') renderCoaches();
   if (tab === 'avisos') { renderStaffAvisos(); document.getElementById('aviso-preview').innerHTML = ''; }
   if (tab === 'rosters') renderRosters();
-  if (tab === 'juegos') { llenarSelectRosterJuego(); renderJuegos(); }
+  if (tab === 'juegos') { llenarSelectRosterJuego(); renderJuegos(); cargarJornadaLtlKids(); }
   if (tab === 'esquemas') renderEsquemas();
 }
 
@@ -2790,6 +2805,62 @@ async function publicarJuegos() {
     renderJuegos();
     alert('✅ Se publicaron ' + data + ' juego(s) como "' + semana.trim() + '".');
   } catch(e) { alert('❌ Error: ' + e.message); }
+}
+
+function fmtUltimoSync(info) {
+  if (!info) return 'Todavía no se ha sincronizado.';
+  var fecha = new Date(info.at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
+  return 'Última vez: ' + fecha + ' — ' + info.resumen.join(' · ');
+}
+
+async function cargarJornadaLtlKids() {
+  try {
+    var res = await fetch(PAYMENTS_API + '/jornada-ltlkids', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_pwd: PWD }),
+    });
+    var data = await res.json();
+    if (data.error) throw new Error(data.error);
+    document.getElementById('jornada-ltlkids').value = data.jornada;
+    document.getElementById('jornada-ultimo-sync').textContent = fmtUltimoSync(data.ultimo_sync);
+  } catch(e) {
+    document.getElementById('jornada-ultimo-sync').textContent = 'No se pudo cargar: ' + e.message;
+  }
+}
+
+async function guardarJornadaLtlKids() {
+  var jornada = document.getElementById('jornada-ltlkids').value.trim();
+  if (!/^\d+$/.test(jornada)) { alert('Escribe solo el número de jornada.'); return; }
+  try {
+    var res = await fetch(PAYMENTS_API + '/jornada-ltlkids', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_pwd: PWD, jornada: jornada }),
+    });
+    var data = await res.json();
+    if (data.error) throw new Error(data.error);
+    alert('✅ Jornada actualizada a ' + data.jornada + '. La próxima sincronización automática ya la va a usar.');
+  } catch(e) { alert('❌ Error: ' + e.message); }
+}
+
+async function sincronizarJuegosAhora(btn) {
+  btn.disabled = true; btn.textContent = '⏳ Sincronizando... (puede tardar ~1 min)';
+  try {
+    var res = await fetch(PAYMENTS_API + '/sync-juegos-ltlkids', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_pwd: PWD }),
+    });
+    var data = await res.json();
+    if (data.error) throw new Error(data.error);
+    alert('✅ Sincronizado:\n\n' + data.resumen.join('\n'));
+    var { data: juegosData, error: juegosErr } = await sb.rpc('admin_list_juegos', { p_pwd: PWD });
+    if (!juegosErr) juegosRecords = juegosData || [];
+    renderJuegos();
+    cargarJornadaLtlKids();
+  } catch(e) {
+    alert('❌ Error: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '🔄 Sincronizar ahora';
+  }
 }
 
 // ── IMPORTAR ROL CON IA (link o imagen) ──
