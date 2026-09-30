@@ -562,13 +562,21 @@ table.lt td{padding:12px 14px;font-size:13px;color:var(--text);border-top:1px so
       <div class="content-card" style="margin-top:16px">
         <div class="mor-header">
           <div>
-            <div class="mor-title">🔄 Sincronización automática con ltlkids.mx</div>
-            <div class="mor-sub">Cada 3 horas revisa el rol y actualiza solo los partidos de Wolverines de esta semana (nunca borra). Solo tienes que actualizar el número de jornada cuando cambie.</div>
+            <div class="mor-title">🔄 Sincronización automática (ltlkids.mx sábados · playmkr.mx viernes)</div>
+            <div class="mor-sub">Cada 3 horas revisa ambas ligas y actualiza solo los partidos de Wolverines (nunca borra). Solo tienes que actualizar el número de jornada de cada una cuando cambie.</div>
           </div>
         </div>
+        <div class="controls" style="padding:0 24px 8px;flex-wrap:wrap;gap:10px">
+          <label style="font-size:12.5px;font-weight:700;color:var(--gray);display:flex;align-items:center;gap:6px">LTL Kids (sábado) — jornada
+            <input class="search-box" type="number" id="jornada-ltlkids" style="max-width:80px">
+          </label>
+          <button class="btn-action btn-ghost" onclick="guardarJornada('ltlkids')">💾 Guardar</button>
+        </div>
         <div class="controls" style="padding:0 24px 16px;flex-wrap:wrap;gap:10px">
-          <input class="search-box" type="number" id="jornada-ltlkids" placeholder="Jornada" style="max-width:100px">
-          <button class="btn-action btn-ghost" onclick="guardarJornadaLtlKids()">💾 Guardar jornada</button>
+          <label style="font-size:12.5px;font-weight:700;color:var(--gray);display:flex;align-items:center;gap:6px">PlayMKR (viernes) — jornada
+            <input class="search-box" type="number" id="jornada-playmkr" style="max-width:80px">
+          </label>
+          <button class="btn-action btn-ghost" onclick="guardarJornada('playmkr')">💾 Guardar</button>
           <button class="btn-action" onclick="sincronizarJuegosAhora(this)">🔄 Sincronizar ahora</button>
         </div>
         <div id="jornada-ultimo-sync" style="padding:0 24px 16px;font-size:12.5px;color:var(--gray)"></div>
@@ -2813,39 +2821,49 @@ function fmtUltimoSync(info) {
   return 'Última vez: ' + fecha + ' — ' + info.resumen.join(' · ');
 }
 
-async function cargarJornadaLtlKids() {
+async function cargarJornada(fuente) {
   try {
-    var res = await fetch(PAYMENTS_API + '/jornada-ltlkids', {
+    var res = await fetch(PAYMENTS_API + '/jornada', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ p_pwd: PWD }),
+      body: JSON.stringify({ p_pwd: PWD, fuente: fuente }),
     });
     var data = await res.json();
     if (data.error) throw new Error(data.error);
-    document.getElementById('jornada-ltlkids').value = data.jornada;
-    document.getElementById('jornada-ultimo-sync').textContent = fmtUltimoSync(data.ultimo_sync);
+    document.getElementById('jornada-' + fuente).value = data.jornada;
+    return data.ultimo_sync;
   } catch(e) {
-    document.getElementById('jornada-ultimo-sync').textContent = 'No se pudo cargar: ' + e.message;
+    return null;
   }
 }
 
-async function guardarJornadaLtlKids() {
-  var jornada = document.getElementById('jornada-ltlkids').value.trim();
+async function cargarJornadaLtlKids() {
+  var el = document.getElementById('jornada-ultimo-sync');
+  el.textContent = 'Cargando...';
+  var [ultimoLtl, ultimoPlaymkr] = await Promise.all([cargarJornada('ltlkids'), cargarJornada('playmkr')]);
+  var partes = [];
+  if (ultimoLtl) partes.push('LTL Kids: ' + fmtUltimoSync(ultimoLtl));
+  if (ultimoPlaymkr) partes.push('PlayMKR: ' + fmtUltimoSync(ultimoPlaymkr));
+  el.textContent = partes.length ? partes.join(' | ') : 'Todavía no se ha sincronizado.';
+}
+
+async function guardarJornada(fuente) {
+  var jornada = document.getElementById('jornada-' + fuente).value.trim();
   if (!/^\d+$/.test(jornada)) { alert('Escribe solo el número de jornada.'); return; }
   try {
-    var res = await fetch(PAYMENTS_API + '/jornada-ltlkids', {
+    var res = await fetch(PAYMENTS_API + '/jornada', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ p_pwd: PWD, jornada: jornada }),
+      body: JSON.stringify({ p_pwd: PWD, fuente: fuente, jornada: jornada }),
     });
     var data = await res.json();
     if (data.error) throw new Error(data.error);
-    alert('✅ Jornada actualizada a ' + data.jornada + '. La próxima sincronización automática ya la va a usar.');
+    alert('✅ Jornada de ' + fuente + ' actualizada a ' + data.jornada + '.');
   } catch(e) { alert('❌ Error: ' + e.message); }
 }
 
 async function sincronizarJuegosAhora(btn) {
   btn.disabled = true; btn.textContent = '⏳ Sincronizando... (puede tardar ~1 min)';
   try {
-    var res = await fetch(PAYMENTS_API + '/sync-juegos-ltlkids', {
+    var res = await fetch(PAYMENTS_API + '/sync-juegos', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ p_pwd: PWD }),
     });
