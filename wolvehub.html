@@ -766,7 +766,8 @@ cargarStock();
 let MP_CFG = null, MP_SALDOS = [], MP_ACTUAL = null;
 const MP_PERIODO_LABEL = { agosto: 'Inscripción', septiembre: 'Pago 2', octubre: 'Pago 3', noviembre: 'Pago 4', diciembre: 'Pago 5' };
 const mpMoney = n => '$' + Number(n).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-function mpToken() { try { return localStorage.getItem(WOLVE_SESSION_KEY); } catch(e) { return null; } }
+let MP_TOKEN_PREVIEW = null;
+function mpToken() { if (MP_TOKEN_PREVIEW) return MP_TOKEN_PREVIEW; try { return localStorage.getItem(WOLVE_SESSION_KEY); } catch(e) { return null; } }
 
 async function mpConfig() {
   if (MP_CFG !== null) return MP_CFG;
@@ -1249,6 +1250,7 @@ let modoVistaPrevia = false;
       switchHubTab('pagos');
       return;
     }
+    try { const { data: tk } = await sb.rpc('admin_crear_sesion_pagos', { p_pwd: adminPwd, p_email: adminEmail }); MP_TOKEN_PREVIEW = tk || null; } catch(e) {}
     await entrarAlHub(data || [], adminEmail);
     document.getElementById('pagos-resultado').innerHTML =
       '<div class="hub-preview-banner">👁 Modo vista previa (admin) — esto no guarda sesión</div>' +
