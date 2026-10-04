@@ -1519,6 +1519,7 @@ function openDetail(id) {
         cuentaHtml +
         '<div class="d-section">' + (esMoms(f) ? 'Pago único de temporada (Moms +30)' : 'Mensualidades (inscripción y pagos)') + ' — clic en el mes o escribe un abono</div>' +
         '<div class="d-pagos-grid">' + pagosHtml + '</div>' +
+        mpLinkHtml(rec) +
         '<div class="d-section">Número de jugador</div>' +
         '<input type="number" id="modal-num" class="d-input" value="' + (f['Número Jugador']||'') + '" placeholder="Ej: 12">' +
         '<div class="d-section">Uniforme (talla + estado por pieza)</div>' +
@@ -2889,6 +2890,58 @@ async function sincronizarJuegosAhora(btn) {
     alert('❌ Error: ' + e.message);
   } finally {
     btn.disabled = false; btn.textContent = '🔄 Sincronizar ahora';
+  }
+}
+
+// ── LINK DE PAGO (Mercado Pago) ──
+function mpLinkHtml(rec) {
+  var f = rec.fields;
+  var opciones = mesesAplicables(f).filter(function(m) { return deudaRestante(f, m) > 0; });
+  if (!opciones.length) return '';
+  var opts = opciones.map(function(m) {
+    return '<option value="' + m.toLowerCase() + '" data-saldo="' + deudaRestante(f, m) + '">' + PAGOS_INFO[m].label + ' — saldo $' + deudaRestante(f, m).toLocaleString() + '</option>';
+  }).join('');
+  return '<div class="d-section">🔗 Link de pago en línea (Mercado Pago)</div>' +
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">' +
+      '<select id="mp-adm-periodo" class="d-input" style="max-width:240px" onchange="document.getElementById(\'mp-adm-monto\').value=this.selectedOptions[0].dataset.saldo">' + opts + '</select>' +
+      '<input type="number" id="mp-adm-monto" class="d-input" style="max-width:130px" min="1" step="0.01" placeholder="Monto $" value="' + opciones.map(function(m) { return deudaRestante(f, m); })[0] + '">' +
+      '<select id="mp-adm-meses" class="d-input" style="max-width:170px"><option value="1">De contado</option><option value="3">3 meses sin intereses</option></select>' +
+      '<button class="btn-action" onclick="generarLinkMp(\'' + rec.id + '\',this)">🔗 Generar link</button>' +
+    '</div>' +
+    '<div id="mp-adm-out" style="margin-top:10px;font-size:12.5px"></div>';
+}
+
+async function generarLinkMp(id, btn) {
+  var rec = allRecords.find(function(r) { return r.id === id; });
+  if (!rec) return;
+  var out = document.getElementById('mp-adm-out');
+  var monto = parseFloat(document.getElementById('mp-adm-monto').value);
+  if (!monto || monto <= 0) { out.textContent = 'Escribe un monto válido.'; return; }
+  var original = btn.textContent;
+  btn.disabled = true; btn.textContent = '⏳ Generando...';
+  try {
+    var res = await fetch(PAYMENTS_API + '/mp/crear-pago', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        p_pwd: PWD, jugador_id: id, tipo: 'cuota', periodo: document.getElementById('mp-adm-periodo').value,
+        neto: monto, meses: Number(document.getElementById('mp-adm-meses').value)
+      })
+    });
+    var data = await res.json();
+    if (!res.ok || !data.init_point) throw new Error(data.error || 'No se pudo generar el link.');
+    var nombre = (rec.fields['Nombre'] || '') + ' ' + (rec.fields['Apellidos'] || '');
+    var texto = 'Hola, te comparto el link para pagar ' + data.titulo.replace('Wolverines TRC - ', '').split(' - ')[0] + ' de ' + nombre.trim() + ' (' + '$' + Number(data.total).toLocaleString() + ' incluye comisión de Mercado Pago): ' + data.init_point;
+    var tel = String(rec.fields['Teléfono'] || '').replace(/\D/g, '');
+    var wa = 'https://wa.me/' + (tel.length === 10 ? '52' + tel : tel) + '?text=' + encodeURIComponent(texto);
+    out.innerHTML = '<div style="background:rgba(34,197,94,.1);border:1px solid var(--green);border-radius:8px;padding:10px">' +
+      '✅ Total con comisión: <b>$' + Number(data.total).toLocaleString() + '</b><br>' +
+      '<input class="d-input" id="mp-adm-link" readonly value="' + data.init_point + '" style="margin:8px 0" onclick="this.select()">' +
+      '<button class="btn-action btn-ghost" onclick="navigator.clipboard.writeText(document.getElementById(\'mp-adm-link\').value).then(function(){alert(\'Link copiado\')})">📋 Copiar</button> ' +
+      '<a class="btn-action" style="text-decoration:none;display:inline-block" href="' + wa + '" target="_blank">📲 Enviar por WhatsApp</a></div>';
+  } catch(e) {
+    out.textContent = '❌ ' + e.message;
+  } finally {
+    btn.disabled = false; btn.textContent = original;
   }
 }
 

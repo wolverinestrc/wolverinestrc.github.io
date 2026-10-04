@@ -55,7 +55,7 @@ header h1{font-size:17px;font-weight:800;color:white}
 <script>
 const SUPABASE_URL = 'https://xaawoqyjavqcybafirri.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhYXdvcXlqYXZxY3liYWZpcnJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1Mzg4MjcsImV4cCI6MjEwMTExNDgyN30.TdLuimBVQIILaaW0UtZDHDSoDpDomwmL6RbG-K-GDZ0';
-const sbAuth = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { storageKey: 'wolverines-jugadora-auth' } });
+const sbAuth = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { storageKey: 'wolverines-jugadora-auth', persistSession: true, autoRefreshToken: true } });
 
 function mostrar(icon, titulo, mensaje, extraHtml) {
   document.getElementById('resultado').innerHTML =

@@ -216,7 +216,7 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
 <script>
 const SUPABASE_URL = 'https://xaawoqyjavqcybafirri.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhYXdvcXlqYXZxY3liYWZpcnJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1Mzg4MjcsImV4cCI6MjEwMTExNDgyN30.TdLuimBVQIILaaW0UtZDHDSoDpDomwmL6RbG-K-GDZ0';
-const sbAuth = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { storageKey: 'wolverines-jugadora-auth' } });
+const sbAuth = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { storageKey: 'wolverines-jugadora-auth', persistSession: true, autoRefreshToken: true } });
 
 const ICONO_TIPO = { Jugada: '📄', Scout: '📊', Video: '▶️' };
 let miJugadorId = null;

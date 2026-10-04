@@ -72,8 +72,9 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
 <script>
 const SUPABASE_URL = 'https://xaawoqyjavqcybafirri.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhYXdvcXlqYXZxY3liYWZpcnJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1Mzg4MjcsImV4cCI6MjEwMTExNDgyN30.TdLuimBVQIILaaW0UtZDHDSoDpDomwmL6RbG-K-GDZ0';
-const sbJugadora = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { storageKey: 'wolverines-jugadora-auth' } });
-const sbCoach = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { storageKey: 'wolverines-coach-auth' } });
+try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch(e) {}
+const sbJugadora = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { storageKey: 'wolverines-jugadora-auth', persistSession: true, autoRefreshToken: true } });
+const sbCoach = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { storageKey: 'wolverines-coach-auth', persistSession: true, autoRefreshToken: true } });
 
 function mostrarError(msg) {
   var el = document.getElementById('alert-error');

@@ -146,6 +146,17 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
 .hub-logout{display:block;text-align:center;font-size:12px;color:var(--gray);margin-top:16px;cursor:pointer;text-decoration:underline}
 .hub-preview-banner{background:#fef3e0;color:#b45309;font-size:12.5px;font-weight:700;text-align:center;padding:10px;border-radius:10px;margin-bottom:16px}
 
+.mp-btn{display:block;width:100%;background:#009ee3;color:#fff;font-weight:800;font-size:13.5px;padding:13px 20px;border-radius:11px;border:none;cursor:pointer;font-family:'Montserrat',sans-serif;margin-top:10px}
+.mp-btn:hover{background:#0087c4}
+.mp-btn:disabled{background:var(--gray-lt);cursor:not-allowed}
+#mp-modal{display:none;position:fixed;inset:0;background:rgba(16,31,61,.55);z-index:1000;align-items:center;justify-content:center;padding:16px}
+#mp-modal.open{display:flex}
+.mp-box{background:#fff;border-radius:16px;max-width:420px;width:100%;padding:22px;max-height:92vh;overflow:auto}
+.mp-box h3{font-size:16px;font-weight:900;color:var(--navy);margin-bottom:4px}
+.mp-box label{display:block;font-size:12px;font-weight:800;color:var(--gray);margin:12px 0 5px}
+.mp-box select,.mp-box input{width:100%;padding:11px 12px;border:1.5px solid var(--border);border-radius:9px;font-size:14px;font-family:'Montserrat',sans-serif}
+.mp-desglose{background:var(--blue-lt);border-radius:10px;padding:12px;font-size:12.5px;line-height:1.7;color:var(--text);margin-top:12px}
+.mp-banner{display:none;max-width:520px;margin:12px auto 0;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700}
 </style>
 </head>
 <body>
@@ -184,6 +195,22 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
         <button class="submit-btn secondary" style="margin-top:8px" onclick="reiniciarConsultaPagos()">← Usar otro correo</button>
       </div>
     </div>
+  </div>
+</div>
+
+<div id="mp-banner" class="mp-banner"></div>
+
+<div id="mp-modal" onclick="if(event.target===this)mpCerrar()">
+  <div class="mp-box">
+    <h3 id="mp-titulo">Pagar en línea</h3>
+    <div id="mp-sub" style="font-size:12.5px;color:var(--gray)"></div>
+    <div id="mp-campo-periodo"><label>¿A qué pago aplica?</label><select id="mp-periodo" onchange="mpPeriodoCambio()"></select></div>
+    <div id="mp-campo-monto"><label>Monto a pagar ($ MXN)</label><input type="number" id="mp-monto" min="1" step="0.01" oninput="mpActualizar()"></div>
+    <div id="mp-campo-meses"><label>Forma de pago</label><select id="mp-meses" onchange="mpActualizar()"></select></div>
+    <div class="mp-desglose" id="mp-desglose"></div>
+    <div style="font-size:11px;color:var(--gray);margin-top:6px">La comisión la cobra Mercado Pago y no se abona a tu saldo.</div>
+    <button class="mp-btn" id="mp-pagar" onclick="mpPagar()">💳 Ir a pagar con Mercado Pago</button>
+    <div style="text-align:center;margin-top:10px"><a href="#" onclick="mpCerrar();return false" style="font-size:12.5px;color:var(--gray)">Cancelar</a></div>
   </div>
 </div>
 
@@ -278,6 +305,7 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
 
     <div class="pay-divider">— o —</div>
     <button id="stripe-btn" class="stripe-btn" onclick="payWithStripe()">💳 Pagar con tarjeta (Stripe)</button>
+    <button id="mp-btn-tienda" class="mp-btn" style="display:none" onclick="mpAbrir(lastOrder.jugadorId,'pedido',lastOrder.pedidoId)">💳 Pagar con Mercado Pago (tarjeta o efectivo)</button>
   </div>
 </div>
 
@@ -678,7 +706,8 @@ async function confirmarPedido() {
       const waMsg = encodeURIComponent('Hola Viky, te envío el comprobante del pedido de Wolve Store de ' + o.jugadorNombre + ' por $' + o.total.toLocaleString() + '.');
       document.getElementById('success-whatsapp').href = 'https://wa.me/528713957332?text=' + waMsg;
       document.getElementById('success-pago-wrap').style.display = 'block';
-      lastOrder = { pedidoId: pedidoId, items: o.stripeItems, customer: { name: o.tutorNombre, phone: o.tutorTel, email: o.tutorEmail } };
+      mpMostrarBotonTienda();
+      lastOrder = { pedidoId: pedidoId, jugadorId: o.jugadorId, items: o.stripeItems, customer: { name: o.tutorNombre, phone: o.tutorTel, email: o.tutorEmail } };
     } else {
       document.getElementById('success-msg').innerHTML = 'Actualizamos los datos de uniforme de <b>' + o.jugadorNombre + '</b>. No hay nada pendiente de pago en este pedido.';
       document.getElementById('success-pago-wrap').style.display = 'none';
@@ -732,6 +761,157 @@ async function payWithStripe() {
 
 renderProducts();
 cargarStock();
+
+// ── PAGO EN LÍNEA (Mercado Pago) ──
+let MP_CFG = null, MP_SALDOS = [], MP_ACTUAL = null;
+const MP_PERIODO_LABEL = { agosto: 'Inscripción', septiembre: 'Pago 2', octubre: 'Pago 3', noviembre: 'Pago 4', diciembre: 'Pago 5' };
+const mpMoney = n => '$' + Number(n).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+function mpToken() { try { return localStorage.getItem(WOLVE_SESSION_KEY); } catch(e) { return null; } }
+
+async function mpConfig() {
+  if (MP_CFG !== null) return MP_CFG;
+  try {
+    const r = await fetch(PAYMENTS_API + '/mp/config', { method: 'POST' });
+    const c = await r.json();
+    MP_CFG = (r.ok && c.configurado) ? c : false;
+  } catch(e) { MP_CFG = false; }
+  return MP_CFG;
+}
+
+function mpCotizar(neto, meses) {
+  const iva = 1 + MP_CFG.iva / 100;
+  const extra = meses === 3 ? ((MP_CFG.msi || []).find(x => x.meses === 3) || { extra: 0 }).extra : 0;
+  const pct = (MP_CFG.pct + extra) / 100;
+  const total = Math.ceil(((neto + MP_CFG.fijo * iva) / (1 - pct * iva)) * 100) / 100;
+  return { total, comision: Math.round((total - neto) * 100) / 100 };
+}
+
+async function mpCargarOpciones() {
+  if (!(await mpConfig()) || !mpToken()) return;
+  try {
+    const { data, error } = await sb.rpc('public_mp_saldos', { p_token: mpToken() });
+    if (error) throw error;
+    MP_SALDOS = data || [];
+  } catch(e) { return; }
+  MP_SALDOS.forEach(s => {
+    const cuotas = (s.cuotas || []).filter(c => Number(c.saldo) > 0);
+    const caja = document.querySelector('.mp-box-jugador[data-jugador="' + s.jugador_id + '"]');
+    if (caja && cuotas.length) caja.innerHTML = '<button class="mp-btn" onclick="mpAbrir(\'' + s.jugador_id + '\',\'cuota\')">💳 Pagar en línea (Mercado Pago)</button>';
+    const cajaPed = document.querySelector('.mp-pedidos-jugador[data-jugador="' + s.jugador_id + '"]');
+    if (cajaPed && (s.pedidos || []).length) {
+      cajaPed.innerHTML = s.pedidos.map(p => '<button class="mp-btn" onclick="mpAbrir(\'' + s.jugador_id + '\',\'pedido\',\'' + p.pedido_id + '\')">💳 Pagar pedido pendiente ' + mpMoney(p.saldo) + '</button>').join('');
+    }
+  });
+}
+
+async function mpMostrarBotonTienda() {
+  const btn = document.getElementById('mp-btn-tienda');
+  if (btn && (await mpConfig()) && mpToken()) btn.style.display = 'block';
+}
+
+async function mpAbrir(jugadorId, tipo, pedidoId) {
+  if (!(await mpConfig())) return;
+  if (mpToken()) {
+    try { const { data } = await sb.rpc('public_mp_saldos', { p_token: mpToken() }); MP_SALDOS = data || []; } catch(e) {}
+  }
+  const s = MP_SALDOS.find(x => x.jugador_id === jugadorId);
+  if (!s) { alert('No pudimos cargar tu saldo. Vuelve a verificar tu correo.'); return; }
+  MP_ACTUAL = { jugadorId, tipo, pedidoId: pedidoId || null, saldo: 0, min: 0 };
+
+  const selMeses = document.getElementById('mp-meses');
+  selMeses.innerHTML = '<option value="1">De contado (tarjeta, efectivo o transferencia)</option>' +
+    ((MP_CFG.msi || []).map(o => '<option value="' + o.meses + '">' + o.meses + ' meses sin intereses (tarjeta de crédito)</option>').join(''));
+
+  const selPer = document.getElementById('mp-periodo');
+  if (tipo === 'cuota') {
+    document.getElementById('mp-titulo').textContent = 'Pagar mensualidad';
+    const abiertos = (s.cuotas || []).filter(c => Number(c.saldo) > 0);
+    selPer.innerHTML = abiertos.map(c => '<option value="' + c.periodo + '" data-saldo="' + c.saldo + '">' + MP_PERIODO_LABEL[c.periodo] + ' — saldo ' + mpMoney(c.saldo) + '</option>').join('');
+    document.getElementById('mp-campo-periodo').style.display = 'block';
+    document.getElementById('mp-campo-monto').style.display = 'block';
+    mpPeriodoCambio();
+  } else {
+    const ped = (s.pedidos || []).find(p => p.pedido_id === pedidoId);
+    const saldo = ped ? Number(ped.saldo) : 0;
+    if (!saldo) { alert('Este pedido ya está pagado.'); return; }
+    document.getElementById('mp-titulo').textContent = 'Pagar pedido de tienda';
+    document.getElementById('mp-campo-periodo').style.display = 'none';
+    document.getElementById('mp-campo-monto').style.display = 'none';
+    MP_ACTUAL.saldo = saldo; MP_ACTUAL.min = saldo;
+    document.getElementById('mp-monto').value = saldo;
+    document.getElementById('mp-sub').textContent = 'Total del pedido pendiente: ' + mpMoney(saldo);
+    mpActualizar();
+  }
+  document.getElementById('mp-modal').classList.add('open');
+}
+
+function mpPeriodoCambio() {
+  const opt = document.getElementById('mp-periodo').selectedOptions[0];
+  const saldo = opt ? Number(opt.dataset.saldo) : 0;
+  MP_ACTUAL.saldo = saldo; MP_ACTUAL.min = Math.min(MP_CFG.min, saldo);
+  document.getElementById('mp-monto').value = saldo;
+  document.getElementById('mp-sub').textContent = 'Puedes abonar desde ' + mpMoney(MP_ACTUAL.min) + ' hasta tu saldo de ' + mpMoney(saldo) + '.';
+  mpActualizar();
+}
+
+function mpMontoValido() {
+  const m = Math.round(Number(document.getElementById('mp-monto').value) * 100) / 100;
+  return (Number.isFinite(m) && m >= MP_ACTUAL.min && m <= MP_ACTUAL.saldo) ? m : null;
+}
+
+function mpActualizar() {
+  const caja = document.getElementById('mp-desglose'), btn = document.getElementById('mp-pagar');
+  const m = mpMontoValido();
+  if (m === null) {
+    caja.innerHTML = 'El monto debe estar entre ' + mpMoney(MP_ACTUAL.min) + ' y ' + mpMoney(MP_ACTUAL.saldo) + '.';
+    btn.disabled = true; return;
+  }
+  const meses = Number(document.getElementById('mp-meses').value);
+  const q = mpCotizar(m, meses);
+  caja.innerHTML = 'Abono a tu saldo: <b>' + mpMoney(m) + '</b><br>Comisión de Mercado Pago' + (meses > 1 ? ' (incluye meses sin intereses)' : '') + ': <b>' + mpMoney(q.comision) + '</b><br>Total a pagar: <b>' + mpMoney(q.total) + '</b>' +
+    (meses > 1 ? '<br><span style="color:var(--gray)">≈ ' + meses + ' pagos de ' + mpMoney(Math.round(q.total / meses * 100) / 100) + ' con tu tarjeta de crédito.</span>' : '');
+  btn.disabled = false;
+}
+
+function mpCerrar() { document.getElementById('mp-modal').classList.remove('open'); }
+
+async function mpPagar() {
+  const m = mpMontoValido();
+  if (m === null) return;
+  const btn = document.getElementById('mp-pagar');
+  const original = btn.textContent;
+  btn.disabled = true; btn.textContent = '⏳ Conectando con Mercado Pago...';
+  try {
+    const r = await fetch(PAYMENTS_API + '/mp/crear-pago', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        token: mpToken(), jugador_id: MP_ACTUAL.jugadorId, tipo: MP_ACTUAL.tipo,
+        periodo: MP_ACTUAL.tipo === 'cuota' ? document.getElementById('mp-periodo').value : null,
+        pedido_id: MP_ACTUAL.pedidoId, neto: MP_ACTUAL.tipo === 'cuota' ? m : null,
+        meses: Number(document.getElementById('mp-meses').value),
+      }),
+    });
+    const d = await r.json();
+    if (!r.ok || !d.init_point) throw new Error(d.error || 'No se pudo iniciar el pago.');
+    window.location.href = d.init_point;
+  } catch(e) {
+    alert('❌ ' + e.message);
+    btn.disabled = false; btn.textContent = original;
+  }
+}
+
+(function mpMostrarRetorno() {
+  const estado = new URLSearchParams(location.search).get('mp');
+  const msgs = {
+    ok:        ['#e3f4e8', '#1d7a3f', '✅ ¡Gracias! Mercado Pago confirmó tu pago. En unos minutos se refleja en "Consultar mis pagos".'],
+    pendiente: ['#FDEEDC', '#b56a10', '⏳ Tu pago quedó pendiente de confirmación (por ejemplo, pago en efectivo). Cuando Mercado Pago lo confirme se reflejará en tu cuenta.'],
+    error:     ['#FCEBEB', '#A32D2D', '❌ El pago no se completó. Si no ves un cargo, puedes intentarlo de nuevo desde "Consultar mis pagos".'],
+  };
+  const el = document.getElementById('mp-banner');
+  if (!el || !msgs[estado]) return;
+  el.style.display = 'block'; el.style.background = msgs[estado][0]; el.style.color = msgs[estado][1]; el.textContent = msgs[estado][2];
+  history.replaceState(null, '', location.pathname);
+})();
 
 // ── HUB TABS ──
 let jugadoresActuales = [];
@@ -965,14 +1145,17 @@ async function renderResumenPagos(jugadoresData) {
       </div>
       <div class="section-label">Mensualidades</div>
       <div class="pagos-mes-grid">${mesesHtml}</div>
+      <div class="mp-box-jugador" data-jugador="${j.id}"></div>
       ${uniHtml ? '<div class="section-label">Uniforme</div>' + uniHtml : ''}
       ${pedidosHtml ? '<div class="section-label">Pedidos de tienda</div>' + pedidosHtml : ''}
+      <div class="mp-pedidos-jugador" data-jugador="${j.id}"></div>
     </div>`;
   }).join('');
 
   cont.innerHTML = tarjetasHtml +
     `<a href="https://wa.me/528713957332?text=${encodeURIComponent('Hola, tengo una duda sobre mi cuenta de Wolve Hub.')}" target="_blank" class="wa-btn" style="display:block;text-align:center;margin-top:8px">📲 Escribir a Wolverines por WhatsApp</a>` +
     `<div class="hub-logout" onclick="reiniciarConsultaPagos()">Cerrar sesión / usar otro correo</div>`;
+  mpCargarOpciones();
 }
 
 // ── ROL DE JUEGOS (solo los partidos de la familia, en orden cronológico) ──
