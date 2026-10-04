@@ -579,6 +579,17 @@ table.lt td{padding:12px 14px;font-size:13px;color:var(--text);border-top:1px so
           <button class="btn-action btn-ghost" onclick="guardarJornada('playmkr')">💾 Guardar</button>
           <button class="btn-action" onclick="sincronizarJuegosAhora(this)">🔄 Sincronizar ahora</button>
         </div>
+        <div class="controls" style="padding:0 24px 16px;flex-wrap:wrap;gap:10px;border-top:1px solid #eef0f5;padding-top:14px">
+          <label style="font-size:12.5px;font-weight:700;color:var(--gray);display:flex;align-items:center;gap:6px">Posponer jornada completa:
+            <select class="search-box" id="posponer-liga" style="max-width:190px" onchange="prefillFechaPosponer()">
+              <option value="Sábado">LTL Kids (sábado)</option>
+              <option value="Viernes">PlayMKR (viernes)</option>
+            </select>
+          </label>
+          <input class="search-box" type="date" id="posponer-fecha" style="max-width:160px">
+          <button class="btn-action" style="background:#b45309" onclick="posponerJornadaCompleta(this)">🌧️ Posponer jornada completa</button>
+          <span style="font-size:12px;color:var(--gray)">Lluvia o fuerza mayor: marca todos los juegos de esa fecha como pospuestos (sin hora ni campo). El sync no los reactiva.</span>
+        </div>
         <div id="jornada-ultimo-sync" style="padding:0 24px 16px;font-size:12.5px;color:var(--gray)"></div>
       </div>
 
@@ -886,7 +897,7 @@ function switchTab(tab) {
   if (tab === 'coaches') renderCoaches();
   if (tab === 'avisos') { renderStaffAvisos(); document.getElementById('aviso-preview').innerHTML = ''; }
   if (tab === 'rosters') renderRosters();
-  if (tab === 'juegos') { llenarSelectRosterJuego(); renderJuegos(); cargarJornadaLtlKids(); }
+  if (tab === 'juegos') { llenarSelectRosterJuego(); renderJuegos(); cargarJornadaLtlKids(); if (!document.getElementById('posponer-fecha').value) prefillFechaPosponer(); }
   if (tab === 'esquemas') renderEsquemas();
 }
 
@@ -2878,6 +2889,44 @@ async function sincronizarJuegosAhora(btn) {
     alert('❌ Error: ' + e.message);
   } finally {
     btn.disabled = false; btn.textContent = '🔄 Sincronizar ahora';
+  }
+}
+
+function prefillFechaPosponer() {
+  var objetivo = document.getElementById('posponer-liga').value === 'Viernes' ? 5 : 6;
+  var d = new Date();
+  d.setDate(d.getDate() + ((objetivo - d.getDay() + 7) % 7));
+  var mm = String(d.getMonth() + 1).padStart(2, '0'), dd = String(d.getDate()).padStart(2, '0');
+  document.getElementById('posponer-fecha').value = d.getFullYear() + '-' + mm + '-' + dd;
+}
+
+async function posponerJornadaCompleta(btn) {
+  var dia = document.getElementById('posponer-liga').value;
+  var fecha = document.getElementById('posponer-fecha').value;
+  if (!fecha) { alert('Elige la fecha de la jornada.'); return; }
+  var afectados = juegosRecords.filter(function(j) { return j.fecha === fecha && j.dia === dia && !j.pospuesto && !j.archivado; });
+  if (!afectados.length) { alert('No hay juegos activos de ' + dia + ' el ' + fecha + '.'); return; }
+  if (!confirm('¿Posponer los ' + afectados.length + ' juegos del ' + dia + ' ' + fecha + '?\n\nQuedarán como "pospuesto" sin hora ni campo.')) return;
+  btn.disabled = true; btn.textContent = '⏳ Posponiendo...';
+  var hechos = 0;
+  try {
+    for (var i = 0; i < afectados.length; i++) {
+      var j = afectados[i];
+      var { error } = await sb.rpc('admin_update_juego', {
+        p_pwd: PWD, p_id: j.id, p_dia: j.dia, p_liga: j.liga, p_categoria: j.categoria, p_partido: j.partido,
+        p_hora: null, p_campo: null, p_sede: j.sede, p_pospuesto: true, p_fecha: j.fecha, p_roster_id: j.roster_id
+      });
+      if (error) throw error;
+      j.pospuesto = true; j.hora = null; j.campo = null;
+      hechos++;
+    }
+    renderJuegos();
+    alert('✅ ' + hechos + ' juegos marcados como pospuestos.');
+  } catch(e) {
+    renderJuegos();
+    alert('❌ Error tras ' + hechos + ' juegos: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '🌧️ Posponer jornada completa';
   }
 }
 
