@@ -206,7 +206,7 @@ nav{background:#0d1f3c;border-bottom:2px solid var(--blue);padding:0 24px;height
 const SUPABASE_URL = 'https://xaawoqyjavqcybafirri.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhYXdvcXlqYXZxY3liYWZpcnJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1Mzg4MjcsImV4cCI6MjEwMTExNDgyN30.TdLuimBVQIILaaW0UtZDHDSoDpDomwmL6RbG-K-GDZ0';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-const PWD      = 'Wolverines2026';
+let PWD = '';
 
 const CONDICIONES = [
   { key: 'asma', label: '¿Padece asma?', detalle: '¿Usa inhalador? ¿Lo traerá a entrenamientos y juegos?' },
@@ -236,16 +236,30 @@ function selectTipoSeguro(val, el) {
 }
 
 // ── AUTH ──
-function login() {
-  if (document.getElementById('pwd').value === PWD) {
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('main').style.display = 'block';
-    loadData();
+const PWD_KEY = 'wolverines_admin_pwd';
+async function verifyPwd(p) {
+  const { error } = await sb.rpc('check_admin_pwd', { p_pwd: p });
+  return !error;
+}
+function savePwd(p) { try { sessionStorage.setItem(PWD_KEY, p); } catch (e) {} }
+function clearPwd() { try { sessionStorage.removeItem(PWD_KEY); } catch (e) {} }
+function savedPwd() { try { return sessionStorage.getItem(PWD_KEY) || ''; } catch (e) { return ''; } }
+function showMain() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('main').style.display = 'block';
+  loadData();
+}
+async function login() {
+  const p = document.getElementById('pwd').value;
+  if (p && await verifyPwd(p)) {
+    PWD = p; savePwd(p); showMain();
   } else {
     document.getElementById('login-err').style.display = 'block';
   }
 }
+(async () => { const p = savedPwd(); if (p && await verifyPwd(p)) { PWD = p; showMain(); } else { clearPwd(); } })();
 function logout() {
+  PWD = ''; clearPwd();
   document.getElementById('main').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('pwd').value = '';
