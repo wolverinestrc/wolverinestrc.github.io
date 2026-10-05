@@ -292,6 +292,7 @@ table.lt td{padding:12px 14px;font-size:13px;color:var(--text);border-top:1px so
       <button class="tab-btn" id="tb-avisos" onclick="switchTab('avisos')">📢 Avisos</button>
       <button class="tab-btn" id="tb-rosters" onclick="switchTab('rosters')">🗂️ Rosters</button>
       <button class="tab-btn" id="tb-juegos" onclick="switchTab('juegos')">🏈 Juegos</button>
+      <button class="tab-btn" id="tb-bajas" onclick="switchTab('bajas')">🚪 Bajas</button>
       <button class="tab-btn" id="tb-esquemas" onclick="switchTab('esquemas')">📋 Esquemas</button>
     </div>
 
@@ -387,6 +388,19 @@ table.lt td{padding:12px 14px;font-size:13px;color:var(--text);border-top:1px so
           </div>
         </div>
         <div id="morosos-content"></div>
+      </div>
+    </div>
+
+    <!-- BAJAS -->
+    <div class="morosos-section" id="section-bajas">
+      <div class="content-card">
+        <div class="mor-header">
+          <div>
+            <div class="mor-title">Bajas de la temporada</div>
+            <div class="mor-sub">Jugadoras/es dados de baja: conservan todos sus datos e historial, pero ya no cuentan en listas, atrasos, rosters ni cobranza, y su acceso a WeHunt está cerrado. Puedes reactivarlos.</div>
+          </div>
+        </div>
+        <div id="bajas-content"></div>
       </div>
     </div>
 
@@ -688,12 +702,14 @@ const MOMS_CATEGORIA = 'Moms +30';
 const MOMS_COSTO_TEMPORADA = 390;
 function esMoms(f) { return f['Categoría'] === MOMS_CATEGORIA; }
 function mesesAplicables(f) { return esMoms(f) ? ['Agosto'] : MESES; }
-// El descuento (beca o hermano) solo aplica a mensualidades (Septiembre en adelante), no a la Inscripción de Agosto.
+// El descuento (beca o hermano) aplica a mensualidades (Septiembre en adelante); la Inscripción de Agosto solo se descuenta si el código trae monto_inscripcion (ej. FAMILIA).
 function montoMensualidad(f, mes) {
   if (esMoms(f)) return mes === 'Agosto' ? MOMS_COSTO_TEMPORADA : 0;
+  if (mes === 'Agosto' && f['Descuento'] && f['Descuento'].monto_inscripcion != null) return Number(f['Descuento'].monto_inscripcion);
   if (mes !== 'Agosto' && f['Descuento']) return Number(f['Descuento'].monto_mensualidad);
   return PAGOS_INFO[mes].monto;
 }
+function debeMes(f, mes) { return esDeuda(f['Pago ' + mes]) && deudaRestante(f, mes) > 0; }
 function deudaRestante(f, mes) {
   var estado = f['Pago ' + mes] || 'Pendiente';
   if (estado === 'Pagado' || estado === 'Exento') return 0;
@@ -712,6 +728,7 @@ function mapJugadorFromSupabase(j) {
     'Número Jugador': j.numero_jugador,
     'Descuento Codigo Id': j.descuento_codigo_id || null, 'Descuento': j.descuento || null,
     'Id Jugadora': j.id_jugadora || null, 'Cuenta Creada': !!j.cuenta_creada,
+    'Baja': !!j.baja, 'Baja Fecha': j.baja_fecha || null, 'Baja Motivo': j.baja_motivo || null,
   };
   (j.pagos || []).forEach(function(p) {
     var mesCap = p.periodo.charAt(0).toUpperCase() + p.periodo.slice(1);
@@ -766,6 +783,7 @@ let rostersRecords = [];
 let rosterMiembrosRecords = [];
 let rosterCoachesRecords = [];
 let juegosRecords = [];
+let bajasRecords = [];
 let descuentoCodigosRecords = [];
 let esquemasRecords = [];
 let currentId    = null;
@@ -810,7 +828,9 @@ async function loadData() {
   try {
     const { data: jugData, error: jugErr } = await sb.rpc('admin_list_jugadores', { p_pwd: PWD });
     if (jugErr) throw jugErr;
-    allRecords = (jugData || []).map(mapJugadorFromSupabase);
+    var todosJug = (jugData || []).map(mapJugadorFromSupabase);
+    allRecords = todosJug.filter(function(r) { return !r.fields['Baja']; });
+    bajasRecords = todosJug.filter(function(r) { return r.fields['Baja']; });
 
     const { data: pedidosData, error: pedidosErr } = await sb.rpc('admin_list_pedidos_tienda', { p_pwd: PWD });
     if (pedidosErr) throw pedidosErr;
@@ -882,13 +902,13 @@ function tieneAtraso(rec) {
   const mesesVencidos = getMesesVencidos();
   const aplicables = mesesAplicables(rec.fields);
   return mesesVencidos.some(function(m) {
-    return aplicables.indexOf(m) !== -1 && esDeuda(rec.fields['Pago ' + m]);
+    return aplicables.indexOf(m) !== -1 && debeMes(rec.fields, m);
   });
 }
 
 // ── TABS ──
 function switchTab(tab) {
-  ['jugadores','pagos','morosos','uniformes','tienda','coaches','avisos','rosters','juegos','esquemas'].forEach(function(t) {
+  ['jugadores','pagos','morosos','uniformes','tienda','coaches','avisos','rosters','juegos','bajas','esquemas'].forEach(function(t) {
     var btn = document.getElementById('tb-' + t);
     if (btn) btn.classList.remove('active');
     var sec = document.getElementById('section-' + t);
@@ -907,6 +927,7 @@ function switchTab(tab) {
   if (tab === 'avisos') { renderStaffAvisos(); document.getElementById('aviso-preview').innerHTML = ''; }
   if (tab === 'rosters') renderRosters();
   if (tab === 'juegos') { llenarSelectRosterJuego(); renderJuegos(); cargarJornadaLtlKids(); if (!document.getElementById('posponer-fecha').value) prefillFechaPosponer(); }
+  if (tab === 'bajas') renderBajas();
   if (tab === 'esquemas') renderEsquemas();
 }
 
@@ -1190,7 +1211,7 @@ function renderPagos() {
     var info = PAGOS_INFO[mes];
     var pagadosRecs = allRecords.filter(function(r) { return r.fields['Pago ' + mes] === 'Pagado'; });
     var pagados  = pagadosRecs.length;
-    var pendientes = allRecords.filter(function(r) { return esDeuda(r.fields['Pago ' + mes]); }).length;
+    var pendientes = allRecords.filter(function(r) { return debeMes(r.fields, mes); }).length;
     var total = pagadosRecs.reduce(function(sum, r) { return sum + montoMensualidad(r.fields, mes); }, 0);
     ingresos += total;
     html += '<div class="mes-card">' +
@@ -1324,7 +1345,7 @@ function renderMorosos() {
   var morosos = allRecords.filter(function(r) {
     var aplicables = mesesAplicables(r.fields);
     return mesesVencidos.some(function(m) {
-      return aplicables.indexOf(m) !== -1 && esDeuda(r.fields['Pago ' + m]);
+      return aplicables.indexOf(m) !== -1 && debeMes(r.fields, m);
     });
   });
 
@@ -1343,7 +1364,7 @@ function renderMorosos() {
   morosos.forEach(function(rec) {
     var f = rec.fields;
     var aplicables = mesesAplicables(f);
-    var mesesPend = mesesVencidos.filter(function(m) { return aplicables.indexOf(m) !== -1 && esDeuda(f['Pago ' + m]); });
+    var mesesPend = mesesVencidos.filter(function(m) { return aplicables.indexOf(m) !== -1 && debeMes(f, m); });
     var deuda = mesesPend.reduce(function(sum, m) { return sum + deudaRestante(f, m); }, 0);
     totalDeuda += deuda;
 
@@ -1367,6 +1388,67 @@ function renderMorosos() {
   container.innerHTML = '<div class="lt-wrap"><table class="lt">' + thead + tbody + '</table></div>' +
     '<div class="lt-summary"><span>' + morosos.length + ' jugador' + (morosos.length !== 1 ? 'es' : '') + ' con atrasos</span>' +
     '<span style="color:var(--red);font-weight:700">Deuda total: $' + totalDeuda.toLocaleString() + ' MXN</span></div>';
+}
+
+// ── BAJAS ──
+async function darDeBaja(id) {
+  var rec = allRecords.find(function(r) { return r.id === id; });
+  if (!rec) return;
+  var nombre = ((rec.fields['Nombre'] || '') + ' ' + (rec.fields['Apellidos'] || '')).trim();
+  var motivo = prompt('Dar de baja a ' + nombre + '.\n\nSe conservan todos sus datos. Se quita de rosters y atrasos, y se cierra su acceso a WeHunt. Puedes reactivarla después.\n\nMotivo (opcional):', '');
+  if (motivo === null) return;
+  try {
+    var { error } = await sb.rpc('admin_dar_baja_jugador', { p_pwd: PWD, p_id: id, p_motivo: motivo });
+    if (error) throw error;
+    rec.fields['Baja'] = true;
+    rec.fields['Baja Fecha'] = new Date().toISOString().slice(0, 10);
+    rec.fields['Baja Motivo'] = motivo.trim() || null;
+    allRecords = allRecords.filter(function(r) { return r.id !== id; });
+    bajasRecords.push(rec);
+    closeModal('detail-modal');
+    updateStats();
+    renderTable();
+    alert('✅ ' + nombre + ' quedó dada de baja. Sus datos están en la pestaña "Bajas".');
+  } catch(e) { alert('❌ Error: ' + e.message); }
+}
+
+async function reactivarJugador(id) {
+  var rec = bajasRecords.find(function(r) { return r.id === id; });
+  if (!rec) return;
+  var nombre = ((rec.fields['Nombre'] || '') + ' ' + (rec.fields['Apellidos'] || '')).trim();
+  if (!confirm('¿Reactivar a ' + nombre + '?\n\nRegresa a sus rosters y recupera su acceso a WeHunt.')) return;
+  try {
+    var { error } = await sb.rpc('admin_reactivar_jugador', { p_pwd: PWD, p_id: id });
+    if (error) throw error;
+    rec.fields['Baja'] = false; rec.fields['Baja Fecha'] = null; rec.fields['Baja Motivo'] = null;
+    bajasRecords = bajasRecords.filter(function(r) { return r.id !== id; });
+    allRecords.push(rec);
+    updateStats();
+    renderTable();
+    renderBajas();
+  } catch(e) { alert('❌ Error: ' + e.message); }
+}
+
+function renderBajas() {
+  var cont = document.getElementById('bajas-content');
+  if (!bajasRecords.length) { cont.innerHTML = '<div class="empty">No hay bajas registradas.</div>'; return; }
+  var vencidos = getMesesVencidos();
+  var tbody = bajasRecords.slice().sort(function(a, b) { return String(b.fields['Baja Fecha'] || '').localeCompare(String(a.fields['Baja Fecha'] || '')); }).map(function(rec) {
+    var f = rec.fields;
+    var aplicables = mesesAplicables(f);
+    var deuda = vencidos.filter(function(m) { return aplicables.indexOf(m) !== -1 && debeMes(f, m); }).reduce(function(sum, m) { return sum + deudaRestante(f, m); }, 0);
+    return '<tr>' +
+      '<td style="font-weight:700">' + (f['Nombre'] || '') + ' ' + (f['Apellidos'] || '') + '</td>' +
+      '<td style="color:var(--gray)">' + (f['Categoría'] || '—') + '</td>' +
+      '<td style="color:var(--gray)">' + (f['Tutor'] || '—') + ' · ' + (f['Teléfono'] || '—') + '</td>' +
+      '<td>' + (f['Baja Fecha'] || '—') + '</td>' +
+      '<td style="color:var(--gray)">' + (f['Baja Motivo'] || '—') + '</td>' +
+      '<td style="text-align:right;color:' + (deuda > 0 ? 'var(--red)' : 'var(--gray)') + ';font-weight:700">' + (deuda > 0 ? '$' + deuda.toLocaleString() : '—') + '</td>' +
+      '<td style="text-align:center"><button class="btn-action btn-ghost" style="padding:7px 12px;font-size:12px" onclick="reactivarJugador(\'' + rec.id + '\')">↩️ Reactivar</button></td>' +
+      '</tr>';
+  }).join('');
+  cont.innerHTML = '<div class="lt-wrap"><table class="lt"><thead><tr><th>Jugador</th><th>Categoría</th><th>Tutor</th><th>Fecha de baja</th><th>Motivo</th><th style="text-align:right">Adeudo registrado</th><th></th></tr></thead><tbody>' + tbody + '</tbody></table></div>' +
+    '<div class="lt-summary"><span>' + bajasRecords.length + ' baja' + (bajasRecords.length !== 1 ? 's' : '') + '</span><span style="color:var(--gray)">El adeudo es solo informativo: no cuenta en atrasos ni cobranza.</span></div>';
 }
 
 // ── COBRANZA POR WHATSAPP (un mensaje por tutor, con link de pago de Mercado Pago) ──
@@ -1401,7 +1483,7 @@ async function cobrarWhatsApp(id, btn) {
 
   var vencidos = getMesesVencidos();
   var aplicables = mesesAplicables(f);
-  var pend = vencidos.filter(function(m) { return aplicables.indexOf(m) !== -1 && esDeuda(f['Pago ' + m]) && deudaRestante(f, m) > 0; });
+  var pend = vencidos.filter(function(m) { return aplicables.indexOf(m) !== -1 && debeMes(f, m) && deudaRestante(f, m) > 0; });
   if (!pend.length) { alert('✅ Este jugador ya no tiene saldo vencido.'); return; }
   var deuda = pend.reduce(function(sum, m) { return sum + deudaRestante(f, m); }, 0);
 
@@ -1450,7 +1532,7 @@ function notificarAtrasos() {
   var morosos = allRecords.filter(function(r) {
     var aplicables = mesesAplicables(r.fields);
     return mesesVencidos.some(function(m) {
-      return aplicables.indexOf(m) !== -1 && esDeuda(r.fields['Pago ' + m]);
+      return aplicables.indexOf(m) !== -1 && debeMes(r.fields, m);
     });
   });
 
@@ -1459,7 +1541,7 @@ function notificarAtrasos() {
   var lista = morosos.map(function(r) {
     var f = r.fields;
     var aplicables = mesesAplicables(f);
-    var pend = mesesVencidos.filter(function(m) { return aplicables.indexOf(m) !== -1 && esDeuda(f['Pago ' + m]); });
+    var pend = mesesVencidos.filter(function(m) { return aplicables.indexOf(m) !== -1 && debeMes(f, m); });
     var deuda = pend.reduce(function(s, m) { return s + deudaRestante(f, m); }, 0);
     var pendLabels = pend.map(function(m) { return PAGOS_INFO[m].label; });
     return '%E2%80%A2 ' + (f['Nombre']||'') + ' ' + (f['Apellidos']||'') + ' (' + pendLabels.join(', ') + ') - $' + deuda.toLocaleString();
@@ -1613,7 +1695,8 @@ function openDetail(id) {
         pedidosTiendaHtml +
       '</div>' +
     '</div>' +
-    '<button class="save-btn" style="max-width:1280px;margin:24px auto 0" onclick="saveDetail()">💾 Guardar cambios</button>';
+    '<button class="save-btn" style="max-width:1280px;margin:24px auto 0" onclick="saveDetail()">💾 Guardar cambios</button>' +
+    '<button class="btn-action btn-red" style="display:block;margin:12px auto 0;max-width:1280px;width:100%" onclick="darDeBaja(\'' + rec.id + '\')">🚪 Dar de baja de la temporada</button>';
 
   document.getElementById('detail-modal').classList.add('open');
 }
@@ -2650,7 +2733,7 @@ function exportPagosPendientes() {
   var rows = [];
   allRecords.forEach(function(rec) {
     var f = rec.fields;
-    var pend = mesesVencidos.filter(function(m) { return esDeuda(f['Pago ' + m]); });
+    var pend = mesesVencidos.filter(function(m) { return debeMes(f, m); });
     if (!pend.length) return;
     var deuda = pend.reduce(function(s, m) { return s + deudaRestante(f, m); }, 0);
     rows.push({
