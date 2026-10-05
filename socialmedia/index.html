@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Social Media – Wolverines TRC</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="apple-touch-icon" href="/icons/wolvehub-180.png">
+<meta name="theme-color" content="#101f3d">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#f1f4f9;--card:#fff;--border:#e5e9f2;--navy:#101f3d;--gold:#FFCB05;--blue:#2563eb;--blue-dk:#1d4ed8;--blue-lt:#eaf1ff;--text:#182338;--gray:#67728c;--gray-lt:#a4adc2;--green:#16a34a;--green-lt:#e8f7ee;--red:#e11d48;--shadow:0 1px 2px rgba(16,31,61,.04),0 1px 6px rgba(16,31,61,.05)}
+body{background:var(--bg);font-family:'Montserrat',sans-serif;color:var(--text);min-height:100vh}
+header{background:var(--navy);padding:16px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:5}
+header img{width:40px;height:40px;border-radius:50%;background:#fff;object-fit:contain;padding:4px}
+header h1{font-size:16px;font-weight:800;color:#fff}
+header p{font-size:11.5px;color:#8ea0c4}
+header .sp{flex:1}
+.link-btn{background:none;border:none;color:#8ea0c4;font:600 12px 'Montserrat',sans-serif;cursor:pointer}
+.wrap{max-width:760px;margin:0 auto;padding:18px 16px 90px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:18px}
+.center{max-width:400px;margin:60px auto 0}
+.center h2{font-size:18px;font-weight:800;margin-bottom:4px}.center .sub{font-size:12.5px;color:var(--gray);margin-bottom:16px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:11px;font-weight:700;letter-spacing:.3px;color:var(--gray);text-transform:uppercase;margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;border:1.5px solid var(--border);border-radius:9px;padding:10px 12px;font:500 14px 'Montserrat',sans-serif;color:var(--text);background:#fff;outline:none}
+.field textarea{min-height:110px;resize:vertical;line-height:1.45}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--blue)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{background:var(--blue);border:none;color:#fff;font:800 13.5px 'Montserrat',sans-serif;padding:13px 16px;border-radius:11px;cursor:pointer}
+.btn:hover{background:var(--blue-dk)}.btn:disabled{background:var(--gray-lt);cursor:not-allowed}
+.btn.full{width:100%}
+.btn.ghost{background:var(--card);color:var(--text);border:1.5px solid var(--border)}
+.btn.ghost:hover{background:var(--bg)}
+.btn.danger{background:#fff;color:var(--red);border:1.5px solid #fbd0d9}
+.btn.sm{padding:8px 12px;font-size:12px;border-radius:9px}
+.msg{font-size:12.5px;margin-top:10px;color:var(--red);font-weight:600}
+.weekbar{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.weekbar .t{flex:1;text-align:center;font-weight:800;font-size:14px}
+.weekbar .t small{display:block;font-weight:600;font-size:11px;color:var(--gray)}
+.nav{background:var(--card);border:1.5px solid var(--border);border-radius:10px;width:40px;height:40px;font-size:18px;cursor:pointer}
+.progress{margin-bottom:12px}
+.progress .bar{height:10px;border-radius:99px;background:#dfe5f2;overflow:hidden}
+.progress .bar i{display:block;height:100%;background:var(--green);width:0;transition:width .3s}
+.progress .lbl{display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:var(--gray);margin-top:6px}
+.tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.tab{border:1.5px solid var(--border);background:var(--card);border-radius:99px;padding:7px 14px;font:700 12px 'Montserrat',sans-serif;cursor:pointer;color:var(--gray)}
+.tab.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.day{margin-bottom:18px}
+.day h3{font-size:12px;font-weight:800;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin:0 2px 8px}
+.day h3.today{color:var(--blue-dk)}
+.post{background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);margin-bottom:10px;overflow:hidden}
+.post.done{background:var(--green-lt);border-color:#bde6cc}
+.post-head{display:flex;gap:12px;padding:14px;align-items:flex-start}
+.chk{width:30px;height:30px;border-radius:9px;border:2px solid var(--gray-lt);background:#fff;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;margin-top:1px}
+.post.done .chk{background:var(--green);border-color:var(--green)}
+.post-main{flex:1;min-width:0;cursor:pointer}
+.post-title{font-size:14px;font-weight:800;line-height:1.3}
+.post.done .post-title{text-decoration:line-through;color:var(--gray)}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.tag{font-size:10.5px;font-weight:800;border-radius:6px;padding:3px 7px;background:var(--blue-lt);color:var(--blue-dk);text-transform:uppercase}
+.tag.ig{background:#fde8f3;color:#b0206f}.tag.fb{background:#e6efff;color:#1d4ed8}.tag.fmt{background:#f1f4f9;color:var(--gray)}
+.post-body{display:none;padding:0 14px 14px;border-top:1px solid var(--border)}
+.post.open .post-body{display:block}
+.blk{margin-top:12px}.blk b{display:block;font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}
+.blk pre{white-space:pre-wrap;word-wrap:break-word;font:500 13px/1.5 'Montserrat',sans-serif;background:var(--bg);border-radius:9px;padding:10px 12px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.done-info{font-size:11.5px;color:var(--green);font-weight:700;margin-top:8px}
+.empty{text-align:center;color:var(--gray);padding:40px 10px;font-size:13.5px}
+.fab{position:fixed;right:18px;bottom:20px;background:var(--gold);color:var(--navy);border:none;border-radius:99px;padding:15px 20px;font:900 14px 'Montserrat',sans-serif;box-shadow:0 4px 16px rgba(16,31,61,.25);cursor:pointer;z-index:6}
+.modal{position:fixed;inset:0;background:rgba(16,31,61,.55);display:none;align-items:flex-end;justify-content:center;z-index:10}
+.modal.on{display:flex}
+.sheet{background:var(--card);width:100%;max-width:560px;max-height:92vh;overflow-y:auto;border-radius:18px 18px 0 0;padding:20px}
+.sheet h2{font-size:16px;font-weight:800;margin-bottom:14px}
+.checks{display:flex;gap:16px;font-size:13.5px;font-weight:600}
+.checks label{display:flex;align-items:center;gap:6px;text-transform:none;letter-spacing:0;color:var(--text);font-size:13.5px;margin:0}
+.checks input{width:auto}
+.toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s;z-index:20}
+.toast.on{opacity:1}
+.hidden{display:none!important}
+@media(min-width:600px){.modal{align-items:center}.sheet{border-radius:18px}}
+</style>
+</head>
+<body>
+<header>
+  <img src="/IMG_0019_transparent.png" alt="Wolverines">
+  <div><h1>Social Media</h1><p>Instagram y Facebook · Wolverines TRC</p></div>
+  <div class="sp"></div>
+  <button class="link-btn hidden" id="btn-salir">Salir</button>
+</header>
+
+<div class="wrap">
+  <section id="v-login" class="card center">
+    <h2>Entrar al panel</h2>
+    <p class="sub">Acceso solo para el equipo de redes sociales.</p>
+    <div class="field"><label>Correo</label><input id="l-email" type="email" autocomplete="username" inputmode="email"></div>
+    <div class="field"><label>Contraseña</label><input id="l-pass" type="password" autocomplete="current-password"></div>
+    <button class="btn full" id="btn-login">Entrar</button>
+    <div class="msg" id="l-msg"></div>
+  </section>
+
+  <section id="v-noacc" class="card center hidden">
+    <h2>Sin acceso</h2>
+    <p class="sub">Tu cuenta no está autorizada para este panel. Pide al administrador que te agregue.</p>
+    <button class="btn ghost full" id="btn-salir2">Cerrar sesión</button>
+  </section>
+
+  <section id="v-app" class="hidden">
+    <div class="weekbar">
+      <button class="nav" id="prev" aria-label="Semana anterior">‹</button>
+      <div class="t" id="week-title"></div>
+      <button class="nav" id="next" aria-label="Semana siguiente">›</button>
+    </div>
+    <div class="progress"><div class="bar"><i id="pbar"></i></div><div class="lbl"><span id="ptxt"></span><button class="link-btn" id="hoy" style="color:var(--blue-dk)">Ir a esta semana</button></div></div>
+    <div class="tabs">
+      <button class="tab on" data-f="todas">Todas</button>
+      <button class="tab" data-f="pend">Pendientes</button>
+      <button class="tab" data-f="pub">Publicadas</button>
+    </div>
+    <div id="list"></div>
+  </section>
+</div>
+
+<button class="fab hidden" id="fab">+ Nueva publicación</button>
+
+<div class="modal" id="modal">
+  <div class="sheet">
+    <h2 id="m-title">Nueva publicación</h2>
+    <div class="field"><label>Título / tema</label><input id="f-titulo" maxlength="120"></div>
+    <div class="row2">
+      <div class="field"><label>Fecha de publicación</label><input id="f-fecha" type="date"></div>
+      <div class="field"><label>Formato</label>
+        <select id="f-formato"><option value="post">Post</option><option value="carrusel">Carrusel</option><option value="reel">Reel</option><option value="historia">Historia</option></select></div>
+    </div>
+    <div class="field"><label>Plataformas</label>
+      <div class="checks"><label><input type="checkbox" id="f-ig" checked> Instagram</label><label><input type="checkbox" id="f-fb" checked> Facebook</label></div></div>
+    <div class="field"><label>Texto de la publicación</label><textarea id="f-texto"></textarea></div>
+    <div class="field"><label>Hashtags</label><input id="f-hashtags" placeholder="#WolverinesTRC #FamiliaWolverines"></div>
+    <div class="field"><label>Material necesario (fotos / video)</label><input id="f-material"></div>
+    <div class="field"><label>Notas</label><input id="f-notas"></div>
+    <div class="actions">
+      <button class="btn" id="m-save">Guardar</button>
+      <button class="btn ghost" id="m-cancel">Cancelar</button>
+    </div>
+    <div class="msg" id="m-msg"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://xaawoqyjavqcybafirri.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhYXdvcXlqYXZxY3liYWZpcnJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1Mzg4MjcsImV4cCI6MjEwMTExNDgyN30.TdLuimBVQIILaaW0UtZDHDSoDpDomwmL6RbG-K-GDZ0';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { storageKey: 'wolverines-social-auth' } });
+
+const $ = id => document.getElementById(id);
+const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const FMT = { post:'Post', carrusel:'Carrusel', reel:'Reel', historia:'Historia' };
+let user = null, me = { nombre: '' }, posts = [], filtro = 'todas', editId = null;
+
+const pad = n => String(n).padStart(2,'0');
+const iso = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const parse = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); };
+function mondayOf(d){ const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); const w = (x.getDay()+6)%7; x.setDate(x.getDate()-w); return x; }
+let weekStart = mondayOf(new Date());
+const addDays = (d,n) => { const x = new Date(d); x.setDate(x.getDate()+n); return x; };
+
+function toast(t){ const el=$('toast'); el.textContent=t; el.classList.add('on'); setTimeout(()=>el.classList.remove('on'),1800); }
+function show(id){ ['v-login','v-noacc','v-app'].forEach(v=>$(v).classList.toggle('hidden', v!==id)); $('fab').classList.toggle('hidden', id!=='v-app'); $('btn-salir').classList.toggle('hidden', id==='v-login'); }
+function el(tag, cls, text){ const e=document.createElement(tag); if(cls) e.className=cls; if(text!=null) e.textContent=text; return e; }
+
+async function init(){
+  const { data:{ session } } = await sb.auth.getSession();
+  if (session) await enter(session.user); else show('v-login');
+}
+async function enter(u){
+  user = u;
+  const { data, error } = await sb.from('social_access').select('nombre').eq('user_id', u.id).maybeSingle();
+  if (error || !data){ show('v-noacc'); return; }
+  me = data; show('v-app'); await load();
+}
+async function login(){
+  $('l-msg').textContent = ''; $('btn-login').disabled = true;
+  const { data, error } = await sb.auth.signInWithPassword({ email: $('l-email').value.trim(), password: $('l-pass').value });
+  $('btn-login').disabled = false;
+  if (error){ $('l-msg').textContent = 'Correo o contraseña incorrectos.'; return; }
+  await enter(data.user);
+}
+async function logout(){ await sb.auth.signOut(); user=null; posts=[]; $('l-pass').value=''; show('v-login'); }
+
+async function load(){
+  const a = iso(weekStart), b = iso(addDays(weekStart,6));
+  const { data, error } = await sb.from('social_posts').select('*').gte('fecha',a).lte('fecha',b).order('fecha').order('created_at');
+  if (error){ toast('No se pudo cargar'); return; }
+  posts = data; render();
+}
+
+function render(){
+  const a = weekStart, b = addDays(a,6);
+  $('week-title').innerHTML = '';
+  $('week-title').append(`${a.getDate()} ${MESES[a.getMonth()]} – ${b.getDate()} ${MESES[b.getMonth()]} ${b.getFullYear()}`);
+  const small = el('small', null, iso(a)===iso(mondayOf(new Date())) ? 'Esta semana' : ''); $('week-title').append(small);
+  const total = posts.length, hechas = posts.filter(p=>p.publicado).length;
+  $('pbar').style.width = total ? (hechas/total*100)+'%' : '0';
+  $('ptxt').textContent = total ? `${hechas} de ${total} publicadas` : 'Sin publicaciones esta semana';
+  const list = $('list'); list.innerHTML = '';
+  const vis = posts.filter(p => filtro==='todas' || (filtro==='pend' ? !p.publicado : p.publicado));
+  if (!vis.length){ list.append(el('div','empty', total ? 'No hay publicaciones con este filtro.' : 'Todavía no hay publicaciones para esta semana. Usa “+ Nueva publicación”.')); return; }
+  const hoy = iso(new Date());
+  for (let i=0;i<7;i++){
+    const d = addDays(weekStart,i), key = iso(d), dp = vis.filter(p=>p.fecha===key);
+    if (!dp.length) continue;
+    const day = el('div','day'); const h = el('h3', key===hoy?'today':'', `${DIAS[d.getDay()]} ${d.getDate()} ${MESES[d.getMonth()]}${key===hoy?' · hoy':''}`);
+    day.append(h); dp.forEach(p => day.append(card(p))); list.append(day);
+  }
+}
+
+function card(p){
+  const c = el('div','post'+(p.publicado?' done':''));
+  const head = el('div','post-head');
+  const chk = el('button','chk', p.publicado?'✓':''); chk.title = 'Marcar como publicada'; chk.addEventListener('click', e=>{e.stopPropagation(); toggle(p);});
+  const main = el('div','post-main'); main.append(el('div','post-title',p.titulo));
+  const tags = el('div','tags');
+  (p.plataformas||[]).forEach(x=>tags.append(el('span','tag '+(x==='instagram'?'ig':'fb'), x==='instagram'?'Instagram':'Facebook')));
+  tags.append(el('span','tag fmt', FMT[p.formato]||p.formato)); main.append(tags);
+  main.addEventListener('click',()=>c.classList.toggle('open'));
+  head.append(chk, main); c.append(head);
+  const body = el('div','post-body');
+  const add = (t,v,pre) => { if(!v) return; const b=el('div','blk'); b.append(el('b',null,t)); b.append(pre?el('pre',null,v):el('div',null,v)); body.append(b); };
+  add('Texto', p.texto, true); add('Hashtags', p.hashtags); add('Material necesario', p.material); add('Notas', p.notas);
+  if (p.publicado){ body.append(el('div','done-info', `Publicada${p.publicado_at?' el '+new Date(p.publicado_at).toLocaleString('es-MX',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''}`)); }
+  const act = el('div','actions');
+  if (p.texto||p.hashtags){ const cp=el('button','btn sm','Copiar texto'); cp.addEventListener('click',()=>copy([p.texto,p.hashtags].filter(Boolean).join('\n\n'))); act.append(cp); }
+  const ed=el('button','btn ghost sm','Editar'); ed.addEventListener('click',()=>openModal(p)); act.append(ed);
+  const del=el('button','btn danger sm','Eliminar'); del.addEventListener('click',()=>remove(p)); act.append(del);
+  body.append(act); c.append(body); return c;
+}
+
+async function copy(t){ try{ await navigator.clipboard.writeText(t); toast('Texto copiado'); }catch(e){ toast('No se pudo copiar'); } }
+async function toggle(p){
+  const nuevo = !p.publicado;
+  const { error } = await sb.from('social_posts').update({ publicado:nuevo, publicado_at: nuevo?new Date().toISOString():null, publicado_por: nuevo?user.id:null }).eq('id',p.id);
+  if (error){ toast('No se pudo actualizar'); return; }
+  toast(nuevo?'Marcada como publicada ✓':'Marcada como pendiente'); await load();
+}
+async function remove(p){
+  if (!confirm(`¿Eliminar “${p.titulo}”?`)) return;
+  const { error } = await sb.from('social_posts').delete().eq('id',p.id);
+  if (error){ toast('No se pudo eliminar'); return; } toast('Eliminada'); await load();
+}
+
+function openModal(p){
+  editId = p ? p.id : null; $('m-msg').textContent='';
+  $('m-title').textContent = p ? 'Editar publicación' : 'Nueva publicación';
+  $('f-titulo').value = p?.titulo||''; $('f-fecha').value = p?.fecha || iso(weekStart);
+  $('f-formato').value = p?.formato||'post';
+  $('f-ig').checked = p ? (p.plataformas||[]).includes('instagram') : true;
+  $('f-fb').checked = p ? (p.plataformas||[]).includes('facebook') : true;
+  $('f-texto').value = p?.texto||''; $('f-hashtags').value = p?.hashtags||''; $('f-material').value = p?.material||''; $('f-notas').value = p?.notas||'';
+  $('modal').classList.add('on');
+}
+async function save(){
+  const plat = []; if ($('f-ig').checked) plat.push('instagram'); if ($('f-fb').checked) plat.push('facebook');
+  const titulo = $('f-titulo').value.trim(), fecha = $('f-fecha').value;
+  if (!titulo || !fecha){ $('m-msg').textContent='Falta el título o la fecha.'; return; }
+  if (!plat.length){ $('m-msg').textContent='Elige al menos una plataforma.'; return; }
+  const row = { titulo, fecha, plataformas:plat, formato:$('f-formato').value, texto:$('f-texto').value.trim()||null, hashtags:$('f-hashtags').value.trim()||null, material:$('f-material').value.trim()||null, notas:$('f-notas').value.trim()||null };
+  $('m-save').disabled = true;
+  const { error } = editId ? await sb.from('social_posts').update(row).eq('id',editId) : await sb.from('social_posts').insert(row);
+  $('m-save').disabled = false;
+  if (error){ $('m-msg').textContent='No se pudo guardar. Intenta de nuevo.'; return; }
+  $('modal').classList.remove('on'); toast('Guardada');
+  const d = parse(fecha); weekStart = mondayOf(d); await load();
+}
+
+$('btn-login').addEventListener('click', login);
+$('l-pass').addEventListener('keydown', e=>{ if(e.key==='Enter') login(); });
+$('btn-salir').addEventListener('click', logout); $('btn-salir2').addEventListener('click', logout);
+$('prev').addEventListener('click', ()=>{ weekStart = addDays(weekStart,-7); load(); });
+$('next').addEventListener('click', ()=>{ weekStart = addDays(weekStart,7); load(); });
+$('hoy').addEventListener('click', ()=>{ weekStart = mondayOf(new Date()); load(); });
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{ document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on')); t.classList.add('on'); filtro=t.dataset.f; render(); }));
+$('fab').addEventListener('click', ()=>openModal(null));
+$('m-cancel').addEventListener('click', ()=>$('modal').classList.remove('on'));
+$('m-save').addEventListener('click', save);
+$('modal').addEventListener('click', e=>{ if(e.target===$('modal')) $('modal').classList.remove('on'); });
+init();
+</script>
+</body>
+</html>
