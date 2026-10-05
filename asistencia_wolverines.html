@@ -89,7 +89,7 @@
     <div class="logo">✅</div>
     <h1>ASISTENCIA</h1>
     <p>Summer Camp 2026 · Control de entrada</p>
-    <input type="password" id="password-input" placeholder="••••••••" autocomplete="current-password">
+    <input type="password" autocapitalize="off" autocorrect="off" spellcheck="false" id="password-input" placeholder="••••••••" autocomplete="current-password">
     <button class="login-btn" onclick="doLogin()">Entrar</button>
     <div class="login-error" id="login-error">⚠️ Contraseña incorrecta</div>
   </div>
@@ -190,7 +190,7 @@ function showDashboard() {
   loadRecords();
 }
 async function doLogin() {
-  const p = document.getElementById('password-input').value;
+  const p = document.getElementById('password-input').value.trim();
   if (p && await verifyPwd(p)) {
     PASSWORD = p; savePwd(p); showDashboard();
   } else {
