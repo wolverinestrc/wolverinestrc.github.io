@@ -312,7 +312,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const PASSWORD       = 'Wolverines2026';
+let PASSWORD = '';
 const SUPABASE_URL = 'https://xaawoqyjavqcybafirri.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhYXdvcXlqYXZxY3liYWZpcnJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1Mzg4MjcsImV4cCI6MjEwMTExNDgyN30.TdLuimBVQIILaaW0UtZDHDSoDpDomwmL6RbG-K-GDZ0';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -342,18 +342,32 @@ let currentAsistFilter = 'todos';
 let currentRecordId = null;
 
 // ── AUTH ──
-function doLogin() {
-  if (document.getElementById('password-input').value === PASSWORD) {
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('dashboard').style.display = 'block';
-    loadRecords();
+const PWD_KEY = 'wolverines_admin_pwd';
+async function verifyPwd(p) {
+  const { error } = await sb.rpc('check_admin_pwd', { p_pwd: p });
+  return !error;
+}
+function savePwd(p) { try { sessionStorage.setItem(PWD_KEY, p); } catch (e) {} }
+function clearPwd() { try { sessionStorage.removeItem(PWD_KEY); } catch (e) {} }
+function savedPwd() { try { return sessionStorage.getItem(PWD_KEY) || ''; } catch (e) { return ''; } }
+function showDashboard() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  loadRecords();
+}
+async function doLogin() {
+  const p = document.getElementById('password-input').value;
+  if (p && await verifyPwd(p)) {
+    PASSWORD = p; savePwd(p); showDashboard();
   } else {
     document.getElementById('login-error').style.display = 'block';
     document.getElementById('password-input').value = '';
   }
 }
 document.getElementById('password-input').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+(async () => { const p = savedPwd(); if (p && await verifyPwd(p)) { PASSWORD = p; showDashboard(); } else { clearPwd(); } })();
 function doLogout() {
+  PASSWORD = ''; clearPwd();
   document.getElementById('dashboard').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('password-input').value = '';
