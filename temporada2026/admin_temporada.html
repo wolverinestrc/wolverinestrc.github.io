@@ -261,7 +261,7 @@ table.lt td{padding:12px 14px;font-size:13px;color:var(--text);border-top:1px so
     <img src="https://wolverines.mx/IMG_0019_transparent.png" alt="Wolverines" onerror="this.style.display='none'">
     <h1>Admin Panel</h1>
     <p>Temporada Agosto–Diciembre 2026</p>
-    <input type="password" id="pwd" placeholder="Contraseña" onkeydown="if(event.key==='Enter')login()">
+    <input type="password" autocapitalize="off" autocorrect="off" spellcheck="false" id="pwd" placeholder="Contraseña" onkeydown="if(event.key==='Enter')login()">
     <button class="login-btn" onclick="login()">Entrar</button>
     <div class="login-err" id="login-err">Contraseña incorrecta</div>
   </div>
@@ -820,7 +820,7 @@ function showMain() {
   loadData();
 }
 async function login() {
-  const p = document.getElementById('pwd').value;
+  const p = document.getElementById('pwd').value.trim();
   if (p && await verifyPwd(p)) {
     PWD = p; savePwd(p); showMain();
   } else {
