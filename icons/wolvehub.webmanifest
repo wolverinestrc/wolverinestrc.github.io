@@ -1,0 +1,21 @@
+{
+  "name": "Wolve Hub",
+  "short_name": "Wolve Hub",
+  "start_url": "/wolvehub.html",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#101f3d",
+  "theme_color": "#101f3d",
+  "icons": [
+    {
+      "src": "/icons/wolvehub-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/wolvehub-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
