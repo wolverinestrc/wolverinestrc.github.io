@@ -1,0 +1,21 @@
+{
+  "name": "Admin Temporada 2026",
+  "short_name": "Admin Temporada",
+  "start_url": "/temporada2026/admin_temporada.html",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#080808",
+  "theme_color": "#080808",
+  "icons": [
+    {
+      "src": "/icons/admin-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/admin-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
