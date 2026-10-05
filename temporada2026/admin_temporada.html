@@ -1336,7 +1336,7 @@ function renderMorosos() {
   var thead = '<thead><tr>';
   thead += '<th>Jugador</th><th>Categoría</th><th>Tutor</th><th>Teléfono</th>';
   mesesVencidos.forEach(function(m) { thead += '<th style="text-align:center">' + PAGOS_INFO[m].label + '</th>'; });
-  thead += '<th style="text-align:right;color:var(--red)">Deuda</th></tr></thead>';
+  thead += '<th style="text-align:right;color:var(--red)">Deuda</th><th style="text-align:center">Cobrar</th></tr></thead>';
 
   var tbody = '<tbody>';
   var totalDeuda = 0;
@@ -1359,6 +1359,7 @@ function renderMorosos() {
       tbody += '<td style="text-align:center">' + icon + '</td>';
     });
     tbody += '<td style="text-align:right;color:var(--red);font-weight:800">$' + deuda.toLocaleString() + '</td>';
+    tbody += '<td style="text-align:center;white-space:nowrap">' + cobroCeldaHtml(rec) + '</td>';
     tbody += '</tr>';
   });
   tbody += '</tbody>';
@@ -1366,6 +1367,81 @@ function renderMorosos() {
   container.innerHTML = '<div class="lt-wrap"><table class="lt">' + thead + tbody + '</table></div>' +
     '<div class="lt-summary"><span>' + morosos.length + ' jugador' + (morosos.length !== 1 ? 'es' : '') + ' con atrasos</span>' +
     '<span style="color:var(--red);font-weight:700">Deuda total: $' + totalDeuda.toLocaleString() + ' MXN</span></div>';
+}
+
+// ── COBRANZA POR WHATSAPP (un mensaje por tutor, con link de pago de Mercado Pago) ──
+function telefonoWhatsApp(tel) {
+  var d = String(tel || '').replace(/\D/g, '');
+  if (d.length === 10) return '52' + d;
+  if (d.length === 12 && d.indexOf('52') === 0) return d;
+  if (d.length === 13 && d.indexOf('521') === 0) return '52' + d.slice(3);
+  return null;
+}
+
+function cobroUltimoTxt(id) {
+  var t = null;
+  try { t = Number(localStorage.getItem('cobro_' + id)); } catch(e) {}
+  if (!t) return 'Sin aviso enviado';
+  var dias = Math.floor((Date.now() - t) / 86400000);
+  return dias === 0 ? 'Aviso: hoy' : 'Aviso: hace ' + dias + (dias === 1 ? ' día' : ' días');
+}
+
+function cobroCeldaHtml(rec) {
+  if (!telefonoWhatsApp(rec.fields['Teléfono'])) return '<span style="color:var(--gray);font-size:12px">Sin teléfono válido</span>';
+  return '<button class="btn-action" style="padding:7px 12px;font-size:12px" onclick="cobrarWhatsApp(\'' + rec.id + '\',this)">📲 Cobrar</button>' +
+    '<div id="cobro-ultimo-' + rec.id + '" style="font-size:10.5px;color:var(--gray);margin-top:3px">' + cobroUltimoTxt(rec.id) + '</div>';
+}
+
+async function cobrarWhatsApp(id, btn) {
+  var rec = allRecords.find(function(r) { return r.id === id; });
+  if (!rec) return;
+  var f = rec.fields;
+  var tel = telefonoWhatsApp(f['Teléfono']);
+  if (!tel) { alert('Este jugador no tiene un teléfono válido.'); return; }
+
+  var vencidos = getMesesVencidos();
+  var aplicables = mesesAplicables(f);
+  var pend = vencidos.filter(function(m) { return aplicables.indexOf(m) !== -1 && esDeuda(f['Pago ' + m]) && deudaRestante(f, m) > 0; });
+  if (!pend.length) { alert('✅ Este jugador ya no tiene saldo vencido.'); return; }
+  var deuda = pend.reduce(function(sum, m) { return sum + deudaRestante(f, m); }, 0);
+
+  var ventana = window.open('', '_blank');
+  var original = btn.textContent;
+  btn.disabled = true; btn.textContent = '⏳...';
+
+  var enlace = null, totalLink = null;
+  try {
+    var primero = pend[0];
+    var res = await fetch(PAYMENTS_API + '/mp/crear-pago', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_pwd: PWD, jugador_id: id, tipo: 'cuota', periodo: primero.toLowerCase(), neto: deudaRestante(f, primero), meses: 1 })
+    });
+    var data = await res.json();
+    if (res.ok && data.init_point) { enlace = data.init_point; totalLink = data.total; }
+  } catch(e) {}
+
+  var tutor = String(f['Tutor'] || '').trim();
+  var saludo = tutor.length > 2 ? 'Hola ' + tutor.split(' ')[0] : 'Hola';
+  var nombre = ((f['Nombre'] || '') + ' ' + (f['Apellidos'] || '')).trim();
+  var lineas = pend.map(function(m) { return '• ' + PAGOS_INFO[m].label + ': $' + deudaRestante(f, m).toLocaleString('es-MX'); }).join('\n');
+  var msg = saludo + ', te escribimos de *Wolverines TRC* 🏈. Te recordamos que *' + nombre + '* tiene pagos pendientes:\n' + lineas +
+    (pend.length > 1 ? '\nTotal: *$' + deuda.toLocaleString('es-MX') + '*' : '') + '\n\n';
+  if (enlace) {
+    msg += '💳 Puedes pagar en línea (tarjeta, efectivo o 3 meses sin intereses) aquí:\n' + enlace +
+      '\n(Este link es por ' + PAGOS_INFO[pend[0]].label + ', total $' + Number(totalLink).toLocaleString('es-MX') + ' con la comisión de Mercado Pago.)';
+    if (pend.length > 1) msg += '\nPara los demás pagos entra a https://wolverines.mx/wolvehub.html';
+  } else {
+    msg += '💳 Puedes pagar en línea desde https://wolverines.mx/wolvehub.html';
+  }
+  msg += '\n\n¡Gracias! 💙';
+
+  var url = 'https://wa.me/' + tel + '?text=' + encodeURIComponent(msg);
+  if (ventana) ventana.location.href = url; else window.location.href = url;
+  try { localStorage.setItem('cobro_' + id, String(Date.now())); } catch(e) {}
+  var ult = document.getElementById('cobro-ultimo-' + id);
+  if (ult) ult.textContent = cobroUltimoTxt(id);
+  btn.disabled = false; btn.textContent = original;
+  if (!enlace) alert('⚠️ No pude generar el link de pago directo (se incluyó el link general del Wolve Hub).');
 }
 
 // ── NOTIFICAR ──
