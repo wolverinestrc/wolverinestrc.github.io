@@ -1228,23 +1228,62 @@ function renderPagos() {
   renderHistorialPagos();
 }
 
+var historialExpandido = false;
+
+function historialOrdenado() {
+  return pagosHistorial.slice().sort(function(x, y) {
+    return String(y.fecha_pago || '').localeCompare(String(x.fecha_pago || '')) || String(y.created_at || '').localeCompare(String(x.created_at || ''));
+  });
+}
+
+function filaHistorialHtml(h, idx) {
+  var periodoLabel = (PAGOS_INFO[h.periodo.charAt(0).toUpperCase() + h.periodo.slice(1)] || {}).label || h.periodo;
+  var rec = allRecords.concat(bajasRecords).find(function(r) { return r.id === h.jugador_id; });
+  var f = rec ? rec.fields : {};
+  var registrado = h.created_at ? new Date(h.created_at).toLocaleString('es-MX') : '—';
+  var detalle = '<div style="display:flex;flex-wrap:wrap;gap:6px 24px;font-size:12.5px;color:var(--gray)">' +
+    '<span><b>Categoría:</b> ' + (f['Categoría'] || '—') + '</span>' +
+    '<span><b>Tutor:</b> ' + (f['Tutor'] || '—') + '</span>' +
+    '<span><b>Teléfono:</b> ' + (f['Teléfono'] || '—') + '</span>' +
+    '<span><b>Email:</b> ' + (f['Email'] || '—') + '</span>' +
+    '<span><b>Registrado:</b> ' + registrado + '</span>' +
+    (f['Baja'] ? '<span style="color:var(--red)"><b>Dado de baja</b></span>' : '') +
+    '</div>';
+  return '<tr style="cursor:pointer" onclick="toggleDetalleHistorial(' + idx + ')" title="Clic para ver más información">' +
+      '<td>' + h.jugador_nombre + '</td>' +
+      '<td>' + periodoLabel + '</td>' +
+      '<td style="font-weight:700;color:var(--green)">$' + Number(h.monto).toLocaleString() + '</td>' +
+      '<td>' + (h.fecha_pago || '—') + ' <span style="color:var(--gray-lt)">▾</span></td>' +
+    '</tr>' +
+    '<tr id="hist-det-' + idx + '" style="display:none"><td colspan="4" style="background:var(--bg);padding:10px 16px">' + detalle + '</td></tr>';
+}
+
+function toggleDetalleHistorial(idx) {
+  var el = document.getElementById('hist-det-' + idx);
+  if (el) el.style.display = el.style.display === 'none' ? 'table-row' : 'none';
+}
+
+function toggleHistorialCompleto() {
+  historialExpandido = !historialExpandido;
+  renderHistorialPagos();
+}
+
 function renderHistorialPagos() {
   var container = document.getElementById('historial-pagos-content');
   if (!pagosHistorial.length) { container.innerHTML = '<div class="empty">Sin pagos registrados todavía.</div>'; return; }
 
-  var rows = pagosHistorial.map(function(h) {
-    var periodoLabel = (PAGOS_INFO[h.periodo.charAt(0).toUpperCase() + h.periodo.slice(1)] || {}).label || h.periodo;
-    return '<tr>' +
-      '<td>' + h.jugador_nombre + '</td>' +
-      '<td>' + periodoLabel + '</td>' +
-      '<td style="font-weight:700;color:var(--green)">$' + Number(h.monto).toLocaleString() + '</td>' +
-      '<td>' + (h.fecha_pago || '—') + '</td>' +
-      '</tr>';
-  }).join('');
+  var todos = historialOrdenado();
+  var visibles = historialExpandido ? todos : todos.slice(0, 5);
+  var rows = visibles.map(function(h, i) { return filaHistorialHtml(h, i); }).join('');
+  var restantes = todos.length - 5;
 
   container.innerHTML = '<div class="lt-wrap"><table class="lt">' +
     '<thead><tr><th>Jugador</th><th>Concepto</th><th>Monto</th><th>Fecha</th></tr></thead>' +
-    '<tbody>' + rows + '</tbody></table></div>';
+    '<tbody>' + rows + '</tbody></table></div>' +
+    (restantes > 0
+      ? '<div style="text-align:center;margin-top:12px"><button class="btn-action btn-ghost" onclick="toggleHistorialCompleto()">' +
+        (historialExpandido ? '▲ Mostrar solo los últimos 5' : '▼ Ver los ' + restantes + ' pagos anteriores') + '</button></div>'
+      : '');
 }
 
 function exportHistorialPagos() {
