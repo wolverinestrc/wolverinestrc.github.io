@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Filtro QB – Wolverines TRC</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="apple-touch-icon" href="/icons/wolvehub-180.png">
+<meta name="theme-color" content="#101f3d">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#f1f4f9;--card:#fff;--border:#e5e9f2;--navy:#101f3d;--gold:#FFCB05;--blue:#2563eb;--blue-dk:#1d4ed8;--blue-lt:#eaf1ff;--text:#182338;--gray:#67728c;--gray-lt:#a4adc2;--green:#16a34a;--green-lt:#e8f7ee;--red:#e11d48;--amber:#b45309;--amber-lt:#fff4dc;--shadow:0 1px 2px rgba(16,31,61,.04),0 1px 6px rgba(16,31,61,.05)}
+body{background:var(--bg);font-family:'Montserrat',sans-serif;color:var(--text);min-height:100vh}
+header{background:var(--navy);padding:16px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:5}
+header img{width:40px;height:40px;border-radius:50%;background:#fff;object-fit:contain;padding:4px}
+header h1{font-size:16px;font-weight:800;color:#fff}
+header p{font-size:11.5px;color:#8ea0c4}
+header .sp{flex:1}
+.link-btn{background:none;border:none;color:#8ea0c4;font:600 12px 'Montserrat',sans-serif;cursor:pointer}
+.wrap{max-width:820px;margin:0 auto;padding:16px 14px 80px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:16px}
+.center{max-width:400px;margin:60px auto 0}
+.center h2{font-size:18px;font-weight:800;margin-bottom:4px}.sub{font-size:12.5px;color:var(--gray);margin-bottom:14px;line-height:1.5}
+.field{margin-bottom:12px}
+.field label,.lbl{display:block;font-size:11px;font-weight:700;letter-spacing:.3px;color:var(--gray);text-transform:uppercase;margin-bottom:5px}
+input,select,textarea{width:100%;border:1.5px solid var(--border);border-radius:9px;padding:10px 12px;font:500 14px 'Montserrat',sans-serif;color:var(--text);background:#fff;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--blue)}
+.btn{background:var(--blue);border:none;color:#fff;font:800 13px 'Montserrat',sans-serif;padding:12px 16px;border-radius:11px;cursor:pointer}
+.btn:hover{background:var(--blue-dk)}.btn:disabled{background:var(--gray-lt);cursor:not-allowed}
+.btn.full{width:100%}.btn.ghost{background:#fff;color:var(--text);border:1.5px solid var(--border)}.btn.ghost:hover{background:var(--bg)}
+.btn.danger{background:#fff;color:var(--red);border:1.5px solid #fbd0d9}.btn.sm{padding:7px 11px;font-size:12px;border-radius:9px}
+.msg{font-size:12.5px;margin-top:10px;color:var(--red);font-weight:600}
+.groups{display:flex;gap:6px;margin-bottom:10px}
+.groups button{flex:1;border:1.5px solid var(--border);background:#fff;border-radius:10px;padding:10px 4px;font:800 13px 'Montserrat',sans-serif;color:var(--gray);cursor:pointer}
+.groups button.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.tabs{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;padding-bottom:2px}
+.tab{border:1.5px solid var(--border);background:#fff;border-radius:99px;padding:8px 14px;font:700 12px 'Montserrat',sans-serif;cursor:pointer;color:var(--gray);white-space:nowrap}
+.tab.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cand{background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:14px;margin-bottom:10px}
+.cand-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.cand-name{flex:1;font-size:14.5px;font-weight:800}
+.badge{font-size:11px;font-weight:800;border-radius:7px;padding:4px 8px;background:#eef1f7;color:var(--gray);white-space:nowrap}
+.badge.pass{background:var(--green-lt);color:var(--green)}.badge.fail{background:#fdecef;color:var(--red)}.badge.warn{background:var(--amber-lt);color:var(--amber)}
+.tin label{font-size:11px;font-weight:700;color:var(--text);text-transform:none;letter-spacing:0;margin-bottom:2px}
+.tin .u{font-size:10.5px;color:var(--gray);margin-bottom:4px;line-height:1.3}
+.row{display:flex;gap:8px;align-items:center}
+.note{background:var(--amber-lt);border-radius:11px;padding:12px 14px;font-size:12px;line-height:1.55;color:#6b4a0a;margin-bottom:12px}
+.note b{display:block;margin-bottom:4px}
+.note ul{padding-left:18px}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th,td{padding:9px 8px;border-bottom:1px solid var(--border);text-align:left}
+th{font-size:10.5px;text-transform:uppercase;letter-spacing:.3px;color:var(--gray)}
+td.n,th.n{text-align:right}
+.scroll{overflow-x:auto}
+.empty{text-align:center;color:var(--gray);padding:34px 10px;font-size:13.5px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s;z-index:20}
+.toast.on{opacity:1}
+.hidden{display:none!important}
+h3.sec{font-size:13px;font-weight:800;margin:16px 0 8px}
+@media(max-width:420px){.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <img src="/IMG_0019_transparent.png" alt="Wolverines">
+  <div><h1>Filtro de QB</h1><p>Dos fases · cognitiva y de campo</p></div>
+  <div class="sp"></div>
+  <button class="link-btn hidden" id="btn-salir">Salir</button>
+</header>
+
+<div class="wrap">
+  <section id="v-login" class="card center">
+    <h2>Entrar</h2>
+    <p class="sub">Acceso solo para personal autorizado.</p>
+    <div class="field"><label>Correo</label><input id="l-email" type="email" autocomplete="username" inputmode="email" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
+    <div class="field"><label>Contraseña</label><input id="l-pass" type="password" autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
+    <button class="btn full" id="btn-login">Entrar</button>
+    <div class="msg" id="l-msg"></div>
+  </section>
+
+  <section id="v-noacc" class="card center hidden">
+    <h2>Sin acceso</h2>
+    <p class="sub">Tu cuenta no está autorizada para este panel. Pide al administrador que te agregue.</p>
+    <button class="btn ghost full" id="btn-salir2">Cerrar sesión</button>
+  </section>
+
+  <section id="v-app" class="hidden">
+    <div class="groups" id="groups"></div>
+    <div class="tabs" id="tabs"></div>
+    <div id="view"></div>
+  </section>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://xaawoqyjavqcybafirri.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhYXdvcXlqYXZxY3liYWZpcnJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1Mzg4MjcsImV4cCI6MjEwMTExNDgyN30.TdLuimBVQIILaaW0UtZDHDSoDpDomwmL6RbG-K-GDZ0';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { storageKey: 'wolverines-qb-auth' } });
+
+// ───────── Definición del protocolo ─────────
+const GRUPOS = ['10-11', '12-14', '15-18'];
+const GRUPO_INFO = { '10-11': '10 a 11 años · línea base, versiones cortas', '12-14': '12 a 14 años · unos 30 min', '15-18': '15 a 18 años · unos 40 min' };
+const T = {
+  rt:     { nombre: 'Reacción de elección', unidad: 'tiempo medio de aciertos (ms)', mejor: 'bajo', paso: 1 },
+  gng:    { nombre: 'Go/No-Go', unidad: '% de errores de comisión', mejor: 'bajo', paso: 0.1 },
+  corsi:  { nombre: 'Corsi', unidad: 'span máximo', mejor: 'alto', paso: 1 },
+  flanker:{ nombre: 'Flanker', unidad: 'efecto de interferencia (ms)', mejor: 'bajo', paso: 1 },
+  mot:    { nombre: '3D-MOT', unidad: 'umbral de velocidad', mejor: 'alto', paso: 0.01 },
+  ssrt:   { nombre: 'Stop-Signal', unidad: 'SSRT (ms)', mejor: 'bajo', paso: 1 },
+  nback:  { nombre: 'N-back 2-back', unidad: "d' (sensibilidad)", mejor: 'alto', paso: 0.01 },
+  tmb:    { nombre: 'Trail Making B', unidad: 'tiempo (s)', mejor: 'bajo', paso: 0.1 }
+};
+const PRUEBAS = {
+  '10-11': ['rt', 'gng', 'corsi'],
+  '12-14': ['rt', 'flanker', 'gng', 'mot', 'corsi'],
+  '15-18': ['rt', 'gng', 'ssrt', 'mot', 'nback', 'tmb']
+};
+const CAMPO = {
+  lectura:   { nombre: 'Lectura y decisión', desc: 'Drill con tres receptores y decisión de último momento' },
+  prec_sin:  { nombre: 'Precisión sin presión', desc: 'Blancos a distintas distancias' },
+  prec_bajo: { nombre: 'Precisión bajo presión', desc: 'Con rusher o tiempo límite' },
+  video:     { nombre: 'Lectura de video', desc: 'Jugadas pausadas: a quién tiraría y por qué' },
+  errores:   { nombre: 'Manejo de errores', desc: 'Reacción tras una intercepción' },
+  comunic:   { nombre: 'Comunicación y liderazgo', desc: 'En el huddle' },
+  playbook:  { nombre: 'Memoria del playbook', desc: 'Jugadas aprendidas en una sesión' }
+};
+const CAMPO_KEYS = Object.keys(CAMPO);
+const DEFAULT_CFG = {
+  corte: 35,        // % superior que pasa la Fase 1 (supuesto editable)
+  peso_campo: 65,   // % campo; el resto es cognitivo (supuesto editable)
+  f1: {},           // pesos por prueba y grupo
+  f2: {
+    '10-11': { lectura: 1, prec_sin: 1, prec_bajo: 1, video: 1, errores: 1, comunic: 1, playbook: 1 },
+    '12-14': { lectura: 20, prec_sin: 20, prec_bajo: 10, video: 10, errores: 10, comunic: 10, playbook: 20 },
+    '15-18': { lectura: 15, prec_sin: 10, prec_bajo: 20, video: 20, errores: 10, comunic: 10, playbook: 15 }
+  }
+};
+GRUPOS.forEach(g => { DEFAULT_CFG.f1[g] = {}; PRUEBAS[g].forEach(k => DEFAULT_CFG.f1[g][k] = 1); });
+
+// ───────── Estado ─────────
+let user = null, grupo = '12-14', tab = 'cands';
+let cands = [], res = {}, cfg = JSON.parse(JSON.stringify(DEFAULT_CFG));
+const $ = id => document.getElementById(id);
+function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+function toast(t) { const e = $('toast'); e.textContent = t; e.classList.add('on'); setTimeout(() => e.classList.remove('on'), 1800); }
+function show(id) { ['v-login','v-noacc','v-app'].forEach(v => $(v).classList.toggle('hidden', v !== id)); $('btn-salir').classList.toggle('hidden', id === 'v-login'); }
+function merge(base, extra) { // mezcla config guardada sobre los valores por defecto
+  const out = JSON.parse(JSON.stringify(base));
+  (function rec(o, e) { for (const k in (e || {})) { if (e[k] && typeof e[k] === 'object' && !Array.isArray(e[k])) { o[k] = o[k] || {}; rec(o[k], e[k]); } else o[k] = e[k]; } })(out, extra);
+  return out;
+}
+
+// ───────── Cálculo ─────────
+function erf(x) { const s = x < 0 ? -1 : 1; x = Math.abs(x); const t = 1 / (1 + 0.3275911 * x);
+  const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x); return s * y; }
+const cdf = z => 0.5 * (1 + erf(z / Math.SQRT2)) ;
+function stats(xs) { const n = xs.length; if (!n) return { n: 0, mean: 0, sd: 0 };
+  const mean = xs.reduce((a, b) => a + b, 0) / n; const sd = n > 1 ? Math.sqrt(xs.reduce((a, b) => a + (b - mean) ** 2, 0) / (n - 1)) : 0; return { n, mean, sd }; }
+
+function calcular(g) {
+  const lista = cands.filter(c => c.grupo === g);
+  const pruebas = PRUEBAS[g], w1 = cfg.f1[g], w2 = cfg.f2[g];
+  const st = {};
+  pruebas.forEach(k => st[k] = stats(lista.map(c => (res[c.id] || {})[k]).filter(v => v != null)));
+  const out = {};
+  lista.forEach(c => {
+    const r = res[c.id] || {};
+    let zs = 0, ws = 0, faltan = 0;
+    pruebas.forEach(k => {
+      const v = r[k]; if (v == null) { faltan++; return; }
+      const s = st[k]; if (s.n < 2 || s.sd === 0) return;
+      let z = (v - s.mean) / s.sd; if (T[k].mejor === 'bajo') z = -z;
+      const w = Number(w1[k]) || 0; zs += w * z; ws += w;
+    });
+    const o = { z: ws > 0 ? zs / ws : null, faltanF1: faltan, cognitivo: null, campo: null, final: null, pasa: null, rankF1: null };
+    if (o.z != null) o.cognitivo = cdf(o.z) * 100;
+    let cs = 0, cw = 0, cf = 0;
+    CAMPO_KEYS.forEach(k => { const v = r['c_' + k]; if (v == null) { cf++; return; } const w = Number(w2[k]) || 0; cs += w * v; cw += w; });
+    o.faltanF2 = cf;
+    if (cw > 0 && cf === 0) o.campo = (cs / cw) * 10;
+    out[c.id] = o;
+  });
+  // Ranking de la Fase 1 solo entre quienes tienen todas las pruebas
+  const completos = lista.filter(c => out[c.id].faltanF1 === 0 && out[c.id].z != null).sort((a, b) => out[b.id].z - out[a.id].z);
+  const cupo = completos.length ? Math.max(1, Math.ceil(completos.length * cfg.corte / 100)) : 0;
+  completos.forEach((c, i) => { out[c.id].rankF1 = i + 1; out[c.id].pasa = i < cupo; });
+  lista.forEach(c => { const o = out[c.id]; if (o.cognitivo != null && o.campo != null && o.faltanF1 === 0) o.final = (cfg.peso_campo * o.campo + (100 - cfg.peso_campo) * o.cognitivo) / 100; });
+  return { out, cupo, total: completos.length };
+}
+const fmt = (v, d = 1) => v == null ? '—' : v.toFixed(d);
+
+// ───────── Datos ─────────
+async function cargar() {
+  const [c, r, k] = await Promise.all([
+    sb.from('qb_candidatos').select('*').order('created_at'),
+    sb.from('qb_resultados').select('*'),
+    sb.from('qb_config').select('config').eq('id', 1).maybeSingle()
+  ]);
+  if (c.error || r.error) { toast('No se pudieron cargar los datos'); return; }
+  cands = c.data || []; res = {};
+  (r.data || []).forEach(x => { (res[x.candidato_id] = res[x.candidato_id] || {})[x.prueba] = Number(x.valor); });
+  cfg = merge(DEFAULT_CFG, k && k.data ? k.data.config : {});
+  renderTodo();
+}
+async function guardarValor(cid, prueba, texto) {
+  const v = texto.trim() === '' ? null : Number(texto.replace(',', '.'));
+  if (v != null && !isFinite(v)) { toast('Número no válido'); return false; }
+  const err = v == null
+    ? (await sb.from('qb_resultados').delete().eq('candidato_id', cid).eq('prueba', prueba)).error
+    : (await sb.from('qb_resultados').upsert({ candidato_id: cid, prueba, valor: v, updated_at: new Date().toISOString() }).select()).error;
+  if (err) { toast('No se pudo guardar'); return false; }
+  res[cid] = res[cid] || {}; if (v == null) delete res[cid][prueba]; else res[cid][prueba] = v;
+  return true;
+}
+
+// ───────── Vistas ─────────
+let badges = []; // referencias para actualizar sin perder el foco
+const TABS = [['cands', 'Candidatos'], ['f1', 'Fase 1 · cognitiva'], ['f2', 'Fase 2 · campo'], ['res', 'Resultados'], ['aj', 'Ajustes']];
+
+function renderTodo() {
+  const g = $('groups'); g.innerHTML = '';
+  GRUPOS.forEach(x => { const b = el('button', x === grupo ? 'on' : '', x); b.addEventListener('click', () => { grupo = x; renderTodo(); }); g.append(b); });
+  const t = $('tabs'); t.innerHTML = '';
+  TABS.forEach(([k, n]) => { const b = el('button', 'tab' + (k === tab ? ' on' : ''), n); b.addEventListener('click', () => { tab = k; renderTodo(); }); t.append(b); });
+  const v = $('view'); v.innerHTML = ''; badges = [];
+  v.append(el('div', 'sub', GRUPO_INFO[grupo]));
+  ({ cands: vCands, f1: vF1, f2: vF2, res: vRes, aj: vAj })[tab](v);
+  refrescar();
+}
+
+function refrescar() {
+  const { out } = calcular(grupo);
+  badges.forEach(b => {
+    const o = out[b.cid]; if (!o) return;
+    if (b.tipo === 'f1') {
+      if (o.faltanF1 > 0) { b.n.className = 'badge warn'; b.n.textContent = `Faltan ${o.faltanF1} prueba${o.faltanF1 > 1 ? 's' : ''}`; }
+      else if (o.rankF1 == null) { b.n.className = 'badge'; b.n.textContent = 'Sin datos suficientes'; }
+      else { b.n.className = 'badge ' + (o.pasa ? 'pass' : 'fail'); b.n.textContent = `#${o.rankF1} · z ${fmt(o.z, 2)} · ${o.pasa ? 'PASA' : 'no pasa'}`; }
+    } else if (b.tipo === 'f2') {
+      if (o.faltanF2 > 0) { b.n.className = 'badge warn'; b.n.textContent = `Faltan ${o.faltanF2} criterio${o.faltanF2 > 1 ? 's' : ''}`; }
+      else { b.n.className = 'badge pass'; b.n.textContent = `Campo ${fmt(o.campo, 0)}/100`; }
+    }
+  });
+}
+
+function vCands(v) {
+  const card = el('div', 'card'); card.style.marginBottom = '12px';
+  const f = el('div', 'field'); f.append(el('label', null, 'Nombre del candidato'));
+  const ni = el('input'); ni.maxLength = 80; ni.placeholder = 'Nombre y inicial del apellido'; f.append(ni); card.append(f);
+  const f2 = el('div', 'field'); f2.append(el('label', null, 'Notas (opcional)')); const no = el('input'); no.maxLength = 160; f2.append(no); card.append(f2);
+  const b = el('button', 'btn full', `Agregar al grupo ${grupo}`);
+  b.addEventListener('click', async () => {
+    const nombre = ni.value.trim(); if (!nombre) { toast('Escribe un nombre'); return; }
+    b.disabled = true;
+    const { data, error } = await sb.from('qb_candidatos').insert({ nombre, grupo, notas: no.value.trim() || null }).select().single();
+    b.disabled = false;
+    if (error) { toast('No se pudo agregar'); return; }
+    cands.push(data); toast('Candidato agregado'); renderTodo();
+  });
+  card.append(b); v.append(card);
+  const lista = cands.filter(c => c.grupo === grupo);
+  if (!lista.length) { v.append(el('div', 'empty', 'Todavía no hay candidatos en este grupo.')); return; }
+  lista.forEach(c => {
+    const d = el('div', 'cand'); const h = el('div', 'cand-head');
+    const nm = el('div', 'cand-name', c.nombre); h.append(nm);
+    const del = el('button', 'btn danger sm', 'Eliminar');
+    del.addEventListener('click', async () => {
+      if (!confirm(`¿Eliminar a ${c.nombre} y todos sus resultados?`)) return;
+      const { error } = await sb.from('qb_candidatos').delete().eq('id', c.id);
+      if (error) { toast('No se pudo eliminar'); return; }
+      cands = cands.filter(x => x.id !== c.id); delete res[c.id]; toast('Eliminado'); renderTodo();
+    });
+    h.append(del); d.append(h);
+    if (c.notas) d.append(el('div', 'sub', c.notas));
+    v.append(d);
+  });
+}
+
+function numInput(cid, key, paso, valor, min, max) {
+  const i = el('input'); i.type = 'number'; i.inputMode = 'decimal'; i.step = paso; if (valor != null) i.value = valor;
+  if (min != null) i.min = min; if (max != null) i.max = max;
+  i.addEventListener('change', async () => {
+    const n = Number(i.value);
+    if (i.value !== '' && (!isFinite(n) || (min != null && n < min) || (max != null && n > max))) {
+      toast(`Usa un valor de ${min} a ${max}`); const prev = (res[cid] || {})[key]; i.value = prev != null ? prev : ''; return;
+    }
+    const ok = await guardarValor(cid, key, i.value); if (ok) refrescar();
+  });
+  return i;
+}
+
+function vF1(v) {
+  const lista = cands.filter(c => c.grupo === grupo);
+  v.append(nota('Cómo se califica', ['Se calcula un z-score por prueba contra los demás candidatos del mismo grupo (a menor tiempo o error, mejor).', `Pasa el ${cfg.corte} % superior por puntaje ponderado (supuesto editable en Ajustes).`, 'Condiciones: mismo dispositivo y ambiente, ronda de práctica y, si se puede, dos intentos promediados (captura el promedio).']));
+  if (!lista.length) { v.append(el('div', 'empty', 'Agrega candidatos en la pestaña Candidatos.')); return; }
+  lista.forEach(c => {
+    const d = el('div', 'cand'); const h = el('div', 'cand-head'); h.append(el('div', 'cand-name', c.nombre));
+    const bd = el('span', 'badge', '…'); h.append(bd); badges.push({ cid: c.id, tipo: 'f1', n: bd }); d.append(h);
+    const g = el('div', 'grid2');
+    PRUEBAS[grupo].forEach(k => {
+      const w = el('div', 'tin'); w.append(el('label', null, T[k].nombre)); w.append(el('div', 'u', `${T[k].unidad} · ${T[k].mejor === 'bajo' ? 'menor es mejor' : 'mayor es mejor'}`));
+      w.append(numInput(c.id, k, T[k].paso, (res[c.id] || {})[k])); g.append(w);
+    });
+    d.append(g); v.append(d);
+  });
+}
+
+function vF2(v) {
+  const lista = cands.filter(c => c.grupo === grupo);
+  const { out } = calcular(grupo);
+  v.append(nota('Cómo se califica', ['Cada criterio de 1 a 10. El puntaje de campo es el promedio ponderado (los pesos cambian según el grupo de edad y se editan en Ajustes).', grupo === '12-14' ? 'En 12 a 14 pesa más la lectura, la precisión básica y la memoria del playbook.' : grupo === '15-18' ? 'En 15 a 18 pesa más la precisión bajo presión y la lectura de video.' : 'Para 10 a 11 no hay pesos definidos en el protocolo: se usan pesos iguales como supuesto.', 'Normalmente solo pasan a esta fase quienes superaron la Fase 1; aquí puedes capturar a cualquiera.']));
+  if (!lista.length) { v.append(el('div', 'empty', 'Agrega candidatos en la pestaña Candidatos.')); return; }
+  lista.forEach(c => {
+    const d = el('div', 'cand'); const h = el('div', 'cand-head'); h.append(el('div', 'cand-name', c.nombre));
+    const o = out[c.id]; if (o && o.pasa) h.append(el('span', 'badge pass', 'Pasó Fase 1'));
+    const bd = el('span', 'badge', '…'); h.append(bd); badges.push({ cid: c.id, tipo: 'f2', n: bd }); d.append(h);
+    const g = el('div', 'grid2');
+    CAMPO_KEYS.forEach(k => {
+      const w = el('div', 'tin'); w.append(el('label', null, CAMPO[k].nombre)); w.append(el('div', 'u', CAMPO[k].desc));
+      const i = numInput(c.id, 'c_' + k, 1, (res[c.id] || {})['c_' + k], 1, 10);
+      w.append(i); g.append(w);
+    });
+    d.append(g); v.append(d);
+  });
+}
+
+function vRes(v) {
+  const lista = cands.filter(c => c.grupo === grupo);
+  const { out, cupo, total } = calcular(grupo);
+  v.append(nota('Cómo leer esta tabla', [`Puntaje final = ${cfg.peso_campo} % campo + ${100 - cfg.peso_campo} % cognitivo (supuesto editable).`, 'El cognitivo se convierte a una escala de 0 a 100 según la posición del candidato dentro de su grupo. Con pocos candidatos los números son muy inestables.', 'Las pruebas cognitivas tienen correlación modesta con el rendimiento real como QB: son un dato más, no el único criterio.']));
+  if (!lista.length) { v.append(el('div', 'empty', 'Sin candidatos en este grupo.')); return; }
+  const filas = lista.map(c => ({ c, o: out[c.id] })).sort((a, b) => (b.o.final ?? -1) - (a.o.final ?? -1) || (b.o.z ?? -99) - (a.o.z ?? -99));
+  const card = el('div', 'card'); const sc = el('div', 'scroll'); const t = el('table');
+  const hr = el('tr'); ['Candidato', 'Fase 1', 'Cognitivo', 'Campo', 'Final'].forEach((x, i) => hr.append(Object.assign(el('th', i ? 'n' : '', x)))); t.append(hr);
+  filas.forEach(({ c, o }) => {
+    const r = el('tr'); r.append(el('td', null, c.nombre));
+    r.append(el('td', 'n', o.rankF1 ? `#${o.rankF1}${o.pasa ? ' ✓' : ''}` : '—'));
+    r.append(el('td', 'n', fmt(o.cognitivo, 0))); r.append(el('td', 'n', fmt(o.campo, 0)));
+    const f = el('td', 'n', fmt(o.final, 1)); f.style.fontWeight = '800'; r.append(f); t.append(r);
+  });
+  sc.append(t); card.append(sc); v.append(card);
+  v.append(el('div', 'sub', total ? `Fase 1: ${total} candidato${total > 1 ? 's' : ''} con todas las pruebas; pasan ${cupo} (${cfg.corte} %).` : 'Fase 1: aún no hay candidatos con todas las pruebas capturadas.'));
+  const b = el('button', 'btn ghost full', 'Descargar CSV de este grupo'); b.style.marginTop = '10px';
+  b.addEventListener('click', () => descargar(lista, out)); v.append(b);
+  v.append(nota('Recomendaciones del protocolo', ['Guarda los resultados de todos, incluso de quienes no pasen.', 'Después de unos meses revisa si el filtro predice el rendimiento en partido.', 'Los pesos y cortes son supuestos de trabajo, no valores validados.']));
+}
+
+function descargar(lista, out) {
+  const cab = ['grupo', 'nombre', ...PRUEBAS[grupo].map(k => T[k].nombre), ...CAMPO_KEYS.map(k => CAMPO[k].nombre), 'z_fase1', 'rank_fase1', 'pasa_fase1', 'cognitivo_0_100', 'campo_0_100', 'final'];
+  const esc = s => { s = s == null ? '' : String(s); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  const filas = lista.map(c => { const r = res[c.id] || {}, o = out[c.id];
+    return [grupo, c.nombre, ...PRUEBAS[grupo].map(k => r[k]), ...CAMPO_KEYS.map(k => r['c_' + k]), o.z, o.rankF1, o.pasa == null ? '' : (o.pasa ? 'si' : 'no'), o.cognitivo, o.campo, o.final].map(esc).join(','); });
+  const blob = new Blob(['﻿' + [cab.map(esc).join(','), ...filas].join('\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `filtro_qb_${grupo}.csv`; document.body.append(a); a.click(); a.remove();
+}
+
+function nota(titulo, items) { const d = el('div', 'note'); d.append(el('b', null, titulo)); const u = el('ul'); items.forEach(i => u.append(el('li', null, i))); d.append(u); return d; }
+
+function vAj(v) {
+  v.append(nota('Importante', ['Estos pesos y cortes son supuestos de trabajo, no valores validados.', 'Cambiarlos afecta a todos los grupos y a todas las cuentas autorizadas.']));
+  const card = el('div', 'card');
+  const row = (etq, valor, onch, min, max) => { const f = el('div', 'field'); f.append(el('label', null, etq)); const i = el('input'); i.type = 'number'; i.inputMode = 'decimal'; i.value = valor; i.min = min; i.max = max; i.addEventListener('change', () => onch(Number(i.value))); f.append(i); return f; };
+  const nuevo = JSON.parse(JSON.stringify(cfg));
+  card.append(row('Corte de Fase 1 (% superior que pasa)', nuevo.corte, x => nuevo.corte = x, 1, 100));
+  card.append(row('Peso del campo en el puntaje final (%)', nuevo.peso_campo, x => nuevo.peso_campo = x, 0, 100));
+  card.append(el('h3', 'sec', `Pesos de Fase 1 · grupo ${grupo}`));
+  PRUEBAS[grupo].forEach(k => card.append(row(T[k].nombre, nuevo.f1[grupo][k], x => nuevo.f1[grupo][k] = x, 0, 100)));
+  card.append(el('h3', 'sec', `Pesos de Fase 2 · grupo ${grupo}`));
+  CAMPO_KEYS.forEach(k => card.append(row(CAMPO[k].nombre, nuevo.f2[grupo][k], x => nuevo.f2[grupo][k] = x, 0, 100)));
+  const b = el('button', 'btn full', 'Guardar ajustes'); b.style.marginTop = '8px';
+  b.addEventListener('click', async () => {
+    if (!(nuevo.corte >= 1 && nuevo.corte <= 100 && nuevo.peso_campo >= 0 && nuevo.peso_campo <= 100)) { toast('Revisa el corte y el peso del campo'); return; }
+    b.disabled = true;
+    const { error } = await sb.from('qb_config').upsert({ id: 1, config: nuevo, updated_at: new Date().toISOString() });
+    b.disabled = false; if (error) { toast('No se pudo guardar'); return; }
+    cfg = nuevo; toast('Ajustes guardados'); renderTodo();
+  });
+  card.append(b);
+  const r = el('button', 'btn ghost full', 'Restablecer valores del protocolo'); r.style.marginTop = '8px';
+  r.addEventListener('click', async () => {
+    if (!confirm('¿Restablecer todos los pesos y cortes?')) return;
+    const { error } = await sb.from('qb_config').upsert({ id: 1, config: DEFAULT_CFG, updated_at: new Date().toISOString() });
+    if (error) { toast('No se pudo restablecer'); return; } cfg = JSON.parse(JSON.stringify(DEFAULT_CFG)); toast('Restablecido'); renderTodo();
+  });
+  card.append(r); v.append(card);
+}
+
+// ───────── Sesión ─────────
+async function init() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) await entrar(session.user); else show('v-login');
+}
+async function entrar(u) {
+  user = u;
+  const { data, error } = await sb.from('qb_access').select('nombre').eq('user_id', u.id).maybeSingle();
+  if (error || !data) { show('v-noacc'); return; }
+  show('v-app'); await cargar();
+}
+async function login() {
+  $('l-msg').textContent = ''; $('btn-login').disabled = true;
+  const { data, error } = await sb.auth.signInWithPassword({ email: $('l-email').value.trim(), password: $('l-pass').value.trim() });
+  $('btn-login').disabled = false;
+  if (error) { $('l-msg').textContent = 'Correo o contraseña incorrectos.'; return; }
+  await entrar(data.user);
+}
+async function logout() { await sb.auth.signOut(); user = null; cands = []; res = {}; $('l-pass').value = ''; show('v-login'); }
+$('btn-login').addEventListener('click', login);
+$('l-pass').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+$('btn-salir').addEventListener('click', logout); $('btn-salir2').addEventListener('click', logout);
+init();
+</script>
+</body>
+</html>
