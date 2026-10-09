@@ -3193,6 +3193,12 @@ async function posponerJornadaCompleta(btn) {
       j.pospuesto = true; j.hora = null; j.campo = null;
       hechos++;
     }
+    try {
+      await fetch(PAYMENTS_API + '/posponer-jornada', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_pwd: PWD, fecha: fecha, dia: dia })
+      });
+    } catch (e) { /* si falla, el sync automático podría reactivarlos */ }
     renderJuegos();
     alert('✅ ' + hechos + ' juegos marcados como pospuestos.');
   } catch(e) {
