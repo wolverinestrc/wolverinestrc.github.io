@@ -1169,6 +1169,30 @@ async function renderResumenPagos(jugadoresData) {
 let JUEGOS_ROL_CACHE = [];
 const DIAS_ORDEN_ROL = ['Viernes', 'Sábado'];
 
+function hoyLocalISO() {
+  var d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function fechaCorta(iso) {
+  if (!iso) return '';
+  var m = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  var p = iso.split('-');
+  return Number(p[2]) + ' ' + m[Number(p[1]) - 1];
+}
+// Solo juegos de hoy en adelante y, por cada día de la semana, solo su próxima fecha
+// (así no se mezclan jornadas pasadas o futuras bajo el mismo encabezado "Sábado").
+function proximaFechaPorDia(juegos) {
+  var hoy = hoyLocalISO(), prox = {};
+  juegos.forEach(function(j) {
+    if (j.fecha && j.fecha >= hoy && (!prox[j.dia] || j.fecha < prox[j.dia])) prox[j.dia] = j.fecha;
+  });
+  return prox;
+}
+function juegoVigente(j, prox) {
+  if (!j.fecha) return true;
+  return j.fecha === prox[j.dia];
+}
+
 async function renderMisPartidosRol() {
   const cont = document.getElementById('rol-mis-partidos');
   if (!cont) return;
@@ -1188,7 +1212,8 @@ async function renderMisPartidosRol() {
   }
 
   const filas = [];
-  juegos.filter(g => !g.pospuesto).forEach(g => {
+  const proxFechas = proximaFechaPorDia(juegos);
+  juegos.filter(g => !g.pospuesto && juegoVigente(g, proxFechas)).forEach(g => {
     const infoJuego = extraerInfoCategoria(g.categoria);
     if (infoJuego) infoJuego.color = extraerColorWolverines(g.partido);
     const hijos = jugadoresActuales.filter(j => tokensDeJugador(j).some(info => coincideCategoria(info, infoJuego)));
@@ -1216,7 +1241,7 @@ async function renderMisPartidosRol() {
       const claseDia = f.juego.dia === 'Viernes' ? 'viernes' : 'sabado';
       const liga = f.juego.liga || ligaDia || '';
       const logo = logoLiga(liga);
-      banner = `<div class="hub-dia-banner ${claseDia}"><span class="dia-nombre">📅 ${f.juego.dia}</span>${liga ? '<span class="dia-liga">' + (logo ? '<img src="' + logo + '" alt="' + liga + '">' : '🏆 ' + liga) + '</span>' : ''}</div>`;
+      banner = `<div class="hub-dia-banner ${claseDia}"><span class="dia-nombre">📅 ${f.juego.dia}${proxFechas[f.juego.dia] ? ' ' + fechaCorta(proxFechas[f.juego.dia]) : ''}</span>${liga ? '<span class="dia-liga">' + (logo ? '<img src="' + logo + '" alt="' + liga + '">' : '🏆 ' + liga) + '</span>' : ''}</div>`;
     }
     const ligaDistinta = f.juego.liga && f.juego.liga !== ligaDia;
     const logoJuego = ligaDistinta ? logoLiga(f.juego.liga) : null;
