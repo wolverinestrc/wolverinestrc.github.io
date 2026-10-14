@@ -62,6 +62,17 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
 .asist-hora{color:var(--gray);font-size:11.5px}
 .tag-retardo{background:#fef3e0;color:#b45309;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:7px}
 .tag-ok{background:#dcfce7;color:#15803d;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:7px}
+.tag-aus{background:#fee2e2;color:#b91c1c;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:7px}
+.asist-resumen{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 4px}
+.asist-resumen span{font-size:12px;font-weight:800;padding:5px 11px;border-radius:20px}
+.asist-grupo{font-size:11.5px;font-weight:800;color:var(--blue-dk);text-transform:uppercase;letter-spacing:.4px;margin:14px 0 2px}
+.asist-row.ausente{cursor:pointer}
+.scan-result{margin-top:10px;padding:12px 14px;border-radius:11px;font-size:14px;font-weight:800;text-align:center}
+.scan-result.ok{background:#dcfce7;color:#15803d}
+.scan-result.warn{background:#fef3e0;color:#b45309}
+.scan-result.err{background:#fee2e2;color:#b91c1c}
+.rep-btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.rep-btns .submit-btn{flex:1;min-width:150px}
 .tag-falta{background:#fde8ee;color:var(--red);font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:7px}
 
 .esq-page-title{font-size:22px;font-weight:900;margin-bottom:14px}
@@ -130,7 +141,7 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
 <div class="wrap" id="section-asistencia">
   <div class="card">
     <h2>✅ Tomar asistencia</h2>
-    <div class="sub">Genera un código y que las jugadoras lo escaneen con su celular</div>
+    <div class="sub">Escanea el QR personal de cada jugadora con la cámara de tu celular</div>
     <div class="field">
       <label>Tipo de evento</label>
       <select id="asist-tipo" onchange="cargarAsistenciaHoy()">
@@ -138,16 +149,36 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
         <option value="Partido">🏈 Partido</option>
       </select>
     </div>
-    <button class="submit-btn" id="btn-generar-qr" onclick="generarQR()">📷 Generar código</button>
-    <div class="qr-wrap" id="qr-wrap" style="display:none">
-      <canvas id="qr-canvas"></canvas>
-      <div class="qr-timer" id="qr-timer"></div>
+    <button class="submit-btn" id="btn-scan" onclick="iniciarScanner()">📷 Escanear QR de jugadora</button>
+    <div id="scan-box" style="display:none">
+      <div id="qr-reader" style="width:100%;max-width:340px;margin:14px auto 0"></div>
+      <div id="scan-result" class="scan-result" style="display:none"></div>
+      <button class="submit-btn" style="background:#64748b;margin-top:12px" onclick="detenerScanner()">⏹ Detener cámara</button>
+    </div>
+    <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border)">
+      <div class="sub" style="margin-bottom:8px">¿Prefieres que ellas escaneen? Muestra un código en tu pantalla:</div>
+      <button class="submit-btn" id="btn-generar-qr" style="background:#64748b" onclick="generarQR()">📱 Mostrar código para que escaneen</button>
+      <div class="qr-wrap" id="qr-wrap" style="display:none">
+        <canvas id="qr-canvas"></canvas>
+        <div class="qr-timer" id="qr-timer"></div>
+      </div>
     </div>
   </div>
   <div class="card">
-    <h2>📝 Asistencia de hoy</h2>
-    <div class="sub">Jugadoras que ya registraron su llegada</div>
+    <h2>📝 Asistencia del día</h2>
+    <div class="sub">Quién está presente, con retardo o sin registrar. Toca a una jugadora sin registrar para marcarla presente.</div>
+    <div class="field"><label>Fecha</label><input type="date" id="asist-fecha" onchange="cargarAsistenciaHoy()"></div>
     <div id="asistencia-hoy-content"><div class="loading-msg">Cargando...</div></div>
+  </div>
+  <div class="card">
+    <h2>📄 Reportes de asistencia</h2>
+    <div class="sub">Descarga el reporte en PDF. El del día y el de la semana también se envían por correo a cada coach.</div>
+    <div class="field"><label>Día o semana a reportar</label><input type="date" id="rep-fecha"></div>
+    <div class="rep-btns">
+      <button class="submit-btn" id="btn-rep-dia" onclick="descargarReporte('dia')">📄 Reporte del día</button>
+      <button class="submit-btn" id="btn-rep-semana" onclick="descargarReporte('semana')">📅 Reporte de la semana</button>
+    </div>
+    <div class="empty-msg" id="rep-msg" style="display:none;margin-top:10px"></div>
   </div>
   <div class="card">
     <h2>📊 Reporte de asistencia</h2>
@@ -326,8 +357,10 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.1/qrcode.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 <script>
 const SUPABASE_URL = 'https://xaawoqyjavqcybafirri.supabase.co';
+const PAYMENTS_API = 'https://wolverines-payments.wolverinestrc.workers.dev';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhYXdvcXlqYXZxY3liYWZpcnJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1Mzg4MjcsImV4cCI6MjEwMTExNDgyN30.TdLuimBVQIILaaW0UtZDHDSoDpDomwmL6RbG-K-GDZ0';
 const sbCoach = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { storageKey: 'wolverines-coach-auth', persistSession: true, autoRefreshToken: true } });
 
@@ -345,6 +378,7 @@ function switchTab(tab) {
     document.querySelector('.hub-tab[data-tab="' + t + '"]').classList.toggle('active', t === tab);
     document.getElementById('section-' + t).style.display = t === tab ? '' : 'none';
   });
+  if (tab !== 'asistencia') detenerScanner();
   if (tab === 'asistencia') cargarReporteAsistencia();
   if (tab === 'jugadoras' && !rosterCache.length) cargarJugadoras();
   if (tab === 'partidos') cargarPartidos();
@@ -399,24 +433,176 @@ function iniciarCuentaRegresiva(expiraAt) {
   qrTimerInterval = setInterval(tick, 1000);
 }
 
+function hoyMx() {
+  return new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+function fmtHoraMx(iso) {
+  return new Date(iso).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Monterrey' });
+}
+
 async function cargarAsistenciaHoy() {
   var tipo = document.getElementById('asist-tipo').value;
-  var hoy = new Date().toISOString().slice(0, 10);
-  var { data, error } = await sbCoach.from('asistencia')
-    .select('hora_checkin, retardo, jugadores(nombre, apellidos, id_jugadora)')
-    .eq('fecha', hoy).eq('tipo_evento', tipo)
-    .order('hora_checkin', { ascending: true });
+  var inputFecha = document.getElementById('asist-fecha');
+  if (!inputFecha.value) inputFecha.value = hoyMx();
+  var fecha = inputFecha.value;
   var wrap = document.getElementById('asistencia-hoy-content');
-  if (error) { wrap.innerHTML = '<div class="empty-msg">No se pudo cargar.</div>'; return; }
-  if (!data.length) { wrap.innerHTML = '<div class="empty-msg">Nadie ha registrado asistencia todavía hoy.</div>'; return; }
-  wrap.innerHTML = data.map(function(a) {
-    var hora = new Date(a.hora_checkin).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Monterrey' });
-    var j = a.jugadores || {};
-    return '<div class="asist-row">' +
-      '<span>' + (j.nombre || '') + ' ' + (j.apellidos || '') + '</span>' +
-      '<span class="asist-hora">' + hora + ' ' + (a.retardo ? '<span class="tag-retardo">Retardo</span>' : '<span class="tag-ok">A tiempo</span>') + '</span>' +
-    '</div>';
-  }).join('');
+  var { data, error } = await sbCoach.rpc('asistencia_del_dia', { p_fecha: fecha, p_tipo_evento: tipo });
+  if (error) { wrap.innerHTML = '<div class="empty-msg">No se pudo cargar la asistencia.</div>'; return; }
+  if (!data || !data.length) { wrap.innerHTML = '<div class="empty-msg">No tienes jugadoras asignadas a tus equipos.</div>'; return; }
+
+  var esHoy = fecha === hoyMx();
+  var presentes = data.filter(function(a) { return a.estado === 'presente'; }).length;
+  var retardos = data.filter(function(a) { return a.estado === 'retardo'; }).length;
+  var ausentes = data.filter(function(a) { return a.estado === 'ausente'; }).length;
+  var html = '<div class="asist-resumen">' +
+    '<span style="background:#dcfce7;color:#15803d">✅ Presentes: ' + presentes + '</span>' +
+    '<span style="background:#fef3e0;color:#b45309">⏰ Retardos: ' + retardos + '</span>' +
+    '<span style="background:#fee2e2;color:#b91c1c">❌ Sin registrar: ' + ausentes + '</span></div>';
+
+  var grupo = null;
+  data.forEach(function(a) {
+    if (a.roster !== grupo) { grupo = a.roster; html += '<div class="asist-grupo">' + grupo + '</div>'; }
+    var chip = a.estado === 'ausente' ? '<span class="tag-aus">Sin registrar</span>'
+             : a.estado === 'retardo' ? fmtHoraMx(a.hora) + ' <span class="tag-retardo">Retardo</span>'
+             : fmtHoraMx(a.hora) + ' <span class="tag-ok">A tiempo</span>';
+    var click = (a.estado === 'ausente' && esHoy)
+      ? ' onclick="marcarPresenteManual(\'' + a.jugador_id + '\', this.dataset.nombre)" data-nombre="' + String(a.nombre).replace(/"/g, '&quot;') + '"' : '';
+    html += '<div class="asist-row' + (a.estado === 'ausente' ? ' ausente' : '') + '"' + click + '>' +
+      '<span>' + a.nombre + '</span><span class="asist-hora">' + chip + '</span></div>';
+  });
+  wrap.innerHTML = html;
+}
+
+async function marcarPresenteManual(jugadorId, nombre) {
+  if (!confirm('¿Marcar presente a ' + nombre + '?')) return;
+  var tipo = document.getElementById('asist-tipo').value;
+  var { data, error } = await sbCoach.rpc('coach_registrar_asistencia', { p_jugador_id: jugadorId, p_tipo_evento: tipo });
+  if (error || !data || !data.ok) { alert('❌ ' + ((data && data.mensaje) || (error && error.message) || 'No se pudo registrar.')); return; }
+  cargarAsistenciaHoy();
+}
+
+/* ---- Escáner de QR de jugadora ---- */
+var scanner = null;
+var scanUltimo = {};
+var scanAudio = null;
+
+function pitido(ok) {
+  try {
+    scanAudio = scanAudio || new (window.AudioContext || window.webkitAudioContext)();
+    var o = scanAudio.createOscillator(), g = scanAudio.createGain();
+    o.connect(g); g.connect(scanAudio.destination);
+    o.frequency.value = ok ? 880 : 220; g.gain.value = 0.08;
+    o.start(); o.stop(scanAudio.currentTime + (ok ? 0.12 : 0.3));
+  } catch (e) {}
+  try { if (navigator.vibrate) navigator.vibrate(ok ? 80 : [60, 40, 60]); } catch (e) {}
+}
+
+function mostrarResultadoScan(clase, texto) {
+  var el = document.getElementById('scan-result');
+  el.className = 'scan-result ' + clase;
+  el.textContent = texto;
+  el.style.display = 'block';
+}
+
+async function iniciarScanner() {
+  if (typeof Html5Qrcode === 'undefined') { alert('No se pudo cargar el lector de QR. Revisa tu conexión y recarga la página.'); return; }
+  if (scanner) return;
+  document.getElementById('scan-box').style.display = 'block';
+  document.getElementById('btn-scan').style.display = 'none';
+  try {
+    scanner = new Html5Qrcode('qr-reader');
+    await scanner.start({ facingMode: 'environment' }, { fps: 10, qrbox: { width: 230, height: 230 } }, onQrLeido, function() {});
+  } catch (e) {
+    scanner = null;
+    document.getElementById('scan-box').style.display = 'none';
+    document.getElementById('btn-scan').style.display = '';
+    alert('No se pudo abrir la cámara. Permite el acceso a la cámara en tu navegador e inténtalo de nuevo.');
+  }
+}
+
+async function detenerScanner() {
+  var s = scanner;
+  scanner = null;
+  var box = document.getElementById('scan-box');
+  if (box) box.style.display = 'none';
+  var btn = document.getElementById('btn-scan');
+  if (btn) btn.style.display = '';
+  if (s) { try { await s.stop(); s.clear(); } catch (e) {} }
+}
+
+async function onQrLeido(texto) {
+  var m = /^(?:WH:)?([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i.exec(String(texto || '').trim());
+  var ahora = Date.now();
+  if (!m) {
+    if (!scanUltimo.__invalido || ahora - scanUltimo.__invalido > 3000) {
+      scanUltimo.__invalido = ahora;
+      pitido(false);
+      mostrarResultadoScan('err', 'Ese QR no es de una jugadora de Wolverines.');
+    }
+    return;
+  }
+  var id = m[1].toLowerCase();
+  if (scanUltimo[id] && ahora - scanUltimo[id] < 5000) return;
+  scanUltimo[id] = ahora;
+
+  var tipo = document.getElementById('asist-tipo').value;
+  var { data, error } = await sbCoach.rpc('coach_registrar_asistencia', { p_jugador_id: id, p_tipo_evento: tipo });
+  if (error || !data) { pitido(false); mostrarResultadoScan('err', '❌ ' + ((error && error.message) || 'No se pudo registrar.')); return; }
+  if (!data.ok) { pitido(false); mostrarResultadoScan('err', '❌ ' + data.mensaje); return; }
+  var hora = data.hora ? fmtHoraMx(data.hora) : '';
+  var extra = data.de_tu_equipo === false ? ' (no es de tus equipos)' : '';
+  if (data.ya_registrada) {
+    pitido(true);
+    mostrarResultadoScan('warn', '⚠️ ' + data.nombre + ' ya estaba registrada' + (hora ? ' a las ' + hora : '') + extra);
+  } else {
+    pitido(true);
+    mostrarResultadoScan(data.retardo ? 'warn' : 'ok', (data.retardo ? '⏰ ' : '✅ ') + data.nombre + ' — ' + (data.retardo ? 'retardo' : 'presente') + (hora ? ' · ' + hora : '') + extra);
+  }
+  cargarAsistenciaHoy();
+}
+
+/* ---- Descarga de reportes ---- */
+async function descargarReporte(modo) {
+  var msg = document.getElementById('rep-msg');
+  var inputFecha = document.getElementById('rep-fecha');
+  if (!inputFecha.value) inputFecha.value = hoyMx();
+  var f = inputFecha.value;
+  var desde = f, hasta = f;
+  if (modo === 'semana') {
+    var d = new Date(f + 'T00:00:00Z');
+    var lunes = new Date(d.getTime() - ((d.getUTCDay() + 6) % 7) * 86400000);
+    desde = lunes.toISOString().slice(0, 10);
+    hasta = new Date(lunes.getTime() + 6 * 86400000).toISOString().slice(0, 10);
+  }
+  var btn = document.getElementById(modo === 'semana' ? 'btn-rep-semana' : 'btn-rep-dia');
+  var original = btn.textContent;
+  btn.disabled = true; btn.textContent = '⏳ Generando...';
+  msg.style.display = 'none';
+  try {
+    var ses = await sbCoach.auth.getSession();
+    var res = await fetch(PAYMENTS_API + '/reporte-asistencia', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + ses.data.session.access_token },
+      body: JSON.stringify({ desde: desde, hasta: hasta, modo: modo })
+    });
+    if (!res.ok) {
+      var err = {};
+      try { err = await res.json(); } catch (e) {}
+      throw new Error(err.error || 'No se pudo generar el reporte.');
+    }
+    var blob = await res.blob();
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'Asistencia_Wolverines_' + (desde === hasta ? desde : desde + '_a_' + hasta) + '.pdf';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function() { URL.revokeObjectURL(a.href); }, 5000);
+  } catch (e) {
+    msg.textContent = '❌ ' + e.message;
+    msg.style.display = 'block';
+  } finally {
+    btn.disabled = false; btn.textContent = original;
+  }
 }
 
 /* ============ ESQUEMAS ============ */

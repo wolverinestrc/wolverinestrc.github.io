@@ -126,6 +126,15 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
     <div id="perfil-content"><div class="loading-msg">Cargando...</div></div>
   </div>
   <div class="card">
+    <h2>📲 Mi QR de asistencia</h2>
+    <div class="sub">Muéstraselo a tu coach al llegar al entrenamiento o al partido para que registre tu asistencia</div>
+    <div class="qr-wrap" id="mi-qr-wrap" style="display:flex;flex-direction:column;align-items:center;padding:6px 0">
+      <canvas id="mi-qr-canvas" style="border-radius:12px;border:1px solid var(--border)"></canvas>
+      <div id="mi-qr-nombre" style="font-size:13px;font-weight:800;color:var(--blue-dk);margin-top:10px"></div>
+      <div style="font-size:11.5px;color:var(--gray);margin-top:4px;text-align:center">Sube el brillo de tu pantalla para que se lea mejor. Es personal: no lo compartas.</div>
+    </div>
+  </div>
+  <div class="card">
     <h2>👋 Hola</h2>
     <div class="sub" id="dash-sub">Bienvenida a tu hub</div>
     <div id="dash-stats"><div class="loading-msg">Cargando...</div></div>
@@ -219,6 +228,7 @@ header p{font-size:12px;color:#8ea0c4;margin-top:1px}
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.1/qrcode.js"></script>
 <script>
 const SUPABASE_URL = 'https://xaawoqyjavqcybafirri.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhYXdvcXlqYXZxY3liYWZpcnJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1Mzg4MjcsImV4cCI6MjEwMTExNDgyN30.TdLuimBVQIILaaW0UtZDHDSoDpDomwmL6RbG-K-GDZ0';
@@ -504,6 +514,12 @@ async function renderPerfil() {
   if (!miPerfil) await cargarMiPerfil();
   if (!miPerfil) { wrap.innerHTML = '<div class="empty-msg">No se pudo cargar tu perfil.</div>'; return; }
   var p = miPerfil;
+  try {
+    if (typeof QRCode !== 'undefined') {
+      await QRCode.toCanvas(document.getElementById('mi-qr-canvas'), p.id, { width: 230, margin: 2 });
+      document.getElementById('mi-qr-nombre').textContent = p.nombre + ' ' + p.apellidos + (p.id_jugadora ? ' · ' + p.id_jugadora : '');
+    }
+  } catch (e) {}
   var fotoHtml = p.foto_url
     ? '<img src="' + p.foto_url + '" class="perfil-foto">'
     : '<div class="perfil-foto-ph">🏈</div>';
