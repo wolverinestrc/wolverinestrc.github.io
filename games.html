@@ -173,9 +173,9 @@ function renderJuegos() {
   }
 
   let html = '';
-  const proxFechas = proximaFechaPorDia(JUEGOS);
+  const proxFechas = proximaFechaPorDia(JUEGOS.filter(function(j) { return !j.pospuesto; }));
   DIAS_ORDEN.forEach(function(dia) {
-    const juegosDia = JUEGOS.filter(function(j) { return j.dia === dia && juegoVigente(j, proxFechas); })
+    const juegosDia = JUEGOS.filter(function(j) { return j.dia === dia && !j.pospuesto && juegoVigente(j, proxFechas); })
       .sort(function(a, b) {
         if (!!a.pospuesto !== !!b.pospuesto) return a.pospuesto ? 1 : -1;
         return (a.hora || '').localeCompare(b.hora || '');

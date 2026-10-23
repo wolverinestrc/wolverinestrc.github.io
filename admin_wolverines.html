@@ -347,9 +347,9 @@ async function verifyPwd(p) {
   const { error } = await sb.rpc('check_admin_pwd', { p_pwd: p });
   return !error;
 }
-function savePwd(p) { try { sessionStorage.setItem(PWD_KEY, p); } catch (e) {} }
-function clearPwd() { try { sessionStorage.removeItem(PWD_KEY); } catch (e) {} }
-function savedPwd() { try { return sessionStorage.getItem(PWD_KEY) || ''; } catch (e) { return ''; } }
+function savePwd(p) { try { localStorage.setItem(PWD_KEY, p); sessionStorage.removeItem(PWD_KEY); } catch (e) {} }
+function clearPwd() { try { localStorage.removeItem(PWD_KEY); sessionStorage.removeItem(PWD_KEY); } catch (e) {} }
+function savedPwd() { try { return localStorage.getItem(PWD_KEY) || sessionStorage.getItem(PWD_KEY) || ''; } catch (e) { return ''; } }
 function showDashboard() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('dashboard').style.display = 'block';
